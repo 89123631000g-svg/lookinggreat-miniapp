@@ -2,206 +2,390 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>LookingGreat — Mini App</title>
   <style>
-    :root { --bg:#f6f7fb; --card:#fff; --text:#111; --muted:#666; --border:#e6e8ef; }
-    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial; background:var(--bg); color:var(--text); }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 18px; }
-    .h1 { font-size: 22px; font-weight: 800; margin: 6px 0 14px; }
-    .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin:12px 0; }
-    .row { display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
-    .tabs { display:flex; gap:8px; }
-    .tab { border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; }
+    :root { --bg:#f6f7fb; --card:#fff; --text:#111; --muted:#6b7280; --btn:#111; --btnText:#fff; --line:#e5e7eb; }
+    body { margin:0; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
+    .wrap { max-width: 520px; margin: 0 auto; padding: 14px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; box-shadow: 0 1px 10px rgba(0,0,0,.03); }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .tabs { display:flex; gap:8px; margin:10px 0 12px; }
+    .tab { padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#fff; cursor:pointer; }
     .tab.active { border-color:#111; }
     .muted { color:var(--muted); font-size: 13px; }
-    label { display:block; font-size: 13px; color:var(--muted); margin:10px 0 6px; }
-    input { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--border); border-radius:10px; }
-    button { border:0; background:#111; color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer; }
-    button.secondary { background:#e9ebf3; color:#111; }
-    button:disabled { opacity:.5; cursor:not-allowed; }
-    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .img { width:100%; border-radius:12px; border:1px solid var(--border); background:#fafbff; aspect-ratio: 3/4; object-fit: cover; }
-    .ok { color:#0a7a2f; font-weight:700; }
-    .bad { color:#b10000; font-weight:700; }
-    .code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background:#f1f3fa; border:1px solid var(--border); padding:10px; border-radius:10px; overflow:auto; }
+    .btn { background:var(--btn); color:var(--btnText); border:0; padding:10px 12px; border-radius:12px; cursor:pointer; }
+    .btn.secondary { background:#fff; color:#111; border:1px solid var(--line); }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    input { width:100%; box-sizing:border-box; padding:10px 12px; border-radius:12px; border:1px solid var(--line); font-size:14px; }
+    label { display:block; margin:10px 0 6px; font-size:13px; color:var(--muted); }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .imgbox { aspect-ratio: 3/4; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:#f3f4f6; display:flex; align-items:center; justify-content:center; }
+    .imgbox img { width:100%; height:100%; object-fit:cover; display:block; }
+    .voteRow { display:flex; gap:10px; margin-top:10px; }
+    .title { font-weight:700; font-size:18px; }
+    .ok { color:#16a34a; font-weight:700; }
+    .bad { color:#dc2626; font-weight:700; }
+    .sp { height:10px; }
+    .list { display:flex; flex-direction:column; gap:10px; }
+    .pairMeta { display:flex; justify-content:space-between; gap:10px; font-size:13px; color:var(--muted); margin-top:8px; }
+    .small { font-size:12px; }
+    .pill { display:inline-flex; gap:6px; align-items:center; border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 10px; font-size:12px; }
+    .err { margin-top:10px; color:#dc2626; font-weight:700; }
   </style>
 </head>
-
 <body>
   <div class="wrap">
-    <div class="h1">LookingGreat — Mini App</div>
-
     <div class="card">
-      <div id="tgStatus" class="muted">Проверяем Telegram…</div>
-      <div class="muted" id="tgUser"></div>
-      <div class="muted" style="margin-top:6px;">
-        Worker API: <span class="code" id="apiBase"></span>
+      <div class="title">LookingGreat</div>
+      <div class="sp"></div>
+
+      <div id="tgStatus" class="pill">
+        <span id="tgIcon">⏳</span>
+        <span id="tgText" class="muted">Проверяем Telegram…</span>
       </div>
-    </div>
 
-    <div class="card">
+      <div class="sp"></div>
+
       <div class="tabs">
-        <div class="tab active" data-tab="feed">Лента</div>
-        <div class="tab" data-tab="create">Создать</div>
-        <div class="tab" data-tab="me">Мои результаты</div>
+        <button class="tab active" id="tabFeed">Лента</button>
+        <button class="tab" id="tabCreate">Создать</button>
+        <button class="tab" id="tabMe">Мои результаты</button>
+      </div>
+
+      <!-- FEED -->
+      <div id="viewFeed">
+        <div class="muted">Голосуй за лучшее фото. Результаты видит только автор.</div>
+        <div class="sp"></div>
+
+        <div id="feedCard" class="card" style="box-shadow:none;">
+          <div class="muted">Загрузка…</div>
+        </div>
+
+        <div class="err" id="feedErr" style="display:none;"></div>
+      </div>
+
+      <!-- CREATE -->
+      <div id="viewCreate" style="display:none;">
+        <div class="muted">Пока принимаем <b>ссылки</b> на 2 фото. Загрузку файлов сделаем следующим шагом.</div>
+
+        <label>Ссылка на левое фото</label>
+        <input id="leftUrl" placeholder="https://..." />
+
+        <label>Ссылка на правое фото</label>
+        <input id="rightUrl" placeholder="https://..." />
+
+        <div class="sp"></div>
+        <div class="row">
+          <button class="btn secondary" id="btnPreview">Предпросмотр</button>
+          <button class="btn" id="btnCreate">Создать голосование</button>
+        </div>
+
+        <div class="sp"></div>
+        <div class="grid2">
+          <div>
+            <div class="muted small">Левое превью</div>
+            <div class="imgbox"><img id="leftPreview" alt="" /></div>
+          </div>
+          <div>
+            <div class="muted small">Правое превью</div>
+            <div class="imgbox"><img id="rightPreview" alt="" /></div>
+          </div>
+        </div>
+
+        <div class="err" id="createErr" style="display:none;"></div>
+        <div id="createOk" class="ok" style="display:none; margin-top:10px;">Голосование создано ✅</div>
+      </div>
+
+      <!-- ME -->
+      <div id="viewMe" style="display:none;">
+        <div class="muted">Твои пары и итоги голосования.</div>
+        <div class="sp"></div>
+        <div id="meList" class="list"></div>
+        <div class="err" id="meErr" style="display:none;"></div>
       </div>
     </div>
-
-    <!-- ЛЕНТА -->
-    <div class="card" id="tab-feed">
-      <div style="font-weight:800; margin-bottom:8px;">Лента</div>
-      <div class="muted">Следующим шагом сделаем выдачу пар для голосования из базы.</div>
-      <div class="muted" style="margin-top:8px;">Сейчас тут просто демо-карточка:</div>
-
-      <div style="margin-top:10px;" class="grid2">
-        <img class="img" id="demoLeft" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=70" alt="left">
-        <img class="img" id="demoRight" src="https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=900&q=70" alt="right">
-      </div>
-
-      <div class="row" style="margin-top:10px;">
-        <button class="secondary" disabled>Левое</button>
-        <button class="secondary" disabled>Правое</button>
-      </div>
-      <div class="muted" style="margin-top:8px;">(Голосование подключим после шага “Создать”.)</div>
-    </div>
-
-    <!-- СОЗДАТЬ -->
-    <div class="card" id="tab-create" style="display:none;">
-      <div style="font-weight:800; margin-bottom:6px;">Создать голосование</div>
-      <div class="muted">Пока принимаем <b>ссылки</b> на 2 фото. Загрузку файлов сделаем следующим шагом.</div>
-
-      <label>Ссылка на левое фото</label>
-      <input id="leftUrl" placeholder="https://...jpg / png / webp" />
-
-      <label>Ссылка на правое фото</label>
-      <input id="rightUrl" placeholder="https://...jpg / png / webp" />
-
-      <div class="row" style="margin-top:12px;">
-        <button id="btnCreate" disabled>Создать голосование</button>
-        <button id="btnPreview" class="secondary">Предпросмотр</button>
-      </div>
-
-      <div style="margin-top:12px;" class="grid2">
-        <img class="img" id="prevLeft" alt="левое превью" />
-        <img class="img" id="prevRight" alt="правое превью" />
-      </div>
-
-      <div id="createResult" style="margin-top:12px;"></div>
-    </div>
-
-    <!-- МОИ РЕЗУЛЬТАТЫ -->
-    <div class="card" id="tab-me" style="display:none;">
-      <div style="font-weight:800; margin-bottom:8px;">Мои результаты</div>
-      <div class="muted">Следующим шагом подключим список созданных пар и их статистику (сколько голосов за левое/правое).</div>
-    </div>
-
   </div>
 
   <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
   <script>
-    // === НАСТРОЙКА: сюда подставь ссылку на твой Worker ===
-    const API_BASE = "https://orange-math-fa5e.89123631000g.workers.dev";
+    // ====== НАСТРОЙКИ ======
+    // Вставь сюда свою workers.dev ссылку (у тебя она такая)
+    const CF_WORKER_BASE = "https://orange-math-fa5e.89123631000g.workers.dev";
+    const API = (path) => `${CF_WORKER_BASE}${path}`;
+    const IMG_PROXY = (u) => `${CF_WORKER_BASE}/img?url=${encodeURIComponent(u)}`;
 
-    const elApiBase = document.getElementById("apiBase");
-    elApiBase.textContent = API_BASE;
-
-    const tgStatus = document.getElementById("tgStatus");
-    const tgUser = document.getElementById("tgUser");
-    const btnCreate = document.getElementById("btnCreate");
-    const btnPreview = document.getElementById("btnPreview");
-    const leftUrl = document.getElementById("leftUrl");
-    const rightUrl = document.getElementById("rightUrl");
-    const prevLeft = document.getElementById("prevLeft");
-    const prevRight = document.getElementById("prevRight");
-    const createResult = document.getElementById("createResult");
-
-    // Tabs
-    const tabs = document.querySelectorAll(".tab");
-    function showTab(name) {
-      tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
-      document.getElementById("tab-feed").style.display = (name === "feed") ? "" : "none";
-      document.getElementById("tab-create").style.display = (name === "create") ? "" : "none";
-      document.getElementById("tab-me").style.display = (name === "me") ? "" : "none";
+    // ====== Telegram user ======
+    function getTelegramUser() {
+      try {
+        const tg = window.Telegram?.WebApp;
+        const u = tg?.initDataUnsafe?.user;
+        if (!u) return null;
+        return {
+          telegram_id: String(u.id),
+          username: u.username ? String(u.username) : "",
+          first_name: u.first_name ? String(u.first_name) : "",
+          last_name: u.last_name ? String(u.last_name) : ""
+        };
+      } catch (e) {
+        return null;
+      }
     }
-    tabs.forEach(t => t.addEventListener("click", () => showTab(t.dataset.tab)));
 
-    // Telegram init
-    const tg = window.Telegram?.WebApp;
-    const initData = tg?.initData || "";
+    const tgUser = getTelegramUser();
+    const tgStatusEl = document.getElementById("tgStatus");
+    const tgIcon = document.getElementById("tgIcon");
+    const tgText = document.getElementById("tgText");
 
-    if (tg && initData) {
-      tg.ready();
-      tgStatus.innerHTML = '✅ <span class="ok">Открыто в Telegram</span>';
-      const u = tg.initDataUnsafe?.user;
-      tgUser.textContent = u ? `User ID: ${u.id} | Username: ${u.username || "—"} | Имя: ${u.first_name || "—"}` : "User: —";
-      btnCreate.disabled = false;
+    if (tgUser) {
+      tgIcon.textContent = "✅";
+      tgText.textContent = `Открыто в Telegram | User ID: ${tgUser.telegram_id} | Username: ${tgUser.username || "—"} | Имя: ${tgUser.first_name || "—"}`;
     } else {
-      tgStatus.innerHTML = '⚠️ <span class="bad">Открой Mini App внутри Telegram</span> (иначе сервер не примет запрос)';
-      tgUser.textContent = "User: —";
-      btnCreate.disabled = true;
+      tgIcon.textContent = "⚠️";
+      tgText.textContent = "Не видим данные Telegram (для теста в браузере это нормально).";
     }
 
-    function setPreview() {
-      const l = leftUrl.value.trim();
-      const r = rightUrl.value.trim();
-      prevLeft.src = l || "";
-      prevRight.src = r || "";
+    // ====== UI Tabs ======
+    const tabFeed = document.getElementById("tabFeed");
+    const tabCreate = document.getElementById("tabCreate");
+    const tabMe = document.getElementById("tabMe");
+
+    const viewFeed = document.getElementById("viewFeed");
+    const viewCreate = document.getElementById("viewCreate");
+    const viewMe = document.getElementById("viewMe");
+
+    function setTab(active) {
+      [tabFeed, tabCreate, tabMe].forEach(t => t.classList.remove("active"));
+      [viewFeed, viewCreate, viewMe].forEach(v => v.style.display = "none");
+
+      if (active === "feed") { tabFeed.classList.add("active"); viewFeed.style.display = ""; loadFeed(); }
+      if (active === "create") { tabCreate.classList.add("active"); viewCreate.style.display = ""; }
+      if (active === "me") { tabMe.classList.add("active"); viewMe.style.display = ""; loadMyResults(); }
     }
 
-    btnPreview.addEventListener("click", () => {
-      setPreview();
-      createResult.innerHTML = '<div class="muted">Предпросмотр обновлён.</div>';
-    });
+    tabFeed.onclick = () => setTab("feed");
+    tabCreate.onclick = () => setTab("create");
+    tabMe.onclick = () => setTab("me");
 
-    async function apiPost(path, payload) {
-      const res = await fetch(API_BASE + path, {
+    // ====== helpers ======
+    async function apiPost(path, bodyObj) {
+      const res = await fetch(API(path), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-telegram-initdata": initData
-        },
-        body: JSON.stringify(payload)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bodyObj),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || data.ok === false) {
-        const msg = data.error || ("HTTP " + res.status);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || json?.ok === false) {
+        const msg = json?.error || `HTTP ${res.status}`;
         throw new Error(msg);
       }
-      return data;
+      return json;
     }
 
-    btnCreate.addEventListener("click", async () => {
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.style.display = "";
+    }
+    function hideErr(id) {
+      const el = document.getElementById(id);
+      el.textContent = "";
+      el.style.display = "none";
+    }
+
+    // ====== CREATE ======
+    const leftUrlInput = document.getElementById("leftUrl");
+    const rightUrlInput = document.getElementById("rightUrl");
+    const leftPreview = document.getElementById("leftPreview");
+    const rightPreview = document.getElementById("rightPreview");
+    const btnPreview = document.getElementById("btnPreview");
+    const btnCreate = document.getElementById("btnCreate");
+    const createOk = document.getElementById("createOk");
+
+    function setPreview() {
+      hideErr("createErr");
+      createOk.style.display = "none";
+
+      const leftUrl = leftUrlInput.value.trim();
+      const rightUrl = rightUrlInput.value.trim();
+
+      leftPreview.src = leftUrl ? IMG_PROXY(leftUrl) : "";
+      rightPreview.src = rightUrl ? IMG_PROXY(rightUrl) : "";
+    }
+
+    btnPreview.onclick = () => setPreview();
+
+    btnCreate.onclick = async () => {
+      hideErr("createErr");
+      createOk.style.display = "none";
+      btnCreate.disabled = true;
+
       try {
-        createResult.innerHTML = '<div class="muted">Создаём…</div>';
+        const leftUrl = leftUrlInput.value.trim();
+        const rightUrl = rightUrlInput.value.trim();
+
+        if (!leftUrl || !rightUrl) throw new Error("Нужны две ссылки на фото.");
+        if (!tgUser) throw new Error("Открой Mini App внутри Telegram (нужен Telegram user_id).");
+
+        // показать превью сразу
         setPreview();
 
-        const l = leftUrl.value.trim();
-        const r = rightUrl.value.trim();
-        if (!l || !r) {
-          createResult.innerHTML = '<div class="bad">Нужно заполнить обе ссылки.</div>';
+        await apiPost("/api/create_pair", {
+          user: tgUser,
+          photo_left_url: leftUrl,
+          photo_right_url: rightUrl
+        });
+
+        createOk.style.display = "";
+        // очистка (по желанию)
+        // leftUrlInput.value = ""; rightUrlInput.value = ""; leftPreview.src=""; rightPreview.src="";
+        // обновим ленту
+        setTab("feed");
+      } catch (e) {
+        showErr("createErr", "Ошибка: " + e.message);
+      } finally {
+        btnCreate.disabled = false;
+      }
+    };
+
+    // ====== FEED ======
+    const feedCard = document.getElementById("feedCard");
+    const feedErr = document.getElementById("feedErr");
+
+    function renderEmptyFeed() {
+      feedCard.innerHTML = `<div class="muted">Пока нет пар для голосования (или ты уже проголосовал в доступных).</div>`;
+    }
+
+    function renderPair(pair) {
+      const leftSrc = IMG_PROXY(pair.photo_left_url);
+      const rightSrc = IMG_PROXY(pair.photo_right_url);
+
+      feedCard.innerHTML = `
+        <div style="font-weight:700;">Выбери, какое фото лучше</div>
+        <div class="muted small">1 голос на 1 пару. Итоги видит только автор.</div>
+        <div class="sp"></div>
+
+        <div class="grid2">
+          <div class="imgbox"><img id="feedLeft" src="${leftSrc}" alt="левое"/></div>
+          <div class="imgbox"><img id="feedRight" src="${rightSrc}" alt="правое"/></div>
+        </div>
+
+        <div class="voteRow">
+          <button class="btn secondary" id="voteLeft">Левое</button>
+          <button class="btn secondary" id="voteRight">Правое</button>
+        </div>
+
+        <div class="pairMeta">
+          <span>Пара #${pair.id}</span>
+          <span class="muted">создано: ${pair.created_at || "—"}</span>
+        </div>
+      `;
+
+      document.getElementById("voteLeft").onclick = () => vote(pair.id, "left");
+      document.getElementById("voteRight").onclick = () => vote(pair.id, "right");
+    }
+
+    async function loadFeed() {
+      feedErr.style.display = "none";
+      feedCard.innerHTML = `<div class="muted">Загрузка…</div>`;
+
+      try {
+        if (!tgUser) {
+          renderEmptyFeed();
+          feedErr.style.display = "";
+          feedErr.textContent = "Открой Mini App внутри Telegram — тогда появится лента с голосованием.";
           return;
         }
 
-        const data = await apiPost("/api/create-pair", {
-          photo_left_url: l,
-          photo_right_url: r
+        const data = await apiPost("/api/feed", { user: tgUser });
+        if (!data?.pair) {
+          renderEmptyFeed();
+          return;
+        }
+        renderPair(data.pair);
+      } catch (e) {
+        feedErr.style.display = "";
+        feedErr.textContent = "Ошибка: " + e.message;
+        renderEmptyFeed();
+      }
+    }
+
+    async function vote(pairId, choice) {
+      feedErr.style.display = "none";
+
+      try {
+        if (!tgUser) throw new Error("Нет Telegram user_id.");
+
+        await apiPost("/api/vote", {
+          user: tgUser,
+          photo_pair_id: pairId,
+          choice
         });
 
-        createResult.innerHTML = `
-          <div class="ok">Готово! Создано голосование.</div>
-          <div class="muted">photo_pair_id:</div>
-          <div class="code">${data.photo_pair_id}</div>
-          <div class="muted" style="margin-top:8px;">
-            Следующий шаг: сделаем ленту и голосование за пары из базы.
+        feedCard.innerHTML = `<div class="ok">Голос учтён ✅</div><div class="muted">Загружаю следующую пару…</div>`;
+        setTimeout(loadFeed, 600);
+      } catch (e) {
+        feedErr.style.display = "";
+        feedErr.textContent = "Ошибка: " + e.message;
+      }
+    }
+
+    // ====== MY RESULTS ======
+    const meList = document.getElementById("meList");
+    const meErr = document.getElementById("meErr");
+
+    function renderMyResults(items) {
+      if (!items || items.length === 0) {
+        meList.innerHTML = `<div class="muted">Пока нет твоих созданных голосований.</div>`;
+        return;
+      }
+
+      meList.innerHTML = items.map(it => {
+        const leftSrc = IMG_PROXY(it.photo_left_url);
+        const rightSrc = IMG_PROXY(it.photo_right_url);
+
+        return `
+          <div class="card" style="box-shadow:none;">
+            <div style="font-weight:700;">Пара #${it.id}</div>
+            <div class="muted small">создано: ${it.created_at || "—"}</div>
+            <div class="sp"></div>
+            <div class="grid2">
+              <div class="imgbox"><img src="${leftSrc}" alt=""/></div>
+              <div class="imgbox"><img src="${rightSrc}" alt=""/></div>
+            </div>
+            <div class="sp"></div>
+            <div class="row">
+              <span class="pill">Левое: <b>${it.left_votes}</b></span>
+              <span class="pill">Правое: <b>${it.right_votes}</b></span>
+              <span class="pill">Всего: <b>${it.total_votes}</b></span>
+            </div>
           </div>
         `;
+      }).join("");
+    }
+
+    async function loadMyResults() {
+      meErr.style.display = "none";
+      meList.innerHTML = `<div class="muted">Загрузка…</div>`;
+
+      try {
+        if (!tgUser) {
+          meList.innerHTML = `<div class="muted">Открой Mini App внутри Telegram — тогда появятся результаты.</div>`;
+          return;
+        }
+
+        const data = await apiPost("/api/my_results", { user: tgUser });
+        renderMyResults(data.items || []);
       } catch (e) {
-        createResult.innerHTML = `<div class="bad">Ошибка: ${e.message}</div>`;
+        meErr.style.display = "";
+        meErr.textContent = "Ошибка: " + e.message;
+        meList.innerHTML = "";
       }
-    });
+    }
+
+    // initial
+    loadFeed();
   </script>
 </body>
 </html>
