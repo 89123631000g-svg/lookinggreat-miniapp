@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>LookingGreat — Mini App</title>
   <style>
-    :root { --bg:#f6f7fb; --card:#fff; --text:#111; --muted:#6b7280; --btn:#111; --btnText:#fff; --line:#e5e7eb; }
-    body { margin:0; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
+    :root { --bg:#f6f7fb; --card:#fff; --text:#111; --muted:#6b7280; --line:#e5e7eb; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text); }
     .wrap { max-width: 520px; margin: 0 auto; padding: 14px; }
     .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; box-shadow: 0 1px 10px rgba(0,0,0,.03); }
     .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
@@ -14,16 +14,20 @@
     .tab { padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#fff; cursor:pointer; }
     .tab.active { border-color:#111; }
     .muted { color:var(--muted); font-size: 13px; }
-    .btn { background:var(--btn); color:var(--btnText); border:0; padding:10px 12px; border-radius:12px; cursor:pointer; }
+    .btn { background:#111; color:#fff; border:0; padding:10px 12px; border-radius:12px; cursor:pointer; }
     .btn.secondary { background:#fff; color:#111; border:1px solid var(--line); }
     .btn:disabled { opacity:.5; cursor:not-allowed; }
     input { width:100%; box-sizing:border-box; padding:10px 12px; border-radius:12px; border:1px solid var(--line); font-size:14px; }
     label { display:block; margin:10px 0 6px; font-size:13px; color:var(--muted); }
     .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    .imgbox { aspect-ratio: 3/4; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:#f3f4f6; display:flex; align-items:center; justify-content:center; }
-    .imgbox img { width:100%; height:100%; object-fit:cover; display:block; }
+    .imgbox { aspect-ratio: 3/4; border-radius:14px; overflow:hidden; border:1px solid var(--line); background:#f3f4f6;
+      display:flex; align-items:center; justify-content:center; position:relative; }
+    .imgbox::before { content:"Загрузка…"; color:#6b7280; font-size:12px; }
+    .imgbox.loaded::before { content:""; }
+    .imgbox img { width:100%; height:100%; object-fit:cover; display:block; opacity:0; transition:opacity .2s ease; }
+    .imgbox.loaded img { opacity:1; }
     .voteRow { display:flex; gap:10px; margin-top:10px; }
-    .title { font-weight:700; font-size:18px; }
+    .title { font-weight:800; font-size:18px; }
     .ok { color:#16a34a; font-weight:700; }
     .bad { color:#dc2626; font-weight:700; }
     .sp { height:10px; }
@@ -32,6 +36,10 @@
     .small { font-size:12px; }
     .pill { display:inline-flex; gap:6px; align-items:center; border:1px solid var(--line); background:#fff; border-radius:999px; padding:6px 10px; font-size:12px; }
     .err { margin-top:10px; color:#dc2626; font-weight:700; }
+    .skeleton { width:100%; height:100%; background:linear-gradient(90deg,#f3f4f6,#e5e7eb,#f3f4f6);
+      background-size:200% 100%; animation:shimmer 1.2s infinite; position:absolute; inset:0; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .imgbox.loaded .skeleton { display:none; }
   </style>
 </head>
 <body>
@@ -85,11 +93,17 @@
         <div class="grid2">
           <div>
             <div class="muted small">Левое превью</div>
-            <div class="imgbox"><img id="leftPreview" alt="" /></div>
+            <div class="imgbox" id="boxPrevL">
+              <div class="skeleton"></div>
+              <img id="leftPreview" alt="" loading="lazy" decoding="async" />
+            </div>
           </div>
           <div>
             <div class="muted small">Правое превью</div>
-            <div class="imgbox"><img id="rightPreview" alt="" /></div>
+            <div class="imgbox" id="boxPrevR">
+              <div class="skeleton"></div>
+              <img id="rightPreview" alt="" loading="lazy" decoding="async" />
+            </div>
           </div>
         </div>
 
@@ -107,16 +121,30 @@
     </div>
   </div>
 
-  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     // ====== НАСТРОЙКИ ======
-    // Вставь сюда свою workers.dev ссылку (у тебя она такая)
     const CF_WORKER_BASE = "https://orange-math-fa5e.89123631000g.workers.dev";
     const API = (path) => `${CF_WORKER_BASE}${path}`;
-    const IMG_PROXY = (u) => `${CF_WORKER_BASE}/img?url=${encodeURIComponent(u)}`;
 
-    // ====== Telegram user ======
+    // Оптимизация: уменьшаем размер на уровне Unsplash + прокси через Worker
+    const IMG_PROXY = (u) => {
+      try {
+        const x = new URL(u);
+
+        // если это images.unsplash.com — уменьшаем вес в 2–3 раза
+        if (x.hostname.includes("images.unsplash.com")) {
+          x.searchParams.set("auto", "format");
+          x.searchParams.set("fit", "crop");
+          x.searchParams.set("w", "520"); // меньше трафик → быстрее
+          x.searchParams.set("q", "65");
+        }
+        return `${CF_WORKER_BASE}/img?url=${encodeURIComponent(x.toString())}`;
+      } catch {
+        return `${CF_WORKER_BASE}/img?url=${encodeURIComponent(u)}`;
+      }
+    };
+
     function getTelegramUser() {
       try {
         const tg = window.Telegram?.WebApp;
@@ -128,13 +156,12 @@
           first_name: u.first_name ? String(u.first_name) : "",
           last_name: u.last_name ? String(u.last_name) : ""
         };
-      } catch (e) {
+      } catch {
         return null;
       }
     }
 
     const tgUser = getTelegramUser();
-    const tgStatusEl = document.getElementById("tgStatus");
     const tgIcon = document.getElementById("tgIcon");
     const tgText = document.getElementById("tgText");
 
@@ -143,10 +170,10 @@
       tgText.textContent = `Открыто в Telegram | User ID: ${tgUser.telegram_id} | Username: ${tgUser.username || "—"} | Имя: ${tgUser.first_name || "—"}`;
     } else {
       tgIcon.textContent = "⚠️";
-      tgText.textContent = "Не видим данные Telegram (для теста в браузере это нормально).";
+      tgText.textContent = "Открой Mini App внутри Telegram (в браузере лента/создание не будут работать).";
     }
 
-    // ====== UI Tabs ======
+    // ===== Tabs =====
     const tabFeed = document.getElementById("tabFeed");
     const tabCreate = document.getElementById("tabCreate");
     const tabMe = document.getElementById("tabMe");
@@ -168,7 +195,7 @@
     tabCreate.onclick = () => setTab("create");
     tabMe.onclick = () => setTab("me");
 
-    // ====== helpers ======
+    // ===== helpers =====
     async function apiPost(path, bodyObj) {
       const res = await fetch(API(path), {
         method: "POST",
@@ -194,11 +221,28 @@
       el.style.display = "none";
     }
 
-    // ====== CREATE ======
+    function bindImage(imgEl, boxEl, src) {
+      // сброс состояния
+      boxEl.classList.remove("loaded");
+
+      imgEl.onload = () => boxEl.classList.add("loaded");
+      imgEl.onerror = () => {
+        // если ошибка — покажем, что не загрузилось (оставим скелетон/текст)
+        boxEl.classList.remove("loaded");
+      };
+
+      imgEl.loading = "lazy";
+      imgEl.decoding = "async";
+      imgEl.src = src || "";
+    }
+
+    // ===== CREATE =====
     const leftUrlInput = document.getElementById("leftUrl");
     const rightUrlInput = document.getElementById("rightUrl");
     const leftPreview = document.getElementById("leftPreview");
     const rightPreview = document.getElementById("rightPreview");
+    const boxPrevL = document.getElementById("boxPrevL");
+    const boxPrevR = document.getElementById("boxPrevR");
     const btnPreview = document.getElementById("btnPreview");
     const btnCreate = document.getElementById("btnCreate");
     const createOk = document.getElementById("createOk");
@@ -210,8 +254,8 @@
       const leftUrl = leftUrlInput.value.trim();
       const rightUrl = rightUrlInput.value.trim();
 
-      leftPreview.src = leftUrl ? IMG_PROXY(leftUrl) : "";
-      rightPreview.src = rightUrl ? IMG_PROXY(rightUrl) : "";
+      bindImage(leftPreview, boxPrevL, leftUrl ? IMG_PROXY(leftUrl) : "");
+      bindImage(rightPreview, boxPrevR, rightUrl ? IMG_PROXY(rightUrl) : "");
     }
 
     btnPreview.onclick = () => setPreview();
@@ -228,7 +272,6 @@
         if (!leftUrl || !rightUrl) throw new Error("Нужны две ссылки на фото.");
         if (!tgUser) throw new Error("Открой Mini App внутри Telegram (нужен Telegram user_id).");
 
-        // показать превью сразу
         setPreview();
 
         await apiPost("/api/create_pair", {
@@ -238,9 +281,6 @@
         });
 
         createOk.style.display = "";
-        // очистка (по желанию)
-        // leftUrlInput.value = ""; rightUrlInput.value = ""; leftPreview.src=""; rightPreview.src="";
-        // обновим ленту
         setTab("feed");
       } catch (e) {
         showErr("createErr", "Ошибка: " + e.message);
@@ -249,26 +289,29 @@
       }
     };
 
-    // ====== FEED ======
+    // ===== FEED =====
     const feedCard = document.getElementById("feedCard");
     const feedErr = document.getElementById("feedErr");
 
     function renderEmptyFeed() {
-      feedCard.innerHTML = `<div class="muted">Пока нет пар для голосования (или ты уже проголосовал в доступных).</div>`;
+      feedCard.innerHTML = `<div class="muted">Пока нет пар для голосования (или ты уже проголосовал во всех доступных).</div>`;
     }
 
     function renderPair(pair) {
-      const leftSrc = IMG_PROXY(pair.photo_left_url);
-      const rightSrc = IMG_PROXY(pair.photo_right_url);
-
       feedCard.innerHTML = `
-        <div style="font-weight:700;">Выбери, какое фото лучше</div>
+        <div style="font-weight:800;">Выбери, какое фото лучше</div>
         <div class="muted small">1 голос на 1 пару. Итоги видит только автор.</div>
         <div class="sp"></div>
 
         <div class="grid2">
-          <div class="imgbox"><img id="feedLeft" src="${leftSrc}" alt="левое"/></div>
-          <div class="imgbox"><img id="feedRight" src="${rightSrc}" alt="правое"/></div>
+          <div class="imgbox" id="boxFeedL">
+            <div class="skeleton"></div>
+            <img id="feedLeft" alt="левое" loading="lazy" decoding="async"/>
+          </div>
+          <div class="imgbox" id="boxFeedR">
+            <div class="skeleton"></div>
+            <img id="feedRight" alt="правое" loading="lazy" decoding="async"/>
+          </div>
         </div>
 
         <div class="voteRow">
@@ -281,6 +324,14 @@
           <span class="muted">создано: ${pair.created_at || "—"}</span>
         </div>
       `;
+
+      const imgL = document.getElementById("feedLeft");
+      const imgR = document.getElementById("feedRight");
+      const boxL = document.getElementById("boxFeedL");
+      const boxR = document.getElementById("boxFeedR");
+
+      bindImage(imgL, boxL, IMG_PROXY(pair.photo_left_url));
+      bindImage(imgR, boxR, IMG_PROXY(pair.photo_right_url));
 
       document.getElementById("voteLeft").onclick = () => vote(pair.id, "left");
       document.getElementById("voteRight").onclick = () => vote(pair.id, "right");
@@ -324,14 +375,14 @@
         });
 
         feedCard.innerHTML = `<div class="ok">Голос учтён ✅</div><div class="muted">Загружаю следующую пару…</div>`;
-        setTimeout(loadFeed, 600);
+        setTimeout(loadFeed, 500);
       } catch (e) {
         feedErr.style.display = "";
         feedErr.textContent = "Ошибка: " + e.message;
       }
     }
 
-    // ====== MY RESULTS ======
+    // ===== MY RESULTS =====
     const meList = document.getElementById("meList");
     const meErr = document.getElementById("meErr");
 
@@ -341,28 +392,39 @@
         return;
       }
 
-      meList.innerHTML = items.map(it => {
-        const leftSrc = IMG_PROXY(it.photo_left_url);
-        const rightSrc = IMG_PROXY(it.photo_right_url);
-
-        return `
-          <div class="card" style="box-shadow:none;">
-            <div style="font-weight:700;">Пара #${it.id}</div>
-            <div class="muted small">создано: ${it.created_at || "—"}</div>
-            <div class="sp"></div>
-            <div class="grid2">
-              <div class="imgbox"><img src="${leftSrc}" alt=""/></div>
-              <div class="imgbox"><img src="${rightSrc}" alt=""/></div>
+      meList.innerHTML = items.map(it => `
+        <div class="card" style="box-shadow:none;">
+          <div style="font-weight:800;">Пара #${it.id}</div>
+          <div class="muted small">создано: ${it.created_at || "—"}</div>
+          <div class="sp"></div>
+          <div class="grid2">
+            <div class="imgbox" id="boxMeL_${it.id}">
+              <div class="skeleton"></div>
+              <img id="meL_${it.id}" alt="" loading="lazy" decoding="async"/>
             </div>
-            <div class="sp"></div>
-            <div class="row">
-              <span class="pill">Левое: <b>${it.left_votes}</b></span>
-              <span class="pill">Правое: <b>${it.right_votes}</b></span>
-              <span class="pill">Всего: <b>${it.total_votes}</b></span>
+            <div class="imgbox" id="boxMeR_${it.id}">
+              <div class="skeleton"></div>
+              <img id="meR_${it.id}" alt="" loading="lazy" decoding="async"/>
             </div>
           </div>
-        `;
-      }).join("");
+          <div class="sp"></div>
+          <div class="row">
+            <span class="pill">Левое: <b>${it.left_votes}</b></span>
+            <span class="pill">Правое: <b>${it.right_votes}</b></span>
+            <span class="pill">Всего: <b>${it.total_votes}</b></span>
+          </div>
+        </div>
+      `).join("");
+
+      // после вставки HTML — привяжем src через proxy
+      for (const it of items) {
+        const imgL = document.getElementById(`meL_${it.id}`);
+        const imgR = document.getElementById(`meR_${it.id}`);
+        const boxL = document.getElementById(`boxMeL_${it.id}`);
+        const boxR = document.getElementById(`boxMeR_${it.id}`);
+        bindImage(imgL, boxL, IMG_PROXY(it.photo_left_url));
+        bindImage(imgR, boxR, IMG_PROXY(it.photo_right_url));
+      }
     }
 
     async function loadMyResults() {
@@ -384,7 +446,7 @@
       }
     }
 
-    // initial
+    // init
     loadFeed();
   </script>
 </body>
