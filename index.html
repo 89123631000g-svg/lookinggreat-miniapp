@@ -3,449 +3,205 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LookingGreat</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>LookingGreat — Mini App</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 0; padding: 16px; background: #fff; }
-    h1 { font-size: 22px; margin: 0 0 12px; }
-    .top { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
-    .badge { font-size: 12px; padding: 6px 10px; border:1px solid #e5e5e5; border-radius: 999px; opacity:.8; }
-    .tabs { display:flex; gap:8px; flex-wrap:wrap; margin: 10px 0 14px; }
-    .tab { padding: 10px 12px; border-radius: 12px; border: 1px solid #ddd; background: #f7f7f7; cursor: pointer; font-size: 15px; }
-    .tab.active { background: #e9f5ff; border-color:#b6dbff; }
-    .card { border: 1px solid #e5e5e5; border-radius: 14px; padding: 14px; }
-    .muted { opacity: .7; }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    .photos { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:12px; }
-    .ph { border:1px solid #eee; border-radius: 14px; overflow:hidden; background:#fafafa; }
-    .ph img { width:100%; height:260px; object-fit:cover; display:block; }
-    .btn { padding: 12px 14px; border-radius: 12px; border: 1px solid #ddd; background: #f7f7f7; cursor: pointer; font-size: 16px; }
-    .btn.primary { background:#111; color:#fff; border-color:#111; }
-    .btn.danger { background:#fff1f1; border-color:#ffd2d2; }
-    input[type="file"]{ width:100%; }
-    .hr { height:1px; background:#eee; margin:12px 0; }
-    .small { font-size: 13px; }
+    :root { --bg:#f6f7fb; --card:#fff; --text:#111; --muted:#666; --border:#e6e8ef; }
+    body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial; background:var(--bg); color:var(--text); }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 18px; }
+    .h1 { font-size: 22px; font-weight: 800; margin: 6px 0 14px; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin:12px 0; }
+    .row { display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
+    .tabs { display:flex; gap:8px; }
+    .tab { border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:10px; cursor:pointer; }
+    .tab.active { border-color:#111; }
+    .muted { color:var(--muted); font-size: 13px; }
+    label { display:block; font-size: 13px; color:var(--muted); margin:10px 0 6px; }
+    input { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--border); border-radius:10px; }
+    button { border:0; background:#111; color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer; }
+    button.secondary { background:#e9ebf3; color:#111; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .img { width:100%; border-radius:12px; border:1px solid var(--border); background:#fafbff; aspect-ratio: 3/4; object-fit: cover; }
+    .ok { color:#0a7a2f; font-weight:700; }
+    .bad { color:#b10000; font-weight:700; }
+    .code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; background:#f1f3fa; border:1px solid var(--border); padding:10px; border-radius:10px; overflow:auto; }
   </style>
 </head>
+
 <body>
-  <div class="top">
-    <h1 style="margin:0">LookingGreat</h1>
-    <div class="badge" id="who">Telegram: —</div>
+  <div class="wrap">
+    <div class="h1">LookingGreat — Mini App</div>
+
+    <div class="card">
+      <div id="tgStatus" class="muted">Проверяем Telegram…</div>
+      <div class="muted" id="tgUser"></div>
+      <div class="muted" style="margin-top:6px;">
+        Worker API: <span class="code" id="apiBase"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tabs">
+        <div class="tab active" data-tab="feed">Лента</div>
+        <div class="tab" data-tab="create">Создать</div>
+        <div class="tab" data-tab="me">Мои результаты</div>
+      </div>
+    </div>
+
+    <!-- ЛЕНТА -->
+    <div class="card" id="tab-feed">
+      <div style="font-weight:800; margin-bottom:8px;">Лента</div>
+      <div class="muted">Следующим шагом сделаем выдачу пар для голосования из базы.</div>
+      <div class="muted" style="margin-top:8px;">Сейчас тут просто демо-карточка:</div>
+
+      <div style="margin-top:10px;" class="grid2">
+        <img class="img" id="demoLeft" src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=70" alt="left">
+        <img class="img" id="demoRight" src="https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=900&q=70" alt="right">
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <button class="secondary" disabled>Левое</button>
+        <button class="secondary" disabled>Правое</button>
+      </div>
+      <div class="muted" style="margin-top:8px;">(Голосование подключим после шага “Создать”.)</div>
+    </div>
+
+    <!-- СОЗДАТЬ -->
+    <div class="card" id="tab-create" style="display:none;">
+      <div style="font-weight:800; margin-bottom:6px;">Создать голосование</div>
+      <div class="muted">Пока принимаем <b>ссылки</b> на 2 фото. Загрузку файлов сделаем следующим шагом.</div>
+
+      <label>Ссылка на левое фото</label>
+      <input id="leftUrl" placeholder="https://...jpg / png / webp" />
+
+      <label>Ссылка на правое фото</label>
+      <input id="rightUrl" placeholder="https://...jpg / png / webp" />
+
+      <div class="row" style="margin-top:12px;">
+        <button id="btnCreate" disabled>Создать голосование</button>
+        <button id="btnPreview" class="secondary">Предпросмотр</button>
+      </div>
+
+      <div style="margin-top:12px;" class="grid2">
+        <img class="img" id="prevLeft" alt="левое превью" />
+        <img class="img" id="prevRight" alt="правое превью" />
+      </div>
+
+      <div id="createResult" style="margin-top:12px;"></div>
+    </div>
+
+    <!-- МОИ РЕЗУЛЬТАТЫ -->
+    <div class="card" id="tab-me" style="display:none;">
+      <div style="font-weight:800; margin-bottom:8px;">Мои результаты</div>
+      <div class="muted">Следующим шагом подключим список созданных пар и их статистику (сколько голосов за левое/правое).</div>
+    </div>
+
   </div>
 
-  <div class="tabs">
-    <button class="tab active" id="tab-feed">Лента</button>
-    <button class="tab" id="tab-create">Создать</button>
-    <button class="tab" id="tab-mine">Мои результаты</button>
-  </div>
-
-  <div id="screen"></div>
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <script>
-    // ---------------- Telegram init ----------------
-    const tg = window.Telegram && window.Telegram.WebApp;
-    let currentUserId = null;
-    let currentUsername = null;
+    // === НАСТРОЙКА: сюда подставь ссылку на твой Worker ===
+    const API_BASE = "https://orange-math-fa5e.89123631000g.workers.dev";
 
-    if (tg) {
+    const elApiBase = document.getElementById("apiBase");
+    elApiBase.textContent = API_BASE;
+
+    const tgStatus = document.getElementById("tgStatus");
+    const tgUser = document.getElementById("tgUser");
+    const btnCreate = document.getElementById("btnCreate");
+    const btnPreview = document.getElementById("btnPreview");
+    const leftUrl = document.getElementById("leftUrl");
+    const rightUrl = document.getElementById("rightUrl");
+    const prevLeft = document.getElementById("prevLeft");
+    const prevRight = document.getElementById("prevRight");
+    const createResult = document.getElementById("createResult");
+
+    // Tabs
+    const tabs = document.querySelectorAll(".tab");
+    function showTab(name) {
+      tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+      document.getElementById("tab-feed").style.display = (name === "feed") ? "" : "none";
+      document.getElementById("tab-create").style.display = (name === "create") ? "" : "none";
+      document.getElementById("tab-me").style.display = (name === "me") ? "" : "none";
+    }
+    tabs.forEach(t => t.addEventListener("click", () => showTab(t.dataset.tab)));
+
+    // Telegram init
+    const tg = window.Telegram?.WebApp;
+    const initData = tg?.initData || "";
+
+    if (tg && initData) {
       tg.ready();
-      tg.expand();
-      const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
-      currentUserId = u && u.id ? String(u.id) : null;
-      currentUsername = u && u.username ? ('@' + u.username) : null;
-      document.getElementById('who').textContent = 'Telegram: ' + (currentUsername || currentUserId || '—');
+      tgStatus.innerHTML = '✅ <span class="ok">Открыто в Telegram</span>';
+      const u = tg.initDataUnsafe?.user;
+      tgUser.textContent = u ? `User ID: ${u.id} | Username: ${u.username || "—"} | Имя: ${u.first_name || "—"}` : "User: —";
+      btnCreate.disabled = false;
     } else {
-      document.getElementById('who').textContent = 'Открой из Telegram';
+      tgStatus.innerHTML = '⚠️ <span class="bad">Открой Mini App внутри Telegram</span> (иначе сервер не примет запрос)';
+      tgUser.textContent = "User: —";
+      btnCreate.disabled = true;
     }
 
-    // ---------------- Local storage helpers (DEMO) ----------------
-    const LS_KEY = 'lg_demo_state_v1';
+    function setPreview() {
+      const l = leftUrl.value.trim();
+      const r = rightUrl.value.trim();
+      prevLeft.src = l || "";
+      prevRight.src = r || "";
+    }
 
-    function loadState() {
+    btnPreview.addEventListener("click", () => {
+      setPreview();
+      createResult.innerHTML = '<div class="muted">Предпросмотр обновлён.</div>';
+    });
+
+    async function apiPost(path, payload) {
+      const res = await fetch(API_BASE + path, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-telegram-initdata": initData
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.ok === false) {
+        const msg = data.error || ("HTTP " + res.status);
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    btnCreate.addEventListener("click", async () => {
       try {
-        const raw = localStorage.getItem(LS_KEY);
-        if (!raw) return null;
-        return JSON.parse(raw);
-      } catch (e) { return null; }
-    }
+        createResult.innerHTML = '<div class="muted">Создаём…</div>';
+        setPreview();
 
-    function saveState(state) {
-      localStorage.setItem(LS_KEY, JSON.stringify(state));
-    }
+        const l = leftUrl.value.trim();
+        const r = rightUrl.value.trim();
+        if (!l || !r) {
+          createResult.innerHTML = '<div class="bad">Нужно заполнить обе ссылки.</div>';
+          return;
+        }
 
-    function ensureState() {
-      let st = loadState();
-      if (!st) {
-        st = {
-          comparisons: [],
-          votes: [] // {comparisonId, voterUserId, choice:'A'|'B', createdAt}
-        };
-        // Добавим 2 тестовых пары, чтобы лента сразу работала
-        st.comparisons.push(makeDemoComparison('Кто лучше'));
-        st.comparisons.push(makeDemoComparison('До / После'));
-        saveState(st);
-      }
-      return st;
-    }
+        const data = await apiPost("/api/create-pair", {
+          photo_left_url: l,
+          photo_right_url: r
+        });
 
-    function uid() {
-      return 'c_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
-
-    function makeDemoComparison(type) {
-      // красивые публичные картинки-заглушки (без хранения)
-      const demoA = 'https://picsum.photos/seed/' + Math.floor(Math.random()*99999) + '/800/800';
-      const demoB = 'https://picsum.photos/seed/' + Math.floor(Math.random()*99999) + '/800/800';
-      return {
-        id: uid(),
-        authorUserId: 'demo',
-        type,
-        status: 'open',
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 7*24*60*60*1000,
-        photoA: { dataUrl: demoA },
-        photoB: { dataUrl: demoB }
-      };
-    }
-
-    function now() { return Date.now(); }
-
-    function isExpired(c) {
-      return c.status !== 'closed' && c.expiresAt && now() > c.expiresAt;
-    }
-
-    function closeIfExpired(state) {
-      let changed = false;
-      state.comparisons.forEach(c => {
-        if (isExpired(c)) { c.status = 'closed'; changed = true; }
-      });
-      if (changed) saveState(state);
-    }
-
-    function hasVoted(state, comparisonId) {
-      if (!currentUserId) return false;
-      return state.votes.some(v => v.comparisonId === comparisonId && v.voterUserId === currentUserId);
-    }
-
-    function countVotes(state, comparisonId) {
-      const vs = state.votes.filter(v => v.comparisonId === comparisonId);
-      const a = vs.filter(v => v.choice === 'A').length;
-      const b = vs.filter(v => v.choice === 'B').length;
-      return { a, b, total: a + b };
-    }
-
-    // ---------------- UI navigation ----------------
-    const screenEl = document.getElementById('screen');
-    const tabFeed = document.getElementById('tab-feed');
-    const tabCreate = document.getElementById('tab-create');
-    const tabMine = document.getElementById('tab-mine');
-
-    tabFeed.onclick = () => show('feed');
-    tabCreate.onclick = () => show('create');
-    tabMine.onclick = () => show('mine');
-
-    function setActive(tab) {
-      [tabFeed, tabCreate, tabMine].forEach(t => t.classList.remove('active'));
-      if (tab === 'feed') tabFeed.classList.add('active');
-      if (tab === 'create') tabCreate.classList.add('active');
-      if (tab === 'mine') tabMine.classList.add('active');
-    }
-
-    function show(which) {
-      const state = ensureState();
-      closeIfExpired(state);
-      setActive(which);
-      if (which === 'feed') renderFeed(state);
-      if (which === 'create') renderCreate(state);
-      if (which === 'mine') renderMine(state);
-    }
-
-    // ---------------- FEED ----------------
-    function pickNext(state) {
-      // показываем открытые, где юзер еще не голосовал, и не свои (в MVP можно скрыть свои)
-      const open = state.comparisons.filter(c =>
-        c.status === 'open' &&
-        !hasVoted(state, c.id) &&
-        (!currentUserId || c.authorUserId !== currentUserId)
-      );
-
-      // если нечего показывать — вернем null
-      if (!open.length) return null;
-
-      // простая “случайная” выдача
-      return open[Math.floor(Math.random() * open.length)];
-    }
-
-    function renderFeed(state) {
-      if (!currentUserId) {
-        screenEl.innerHTML = `<div class="card">
-          <b>Открой Mini App из Telegram</b>
-          <div class="muted" style="margin-top:6px">Чтобы мы могли засчитывать голос, нужен Telegram User ID.</div>
-        </div>`;
-        return;
-      }
-
-      const c = pickNext(state);
-
-      if (!c) {
-        screenEl.innerHTML = `<div class="card">
-          <b>В ленте пока нет новых пар</b>
-          <div class="muted" style="margin-top:6px">Создай пару во вкладке «Создать» — и она появится в ленте (на твоём устройстве это демо).</div>
-          <div class="hr"></div>
-          <button class="btn primary" onclick="show('create')">Создать сравнение</button>
-        </div>`;
-        return;
-      }
-
-      const title = c.type === 'До / После' ? 'Что лучше: до или после?' : 'Выбери, какое фото лучше';
-      const leftLabel = c.type === 'До / После' ? 'До' : 'Левое';
-      const rightLabel = c.type === 'До / После' ? 'После' : 'Правое';
-
-      screenEl.innerHTML = `
-        <div class="card">
-          <div><b>${title}</b></div>
-          <div class="muted small" style="margin-top:6px">1 голос на 1 пару. Результаты видит только автор.</div>
-
-          <div class="photos">
-            <div class="ph"><img src="${c.photoA.dataUrl}" alt="A"></div>
-            <div class="ph"><img src="${c.photoB.dataUrl}" alt="B"></div>
-          </div>
-
-          <div class="row" style="margin-top:12px">
-            <button class="btn" onclick="vote('${c.id}','A')">${leftLabel}</button>
-            <button class="btn" onclick="vote('${c.id}','B')">${rightLabel}</button>
-          </div>
-        </div>
-      `;
-    }
-
-    function vote(comparisonId, choice) {
-      const state = ensureState();
-      closeIfExpired(state);
-
-      const c = state.comparisons.find(x => x.id === comparisonId);
-      if (!c || c.status !== 'open') {
-        alert('Это голосование уже закрыто.');
-        show('feed');
-        return;
-      }
-      if (!currentUserId) {
-        alert('Нужно открыть из Telegram.');
-        return;
-      }
-      if (hasVoted(state, comparisonId)) {
-        alert('Ты уже голосовал в этой паре.');
-        show('feed');
-        return;
-      }
-
-      state.votes.push({
-        comparisonId,
-        voterUserId: currentUserId,
-        choice,
-        createdAt: Date.now()
-      });
-      saveState(state);
-
-      // лёгкое подтверждение
-      if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-      show('feed');
-    }
-
-    // ---------------- CREATE ----------------
-    function renderCreate(state) {
-      if (!currentUserId) {
-        screenEl.innerHTML = `<div class="card">
-          <b>Открой Mini App из Telegram</b>
-          <div class="muted" style="margin-top:6px">Чтобы создать сравнение, нужен Telegram User ID.</div>
-        </div>`;
-        return;
-      }
-
-      screenEl.innerHTML = `
-        <div class="card">
-          <b>Создать сравнение</b>
-          <div class="muted small" style="margin-top:6px">
-            Это демо: фото сохраняются только у тебя (на устройстве). На следующем шаге подключим сервер и будет работать для всех.
-          </div>
-
-          <div class="hr"></div>
-
-          <div class="row" style="margin-bottom:8px">
-            <label class="small"><b>Тип:</b></label>
-            <select id="type" class="btn" style="padding:10px 12px">
-              <option>Кто лучше</option>
-              <option>До / После</option>
-            </select>
-          </div>
-
-          <div class="small" style="margin:10px 0 6px"><b>Фото A</b></div>
-          <input id="fileA" type="file" accept="image/*" />
-
-          <div class="small" style="margin:12px 0 6px"><b>Фото B</b></div>
-          <input id="fileB" type="file" accept="image/*" />
-
-          <div class="row" style="margin-top:14px">
-            <button class="btn primary" onclick="createComparison()">Запустить голосование</button>
-          </div>
-
-          <div class="muted small" style="margin-top:10px">
-            Голосование живёт 7 дней. Результаты видишь только ты.
-          </div>
-        </div>
-      `;
-    }
-
-    function fileToDataUrl(file) {
-      return new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(String(r.result));
-        r.onerror = reject;
-        r.readAsDataURL(file);
-      });
-    }
-
-    async function createComparison() {
-      const type = document.getElementById('type').value;
-      const fa = document.getElementById('fileA').files[0];
-      const fb = document.getElementById('fileB').files[0];
-
-      if (!fa || !fb) {
-        alert('Нужно выбрать 2 фото.');
-        return;
-      }
-
-      // чуть ограничим размер для демо (чтобы localStorage не взорвался)
-      const maxMb = 2;
-      if (fa.size > maxMb*1024*1024 || fb.size > maxMb*1024*1024) {
-        alert('Для демо выбери фото поменьше (до 2 МБ каждое). Потом сделаем нормальное хранилище.');
-        return;
-      }
-
-      const aUrl = await fileToDataUrl(fa);
-      const bUrl = await fileToDataUrl(fb);
-
-      const state = ensureState();
-      const c = {
-        id: uid(),
-        authorUserId: currentUserId,
-        type,
-        status: 'open',
-        createdAt: Date.now(),
-        expiresAt: Date.now() + 7*24*60*60*1000,
-        photoA: { dataUrl: aUrl },
-        photoB: { dataUrl: bUrl }
-      };
-
-      state.comparisons.unshift(c);
-      saveState(state);
-
-      alert('Готово! Пара добавлена в ленту (в этом демо — на твоём устройстве).');
-      show('mine');
-    }
-
-    // ---------------- MINE ----------------
-    function renderMine(state) {
-      if (!currentUserId) {
-        screenEl.innerHTML = `<div class="card">
-          <b>Открой Mini App из Telegram</b>
-        </div>`;
-        return;
-      }
-
-      const mine = state.comparisons.filter(c => c.authorUserId === currentUserId);
-
-      if (!mine.length) {
-        screenEl.innerHTML = `<div class="card">
-          <b>У тебя пока нет сравнений</b>
-          <div class="muted" style="margin-top:6px">Нажми «Создать», загрузи 2 фото и запусти голосование.</div>
-          <div class="hr"></div>
-          <button class="btn primary" onclick="show('create')">Создать</button>
-        </div>`;
-        return;
-      }
-
-      const items = mine.map(c => {
-        const v = countVotes(state, c.id);
-        const aPct = v.total ? Math.round(v.a / v.total * 100) : 0;
-        const bPct = v.total ? 100 - aPct : 0;
-        const leftLabel = c.type === 'До / После' ? 'До' : 'Левое';
-        const rightLabel = c.type === 'До / После' ? 'После' : 'Правое';
-        const status = c.status === 'open' ? 'Открыто' : 'Закрыто';
-        const daysLeft = c.status === 'open' ? Math.max(0, Math.ceil((c.expiresAt - now()) / (24*60*60*1000))) : 0;
-
-        return `
-          <div class="card" style="margin-bottom:12px">
-            <div class="row" style="justify-content:space-between">
-              <div><b>${c.type}</b></div>
-              <div class="muted small">${status}${c.status==='open' ? ' · осталось ' + daysLeft + ' дн.' : ''}</div>
-            </div>
-
-            <div class="photos">
-              <div class="ph"><img src="${c.photoA.dataUrl}" alt="A"></div>
-              <div class="ph"><img src="${c.photoB.dataUrl}" alt="B"></div>
-            </div>
-
-            <div class="hr"></div>
-            <div class="small">
-              <b>Голоса:</b> ${v.total} &nbsp;|&nbsp;
-              ${leftLabel}: ${v.a} (${aPct}%) &nbsp;·&nbsp;
-              ${rightLabel}: ${v.b} (${bPct}%)
-            </div>
-
-            <div class="row" style="margin-top:12px">
-              ${c.status==='open'
-                ? `<button class="btn" onclick="closeComparison('${c.id}')">Закрыть</button>`
-                : `<button class="btn" onclick="reopenComparison('${c.id}')">Открыть снова</button>`
-              }
-              <button class="btn danger" onclick="deleteComparison('${c.id}')">Удалить</button>
-            </div>
-
-            <div class="muted small" style="margin-top:10px">
-              В демо результаты считаются только здесь. На следующем шаге сделаем общий сервер.
-            </div>
+        createResult.innerHTML = `
+          <div class="ok">Готово! Создано голосование.</div>
+          <div class="muted">photo_pair_id:</div>
+          <div class="code">${data.photo_pair_id}</div>
+          <div class="muted" style="margin-top:8px;">
+            Следующий шаг: сделаем ленту и голосование за пары из базы.
           </div>
         `;
-      }).join('');
-
-      screenEl.innerHTML = items;
-    }
-
-    function closeComparison(id) {
-      const state = ensureState();
-      const c = state.comparisons.find(x => x.id === id && x.authorUserId === currentUserId);
-      if (!c) return;
-      c.status = 'closed';
-      saveState(state);
-      show('mine');
-    }
-
-    function reopenComparison(id) {
-      const state = ensureState();
-      const c = state.comparisons.find(x => x.id === id && x.authorUserId === currentUserId);
-      if (!c) return;
-      // при открытии снова дадим 7 дней
-      c.status = 'open';
-      c.expiresAt = Date.now() + 7*24*60*60*1000;
-      saveState(state);
-      show('mine');
-    }
-
-    function deleteComparison(id) {
-      const ok = confirm('Точно удалить сравнение?');
-      if (!ok) return;
-      const state = ensureState();
-      const idx = state.comparisons.findIndex(x => x.id === id && x.authorUserId === currentUserId);
-      if (idx === -1) return;
-      state.comparisons.splice(idx, 1);
-      // удалим голоса по этой паре
-      state.votes = state.votes.filter(v => v.comparisonId !== id);
-      saveState(state);
-      show('mine');
-    }
-
-    // стартовый экран
-    show('feed');
+      } catch (e) {
+        createResult.innerHTML = `<div class="bad">Ошибка: ${e.message}</div>`;
+      }
+    });
   </script>
 </body>
 </html>
