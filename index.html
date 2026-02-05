@@ -101,7 +101,7 @@
     const resp = await fetch(`${API_BASE}/api/upload_photos`, { method: "POST", body: fd });
     const data = await resp.json().catch(() => null);
     if (!resp.ok || !data?.ok) throw new Error(data?.error || "Ошибка загрузки фото");
-    return data; // { ok, left_url, right_url }
+    return data;
   }
 
   async function createPair(leftUrl, rightUrl, telegramId) {
@@ -117,7 +117,7 @@
   }
 
   async function loadFeed(telegramId) {
-    return await fetchJson(`${API_BASE}/api/feed?telegram_id=${encodeURIComponent(telegramId)}&limit=20`, {
+    return await fetchJson(`${API_BASE}/api/feed?telegram_id=${encodeURIComponent(telegramId)}&limit=30`, {
       method: "GET",
     });
   }
@@ -135,7 +135,7 @@
   }
 
   async function loadMy(telegramId) {
-    return await fetchJson(`${API_BASE}/api/my_results?telegram_id=${encodeURIComponent(telegramId)}&limit=20`, {
+    return await fetchJson(`${API_BASE}/api/my_results?telegram_id=${encodeURIComponent(telegramId)}&limit=30`, {
       method: "GET",
     });
   }
@@ -162,7 +162,6 @@
 
     items.forEach(item => {
       const card = el("div", { class: "card" });
-
       card.appendChild(el("div", { class: "muted", html: `pair_id: ${item.id}` }));
 
       const pair = el("div", { class: "pair" }, [
@@ -205,7 +204,7 @@
       card.appendChild(pair);
       card.appendChild(btns);
 
-      // ✅ главное: если уже голосовал — не “пропадает”, а показываем выбор
+      // Если уже голосовал — показываем, а не скрываем
       if (item.my_choice) {
         bL.disabled = true;
         bR.disabled = true;
