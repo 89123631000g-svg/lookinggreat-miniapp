@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>LookingGreat</title>
 
-  <!-- Telegram Mini App SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -20,11 +19,11 @@
     .status { margin-top: 10px; font-size: 14px; }
     .h { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
     .pill { display:inline-block; padding: 4px 8px; border-radius: 999px; background:#f3f3f3; font-size: 12px; color:#333; }
-    img { max-width: 100%; border-radius: 12px; display:block; }
-    .pair { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    img { width: 100%; border-radius: 12px; display:block; background:#f5f5f5; }
+    .pair { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:8px; }
     .voteBtns { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px; }
     .smallBtn { padding:10px; border-radius: 12px; border:1px solid #ddd; background:#fff; cursor:pointer; }
-    .smallBtn:hover { background:#f8f8f8; }
+    .smallBtn:disabled { opacity: .5; cursor: default; }
   </style>
 </head>
 
@@ -38,7 +37,6 @@
       </div>
     </div>
 
-    <!-- Создание пары -->
     <div class="card">
       <div class="h">Создать пару</div>
 
@@ -58,7 +56,6 @@
       </div>
     </div>
 
-    <!-- Лента -->
     <div class="card">
       <div class="h">Лента голосований</div>
       <button class="btn btnGhost" id="btnLoadFeed">Обновить ленту</button>
@@ -66,7 +63,6 @@
       <div id="feed"></div>
     </div>
 
-    <!-- Мои результаты -->
     <div class="card">
       <div class="h">Мои результаты</div>
       <button class="btn btnGhost" id="btnLoadMy">Обновить мои результаты</button>
@@ -80,47 +76,34 @@
   </div>
 
 <script>
-  // === НАСТРОЙКА ===
   const API_BASE = "https://orange-math-fa5e.89123631000g.workers.dev";
   document.getElementById("apiBaseText").textContent = API_BASE;
 
-  // Telegram ID
   function getTelegramId() {
     const tg = window.Telegram?.WebApp;
     const id = tg?.initDataUnsafe?.user?.id;
     return id ? String(id) : null;
   }
 
-  // Удобный fetch JSON
   async function fetchJson(url, options) {
     const resp = await fetch(url, options);
     const data = await resp.json().catch(() => null);
-    if (!resp.ok) {
-      throw new Error(data?.error || `HTTP ${resp.status}`);
-    }
+    if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
     return data;
   }
 
-  // === Upload 2 files -> R2 ===
   async function uploadTwoPhotosToR2(leftFile, rightFile, telegramId) {
     const fd = new FormData();
     fd.append("left", leftFile);
     fd.append("right", rightFile);
     fd.append("telegram_id", telegramId);
 
-    const resp = await fetch(`${API_BASE}/api/upload_photos`, {
-      method: "POST",
-      body: fd,
-    });
-
+    const resp = await fetch(`${API_BASE}/api/upload_photos`, { method: "POST", body: fd });
     const data = await resp.json().catch(() => null);
-    if (!resp.ok || !data?.ok) {
-      throw new Error(data?.error || "Ошибка загрузки фото");
-    }
+    if (!resp.ok || !data?.ok) throw new Error(data?.error || "Ошибка загрузки фото");
     return data; // { ok, left_url, right_url }
   }
 
-  // === Create pair in DB ===
   async function createPair(leftUrl, rightUrl, telegramId) {
     return await fetchJson(`${API_BASE}/api/create_pair`, {
       method: "POST",
@@ -133,14 +116,12 @@
     });
   }
 
-  // === Feed ===
   async function loadFeed(telegramId) {
-    return await fetchJson(`${API_BASE}/api/feed?telegram_id=${encodeURIComponent(telegramId)}&limit=10`, {
+    return await fetchJson(`${API_BASE}/api/feed?telegram_id=${encodeURIComponent(telegramId)}&limit=20`, {
       method: "GET",
     });
   }
 
-  // === Vote ===
   async function vote(photoPairId, choice, telegramId) {
     return await fetchJson(`${API_BASE}/api/vote`, {
       method: "POST",
@@ -148,19 +129,17 @@
       body: JSON.stringify({
         telegram_id: telegramId,
         photo_pair_id: photoPairId,
-        choice: choice, // "left" | "right"
+        choice: choice,
       }),
     });
   }
 
-  // === My results ===
   async function loadMy(telegramId) {
-    return await fetchJson(`${API_BASE}/api/my_results?telegram_id=${encodeURIComponent(telegramId)}&limit=10`, {
+    return await fetchJson(`${API_BASE}/api/my_results?telegram_id=${encodeURIComponent(telegramId)}&limit=20`, {
       method: "GET",
     });
   }
 
-  // === UI helpers ===
   function el(tag, attrs = {}, children = []) {
     const n = document.createElement(tag);
     Object.entries(attrs).forEach(([k, v]) => {
@@ -177,12 +156,14 @@
     root.innerHTML = "";
 
     if (!items || items.length === 0) {
-      root.appendChild(el("div", { class: "muted", html: "Пока нет доступных голосований." }));
+      root.appendChild(el("div", { class: "muted", html: "Пока нет пар в ленте." }));
       return;
     }
 
     items.forEach(item => {
       const card = el("div", { class: "card" });
+
+      card.appendChild(el("div", { class: "muted", html: `pair_id: ${item.id}` }));
 
       const pair = el("div", { class: "pair" }, [
         el("div", {}, [ el("img", { src: item.photo_left_url, alt: "left" }) ]),
@@ -190,22 +171,23 @@
       ]);
 
       const btns = el("div", { class: "voteBtns" });
-
       const bL = el("button", { class: "smallBtn" });
       bL.textContent = "Выбрать левое";
+
+      const bR = el("button", { class: "smallBtn" });
+      bR.textContent = "Выбрать правое";
+
       bL.onclick = async () => {
         try {
           await vote(item.id, "left", telegramId);
           bL.textContent = "Готово ✓";
-          bR.disabled = true;
           bL.disabled = true;
+          bR.disabled = true;
         } catch (e) {
           alert("Ошибка: " + (e.message || e));
         }
       };
 
-      const bR = el("button", { class: "smallBtn" });
-      bR.textContent = "Выбрать правое";
       bR.onclick = async () => {
         try {
           await vote(item.id, "right", telegramId);
@@ -220,9 +202,20 @@
       btns.appendChild(bL);
       btns.appendChild(bR);
 
-      card.appendChild(el("div", { class: "muted", html: `pair_id: ${item.id}` }));
       card.appendChild(pair);
       card.appendChild(btns);
+
+      // ✅ главное: если уже голосовал — не “пропадает”, а показываем выбор
+      if (item.my_choice) {
+        bL.disabled = true;
+        bR.disabled = true;
+
+        const note = document.createElement("div");
+        note.className = "muted";
+        note.style.marginTop = "8px";
+        note.textContent = `Ты уже голосовал: ${item.my_choice === "left" ? "левое" : "правое"}`;
+        card.appendChild(note);
+      }
 
       root.appendChild(card);
     });
@@ -256,9 +249,7 @@
     });
   }
 
-  // === Init ===
   (function init() {
-    // Telegram UI nice-to-have
     try {
       const tg = window.Telegram?.WebApp;
       tg?.ready?.();
@@ -269,7 +260,6 @@
     document.getElementById("tgInfo").textContent =
       telegramId ? `Telegram ID: ${telegramId}` : "Telegram ID: не найден (открой из Telegram)";
 
-    // Create pair button
     document.getElementById("btnUploadCreate").addEventListener("click", async () => {
       const statusEl = document.getElementById("uploadStatus");
       const left = document.getElementById("fileLeft")?.files?.[0];
@@ -279,7 +269,6 @@
         statusEl.textContent = "Проверяю Telegram ID...";
         const id = getTelegramId();
         if (!id) throw new Error("Не вижу Telegram User ID. Открой мини-приложение из Telegram.");
-
         if (!left || !right) throw new Error("Выбери два файла (слева и справа).");
 
         statusEl.textContent = "Загружаю фото в R2...";
@@ -296,7 +285,6 @@
       }
     });
 
-    // Load feed
     document.getElementById("btnLoadFeed").addEventListener("click", async () => {
       const statusEl = document.getElementById("feedStatus");
       try {
@@ -311,7 +299,6 @@
       }
     });
 
-    // Load my results
     document.getElementById("btnLoadMy").addEventListener("click", async () => {
       const statusEl = document.getElementById("myStatus");
       try {
