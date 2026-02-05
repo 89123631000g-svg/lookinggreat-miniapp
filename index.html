@@ -22,4 +22,430 @@
     .btn { padding: 12px 14px; border-radius: 12px; border: 1px solid #ddd; background: #f7f7f7; cursor: pointer; font-size: 16px; }
     .btn.primary { background:#111; color:#fff; border-color:#111; }
     .btn.danger { background:#fff1f1; border-color:#ffd2d2; }
-    input
+    input[type="file"]{ width:100%; }
+    .hr { height:1px; background:#eee; margin:12px 0; }
+    .small { font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <h1 style="margin:0">LookingGreat</h1>
+    <div class="badge" id="who">Telegram: —</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tab-feed">Лента</button>
+    <button class="tab" id="tab-create">Создать</button>
+    <button class="tab" id="tab-mine">Мои результаты</button>
+  </div>
+
+  <div id="screen"></div>
+
+  <script>
+    // ---------------- Telegram init ----------------
+    const tg = window.Telegram && window.Telegram.WebApp;
+    let currentUserId = null;
+    let currentUsername = null;
+
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+      currentUserId = u && u.id ? String(u.id) : null;
+      currentUsername = u && u.username ? ('@' + u.username) : null;
+      document.getElementById('who').textContent = 'Telegram: ' + (currentUsername || currentUserId || '—');
+    } else {
+      document.getElementById('who').textContent = 'Открой из Telegram';
+    }
+
+    // ---------------- Local storage helpers (DEMO) ----------------
+    const LS_KEY = 'lg_demo_state_v1';
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (e) { return null; }
+    }
+
+    function saveState(state) {
+      localStorage.setItem(LS_KEY, JSON.stringify(state));
+    }
+
+    function ensureState() {
+      let st = loadState();
+      if (!st) {
+        st = {
+          comparisons: [],
+          votes: [] // {comparisonId, voterUserId, choice:'A'|'B', createdAt}
+        };
+        // Добавим 2 тестовых пары, чтобы лента сразу работала
+        st.comparisons.push(makeDemoComparison('Кто лучше'));
+        st.comparisons.push(makeDemoComparison('До / После'));
+        saveState(st);
+      }
+      return st;
+    }
+
+    function uid() {
+      return 'c_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function makeDemoComparison(type) {
+      // красивые публичные картинки-заглушки (без хранения)
+      const demoA = 'https://picsum.photos/seed/' + Math.floor(Math.random()*99999) + '/800/800';
+      const demoB = 'https://picsum.photos/seed/' + Math.floor(Math.random()*99999) + '/800/800';
+      return {
+        id: uid(),
+        authorUserId: 'demo',
+        type,
+        status: 'open',
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 7*24*60*60*1000,
+        photoA: { dataUrl: demoA },
+        photoB: { dataUrl: demoB }
+      };
+    }
+
+    function now() { return Date.now(); }
+
+    function isExpired(c) {
+      return c.status !== 'closed' && c.expiresAt && now() > c.expiresAt;
+    }
+
+    function closeIfExpired(state) {
+      let changed = false;
+      state.comparisons.forEach(c => {
+        if (isExpired(c)) { c.status = 'closed'; changed = true; }
+      });
+      if (changed) saveState(state);
+    }
+
+    function hasVoted(state, comparisonId) {
+      if (!currentUserId) return false;
+      return state.votes.some(v => v.comparisonId === comparisonId && v.voterUserId === currentUserId);
+    }
+
+    function countVotes(state, comparisonId) {
+      const vs = state.votes.filter(v => v.comparisonId === comparisonId);
+      const a = vs.filter(v => v.choice === 'A').length;
+      const b = vs.filter(v => v.choice === 'B').length;
+      return { a, b, total: a + b };
+    }
+
+    // ---------------- UI navigation ----------------
+    const screenEl = document.getElementById('screen');
+    const tabFeed = document.getElementById('tab-feed');
+    const tabCreate = document.getElementById('tab-create');
+    const tabMine = document.getElementById('tab-mine');
+
+    tabFeed.onclick = () => show('feed');
+    tabCreate.onclick = () => show('create');
+    tabMine.onclick = () => show('mine');
+
+    function setActive(tab) {
+      [tabFeed, tabCreate, tabMine].forEach(t => t.classList.remove('active'));
+      if (tab === 'feed') tabFeed.classList.add('active');
+      if (tab === 'create') tabCreate.classList.add('active');
+      if (tab === 'mine') tabMine.classList.add('active');
+    }
+
+    function show(which) {
+      const state = ensureState();
+      closeIfExpired(state);
+      setActive(which);
+      if (which === 'feed') renderFeed(state);
+      if (which === 'create') renderCreate(state);
+      if (which === 'mine') renderMine(state);
+    }
+
+    // ---------------- FEED ----------------
+    function pickNext(state) {
+      // показываем открытые, где юзер еще не голосовал, и не свои (в MVP можно скрыть свои)
+      const open = state.comparisons.filter(c =>
+        c.status === 'open' &&
+        !hasVoted(state, c.id) &&
+        (!currentUserId || c.authorUserId !== currentUserId)
+      );
+
+      // если нечего показывать — вернем null
+      if (!open.length) return null;
+
+      // простая “случайная” выдача
+      return open[Math.floor(Math.random() * open.length)];
+    }
+
+    function renderFeed(state) {
+      if (!currentUserId) {
+        screenEl.innerHTML = `<div class="card">
+          <b>Открой Mini App из Telegram</b>
+          <div class="muted" style="margin-top:6px">Чтобы мы могли засчитывать голос, нужен Telegram User ID.</div>
+        </div>`;
+        return;
+      }
+
+      const c = pickNext(state);
+
+      if (!c) {
+        screenEl.innerHTML = `<div class="card">
+          <b>В ленте пока нет новых пар</b>
+          <div class="muted" style="margin-top:6px">Создай пару во вкладке «Создать» — и она появится в ленте (на твоём устройстве это демо).</div>
+          <div class="hr"></div>
+          <button class="btn primary" onclick="show('create')">Создать сравнение</button>
+        </div>`;
+        return;
+      }
+
+      const title = c.type === 'До / После' ? 'Что лучше: до или после?' : 'Выбери, какое фото лучше';
+      const leftLabel = c.type === 'До / После' ? 'До' : 'Левое';
+      const rightLabel = c.type === 'До / После' ? 'После' : 'Правое';
+
+      screenEl.innerHTML = `
+        <div class="card">
+          <div><b>${title}</b></div>
+          <div class="muted small" style="margin-top:6px">1 голос на 1 пару. Результаты видит только автор.</div>
+
+          <div class="photos">
+            <div class="ph"><img src="${c.photoA.dataUrl}" alt="A"></div>
+            <div class="ph"><img src="${c.photoB.dataUrl}" alt="B"></div>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn" onclick="vote('${c.id}','A')">${leftLabel}</button>
+            <button class="btn" onclick="vote('${c.id}','B')">${rightLabel}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function vote(comparisonId, choice) {
+      const state = ensureState();
+      closeIfExpired(state);
+
+      const c = state.comparisons.find(x => x.id === comparisonId);
+      if (!c || c.status !== 'open') {
+        alert('Это голосование уже закрыто.');
+        show('feed');
+        return;
+      }
+      if (!currentUserId) {
+        alert('Нужно открыть из Telegram.');
+        return;
+      }
+      if (hasVoted(state, comparisonId)) {
+        alert('Ты уже голосовал в этой паре.');
+        show('feed');
+        return;
+      }
+
+      state.votes.push({
+        comparisonId,
+        voterUserId: currentUserId,
+        choice,
+        createdAt: Date.now()
+      });
+      saveState(state);
+
+      // лёгкое подтверждение
+      if (tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+      show('feed');
+    }
+
+    // ---------------- CREATE ----------------
+    function renderCreate(state) {
+      if (!currentUserId) {
+        screenEl.innerHTML = `<div class="card">
+          <b>Открой Mini App из Telegram</b>
+          <div class="muted" style="margin-top:6px">Чтобы создать сравнение, нужен Telegram User ID.</div>
+        </div>`;
+        return;
+      }
+
+      screenEl.innerHTML = `
+        <div class="card">
+          <b>Создать сравнение</b>
+          <div class="muted small" style="margin-top:6px">
+            Это демо: фото сохраняются только у тебя (на устройстве). На следующем шаге подключим сервер и будет работать для всех.
+          </div>
+
+          <div class="hr"></div>
+
+          <div class="row" style="margin-bottom:8px">
+            <label class="small"><b>Тип:</b></label>
+            <select id="type" class="btn" style="padding:10px 12px">
+              <option>Кто лучше</option>
+              <option>До / После</option>
+            </select>
+          </div>
+
+          <div class="small" style="margin:10px 0 6px"><b>Фото A</b></div>
+          <input id="fileA" type="file" accept="image/*" />
+
+          <div class="small" style="margin:12px 0 6px"><b>Фото B</b></div>
+          <input id="fileB" type="file" accept="image/*" />
+
+          <div class="row" style="margin-top:14px">
+            <button class="btn primary" onclick="createComparison()">Запустить голосование</button>
+          </div>
+
+          <div class="muted small" style="margin-top:10px">
+            Голосование живёт 7 дней. Результаты видишь только ты.
+          </div>
+        </div>
+      `;
+    }
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    async function createComparison() {
+      const type = document.getElementById('type').value;
+      const fa = document.getElementById('fileA').files[0];
+      const fb = document.getElementById('fileB').files[0];
+
+      if (!fa || !fb) {
+        alert('Нужно выбрать 2 фото.');
+        return;
+      }
+
+      // чуть ограничим размер для демо (чтобы localStorage не взорвался)
+      const maxMb = 2;
+      if (fa.size > maxMb*1024*1024 || fb.size > maxMb*1024*1024) {
+        alert('Для демо выбери фото поменьше (до 2 МБ каждое). Потом сделаем нормальное хранилище.');
+        return;
+      }
+
+      const aUrl = await fileToDataUrl(fa);
+      const bUrl = await fileToDataUrl(fb);
+
+      const state = ensureState();
+      const c = {
+        id: uid(),
+        authorUserId: currentUserId,
+        type,
+        status: 'open',
+        createdAt: Date.now(),
+        expiresAt: Date.now() + 7*24*60*60*1000,
+        photoA: { dataUrl: aUrl },
+        photoB: { dataUrl: bUrl }
+      };
+
+      state.comparisons.unshift(c);
+      saveState(state);
+
+      alert('Готово! Пара добавлена в ленту (в этом демо — на твоём устройстве).');
+      show('mine');
+    }
+
+    // ---------------- MINE ----------------
+    function renderMine(state) {
+      if (!currentUserId) {
+        screenEl.innerHTML = `<div class="card">
+          <b>Открой Mini App из Telegram</b>
+        </div>`;
+        return;
+      }
+
+      const mine = state.comparisons.filter(c => c.authorUserId === currentUserId);
+
+      if (!mine.length) {
+        screenEl.innerHTML = `<div class="card">
+          <b>У тебя пока нет сравнений</b>
+          <div class="muted" style="margin-top:6px">Нажми «Создать», загрузи 2 фото и запусти голосование.</div>
+          <div class="hr"></div>
+          <button class="btn primary" onclick="show('create')">Создать</button>
+        </div>`;
+        return;
+      }
+
+      const items = mine.map(c => {
+        const v = countVotes(state, c.id);
+        const aPct = v.total ? Math.round(v.a / v.total * 100) : 0;
+        const bPct = v.total ? 100 - aPct : 0;
+        const leftLabel = c.type === 'До / После' ? 'До' : 'Левое';
+        const rightLabel = c.type === 'До / После' ? 'После' : 'Правое';
+        const status = c.status === 'open' ? 'Открыто' : 'Закрыто';
+        const daysLeft = c.status === 'open' ? Math.max(0, Math.ceil((c.expiresAt - now()) / (24*60*60*1000))) : 0;
+
+        return `
+          <div class="card" style="margin-bottom:12px">
+            <div class="row" style="justify-content:space-between">
+              <div><b>${c.type}</b></div>
+              <div class="muted small">${status}${c.status==='open' ? ' · осталось ' + daysLeft + ' дн.' : ''}</div>
+            </div>
+
+            <div class="photos">
+              <div class="ph"><img src="${c.photoA.dataUrl}" alt="A"></div>
+              <div class="ph"><img src="${c.photoB.dataUrl}" alt="B"></div>
+            </div>
+
+            <div class="hr"></div>
+            <div class="small">
+              <b>Голоса:</b> ${v.total} &nbsp;|&nbsp;
+              ${leftLabel}: ${v.a} (${aPct}%) &nbsp;·&nbsp;
+              ${rightLabel}: ${v.b} (${bPct}%)
+            </div>
+
+            <div class="row" style="margin-top:12px">
+              ${c.status==='open'
+                ? `<button class="btn" onclick="closeComparison('${c.id}')">Закрыть</button>`
+                : `<button class="btn" onclick="reopenComparison('${c.id}')">Открыть снова</button>`
+              }
+              <button class="btn danger" onclick="deleteComparison('${c.id}')">Удалить</button>
+            </div>
+
+            <div class="muted small" style="margin-top:10px">
+              В демо результаты считаются только здесь. На следующем шаге сделаем общий сервер.
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      screenEl.innerHTML = items;
+    }
+
+    function closeComparison(id) {
+      const state = ensureState();
+      const c = state.comparisons.find(x => x.id === id && x.authorUserId === currentUserId);
+      if (!c) return;
+      c.status = 'closed';
+      saveState(state);
+      show('mine');
+    }
+
+    function reopenComparison(id) {
+      const state = ensureState();
+      const c = state.comparisons.find(x => x.id === id && x.authorUserId === currentUserId);
+      if (!c) return;
+      // при открытии снова дадим 7 дней
+      c.status = 'open';
+      c.expiresAt = Date.now() + 7*24*60*60*1000;
+      saveState(state);
+      show('mine');
+    }
+
+    function deleteComparison(id) {
+      const ok = confirm('Точно удалить сравнение?');
+      if (!ok) return;
+      const state = ensureState();
+      const idx = state.comparisons.findIndex(x => x.id === id && x.authorUserId === currentUserId);
+      if (idx === -1) return;
+      state.comparisons.splice(idx, 1);
+      // удалим голоса по этой паре
+      state.votes = state.votes.filter(v => v.comparisonId !== id);
+      saveState(state);
+      show('mine');
+    }
+
+    // стартовый экран
+    show('feed');
+  </script>
+</body>
+</html>
