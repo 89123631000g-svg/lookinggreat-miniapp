@@ -88,8 +88,31 @@
   async function fetchJson(url, options) {
     const resp = await fetch(url, options);
     const data = await resp.json().catch(() => null);
-    if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+    if (!resp.ok) {
+      // чтобы видеть реальные ошибки, а не просто "Load failed"
+      throw new Error(data?.error || `HTTP ${resp.status}`);
+    }
     return data;
+  }
+
+  // ✅ нормализуем URL картинок: если вдруг старый /r2/... — превращаем в /r2img?key=...
+  function normalizeImageUrl(u) {
+    if (!u) return u;
+    try {
+      const url = new URL(u);
+      // уже новый формат /r2img?key=...
+      if (url.pathname === "/r2img") return u;
+
+      // старый формат /r2/<key>
+      if (url.pathname.startsWith("/r2/")) {
+        const key = url.pathname.slice("/r2/".length);
+        const fixed = `${url.origin}/r2img?key=${encodeURIComponent(key)}`;
+        return fixed;
+      }
+      return u;
+    } catch {
+      return u;
+    }
   }
 
   async function uploadTwoPhotosToR2(leftFile, rightFile, telegramId) {
@@ -98,10 +121,15 @@
     fd.append("right", rightFile);
     fd.append("telegram_id", telegramId);
 
-    const resp = await fetch(`${API_BASE}/api/upload_photos`, { method: "POST", body: fd });
-    const data = await resp.json().catch(() => null);
-    if (!resp.ok || !data?.ok) throw new Error(data?.error || "Ошибка загрузки фото");
-    return data;
+    try {
+      const resp = await fetch(`${API_BASE}/api/upload_photos`, { method: "POST", body: fd });
+      const data = await resp.json().catch(() => null);
+      if (!resp.ok || !data?.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+      return data;
+    } catch (e) {
+      // iOS часто пишет просто "Load failed" — покажем понятнее
+      throw new Error(e?.message || "Load failed");
+    }
   }
 
   async function createPair(leftUrl, rightUrl, telegramId) {
@@ -110,8 +138,8 @@
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         telegram_id: telegramId,
-        photo_left_url: leftUrl,
-        photo_right_url: rightUrl
+        photo_left_url: normalizeImageUrl(leftUrl),
+        photo_right_url: normalizeImageUrl(rightUrl),
       }),
     });
   }
@@ -151,6 +179,20 @@
     return n;
   }
 
+  function makeImg(src, alt) {
+    const img = document.createElement("img");
+    img.alt = alt || "";
+    img.src = normalizeImageUrl(src);
+
+    // подсказка: если снова не грузится — увидим это в UI
+    img.onerror = () => {
+      img.style.opacity = "0.4";
+      img.title = "Не удалось загрузить изображение";
+    };
+
+    return img;
+  }
+
   function renderFeed(items, telegramId) {
     const root = document.getElementById("feed");
     root.innerHTML = "";
@@ -165,8 +207,8 @@
       card.appendChild(el("div", { class: "muted", html: `pair_id: ${item.id}` }));
 
       const pair = el("div", { class: "pair" }, [
-        el("div", {}, [ el("img", { src: item.photo_left_url, alt: "left" }) ]),
-        el("div", {}, [ el("img", { src: item.photo_right_url, alt: "right" }) ])
+        el("div", {}, [ makeImg(item.photo_left_url, "left") ]),
+        el("div", {}, [ makeImg(item.photo_right_url, "right") ])
       ]);
 
       const btns = el("div", { class: "voteBtns" });
@@ -204,11 +246,9 @@
       card.appendChild(pair);
       card.appendChild(btns);
 
-      // Если уже голосовал — показываем, а не скрываем
       if (item.my_choice) {
         bL.disabled = true;
         bR.disabled = true;
-
         const note = document.createElement("div");
         note.className = "muted";
         note.style.marginTop = "8px";
@@ -239,8 +279,8 @@
       card.appendChild(el("div", { class: "muted", html: `pair_id: ${item.id} · голосов: ${total} (лево: ${l}, право: ${r})` }));
 
       const pair = el("div", { class: "pair" }, [
-        el("div", {}, [ el("img", { src: item.photo_left_url, alt: "left" }) ]),
-        el("div", {}, [ el("img", { src: item.photo_right_url, alt: "right" }) ])
+        el("div", {}, [ makeImg(item.photo_left_url, "left") ]),
+        el("div", {}, [ makeImg(item.photo_right_url, "right") ])
       ]);
 
       card.appendChild(pair);
