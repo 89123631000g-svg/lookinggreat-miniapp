@@ -3,616 +3,643 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="color-scheme" content="light dark" />
   <title>LookingGreat</title>
 
+  <!-- Telegram WebApp (если открыто внутри Telegram) -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
     :root{
-      --bg:#f6f7fb;
-      --card:#fff;
-      --text:#101114;
-      --muted:#6b7280;
-      --border:#e5e7eb;
-      --btn:#111827;
-      --btnText:#fff;
-      --btn2:#f3f4f6;
-      --shadow:0 10px 25px rgba(0,0,0,.08);
-      --radius:18px;
+      --bg:#0b0c10;
+      --card:#11131a;
+      --text:#f2f3f5;
+      --muted:#a8adbd;
+      --stroke:rgba(255,255,255,.12);
+      --shadow: 0 12px 40px rgba(0,0,0,.35);
+      --radius:16px;
+      --radius2:22px;
+      --cta:#ffffff;
+      --ctaText:#0b0c10;
+      --danger:#ff4d4d;
+      --ok:#2ecc71;
+      --tap: rgba(255,255,255,.08);
     }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#f6f7fb;
+        --card:#ffffff;
+        --text:#141824;
+        --muted:#5b6375;
+        --stroke:rgba(0,0,0,.10);
+        --shadow: 0 12px 40px rgba(10,15,25,.12);
+        --cta:#141824;
+        --ctaText:#ffffff;
+        --tap: rgba(10,15,25,.06);
+      }
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:var(--bg);
-      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
-    .wrap{max-width:420px;margin:0 auto;padding:14px 14px 28px;}
-    .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:14px;
-      margin:10px 0;
+
+    a{ color: inherit; text-decoration: none; }
+    button{ font: inherit; }
+    .wrap{
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 16px 16px 110px;
     }
-    .top{
+
+    /* Header: ТОЛЬКО бренд. Без кнопок и ссылок "Голосовать" */
+    header{
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      margin:6px 0 10px;
+      justify-content:center;
+      padding: 10px 0 6px;
+      position: sticky;
+      top: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,.35), rgba(0,0,0,0));
+      backdrop-filter: blur(10px);
+      z-index: 10;
     }
-    .logo{font-weight:900;letter-spacing:.2px;}
-    .link{
-      font-size:13px;
-      color:#111827;
-      text-decoration:underline;
-      cursor:pointer;
-      user-select:none;
+    @media (prefers-color-scheme: light){
+      header{
+        background: linear-gradient(to bottom, rgba(246,247,251,.85), rgba(246,247,251,0));
+      }
+    }
+    .brand{
+      font-weight: 800;
+      letter-spacing: .2px;
+      font-size: 16px;
+      padding: 10px 14px;
+      border: 1px solid var(--stroke);
+      border-radius: 999px;
+      background: rgba(255,255,255,.02);
+    }
+    @media (prefers-color-scheme: light){
+      .brand{ background: rgba(0,0,0,.02); }
     }
 
-    .h1{font-size:22px;font-weight:900;line-height:1.15;margin:0 0 6px;}
-    .sub{font-size:13px;color:var(--muted);line-height:1.35;margin:0 0 12px;}
-    .muted{color:var(--muted);font-size:13px;line-height:1.35;}
-    .btn{
-      width:100%;
-      border:0;
-      background:var(--btn);
-      color:var(--btnText);
-      padding:12px 14px;
-      border-radius:14px;
-      font-size:15px;
-      font-weight:800;
-      cursor:pointer;
-    }
-    .btn2{
-      width:100%;
-      border:1px solid var(--border);
-      background:var(--btn2);
-      color:#111827;
-      padding:12px 14px;
-      border-radius:14px;
-      font-size:15px;
-      font-weight:800;
-      cursor:pointer;
-    }
-    .btnRow{display:flex;gap:10px;margin-top:10px;}
-    .btnRow .btn, .btnRow .btn2{width:auto;flex:1;}
+    /* Screens */
+    .screen{ display:none; }
+    .screen.active{ display:block; }
 
-    .pillRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    /* Home hero */
+    .hero{
+      margin-top: 16px;
+      background: radial-gradient(1200px 420px at 50% -120px, rgba(255,255,255,.08), transparent 60%);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .h1{
+      font-size: 30px;
+      line-height: 1.1;
+      letter-spacing: -0.6px;
+      font-weight: 900;
+      margin: 0 0 10px;
+    }
+    .sub{
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 14px;
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+    }
     .pill{
-      border:1px solid var(--border);
-      background:#fff;
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:13px;
-      cursor:pointer;
-      user-select:none;
+      padding: 6px 10px;
+      border: 1px solid var(--stroke);
+      border-radius: 999px;
+      background: rgba(255,255,255,.03);
     }
-    .pillActive{
-      background:#111827;
-      color:#fff;
-      border-color:#111827;
+    @media (prefers-color-scheme: light){
+      .pill{ background: rgba(0,0,0,.02); }
     }
 
-    .hidden{display:none !important;}
-
-    /* Vote */
-    .voteGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-    .voteTile{
-      border:1px solid var(--border);
-      border-radius:16px;
+    .previewCard{
+      margin-top: 12px;
+      border-radius: var(--radius2);
+      border: 1px solid var(--stroke);
       overflow:hidden;
-      background:#fafafa;
+      background: rgba(255,255,255,.02);
+    }
+    @media (prefers-color-scheme: light){
+      .previewCard{ background: rgba(0,0,0,.02); }
+    }
+    .pairGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--stroke);
+    }
+    .imgBox{
+      aspect-ratio: 1 / 1;
+      position: relative;
+      overflow:hidden;
+      background: rgba(255,255,255,.03);
+    }
+    .imgBox img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      filter: blur(10px) brightness(.9);
+      transform: scale(1.08);
+      display:block;
+    }
+    .imgBox::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(to bottom, rgba(0,0,0,.10), rgba(0,0,0,.25));
+      pointer-events:none;
+    }
+
+    .cta{
+      width:100%;
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 0;
+      background: var(--cta);
+      color: var(--ctaText);
+      font-weight: 900;
+      font-size: 16px;
+      cursor:pointer;
+      box-shadow: 0 10px 26px rgba(0,0,0,.22);
+    }
+    .cta:active{ transform: translateY(1px); }
+
+    .micro{
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align:center;
+    }
+
+    /* Soft nav (не в шапке) */
+    .softNav{
+      margin-top: 14px;
+      display:flex;
+      justify-content:center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .softNav a{
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+    }
+    .softNav a:active{ background: var(--tap); }
+
+    /* Vote screen */
+    .blockTitle{
+      font-size: 18px;
+      font-weight: 900;
+      margin: 12px 0 10px;
+      letter-spacing: -0.2px;
+    }
+    .voteCard{
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      background: rgba(255,255,255,.02);
+    }
+    @media (prefers-color-scheme: light){
+      .voteCard{ background: rgba(0,0,0,.02); }
+    }
+    .voteGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--stroke);
+    }
+    .voteBtn{
+      padding:0;
+      border:0;
+      background: transparent;
       cursor:pointer;
       position:relative;
-      min-height:170px;
     }
-    .voteTile img{
-      width:100%;
-      height:220px;
-      object-fit:cover;
-      display:block;
-      background:#ddd;
+    .voteBtn .imgBox img{
+      filter: none;
+      transform:none;
     }
-    .voteBadge{
-      position:absolute;
-      left:10px;
-      top:10px;
-      background:rgba(17,24,39,.85);
-      color:#fff;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:900;
-      backdrop-filter: blur(4px);
+    /* ВАЖНО: никаких "ЛЕВО/ПРАВО" */
+    .voteBtn:active{
+      outline: 3px solid rgba(255,255,255,.22);
+      outline-offset: -3px;
     }
-    .centerNote{font-size:12px;color:var(--muted);text-align:center;margin-top:10px;}
+    .voteHint{
+      padding: 12px 12px 14px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align:center;
+    }
 
-    /* Create */
-    .field{margin:10px 0;}
-    .label{font-size:13px;font-weight:800;margin:0 0 6px;}
-    .file{
-      width:100%;
-      padding:10px;
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:#fff;
+    .row{
+      display:flex;
+      gap: 10px;
+      margin-top: 12px;
     }
-    .status{margin-top:10px;font-size:14px;}
-
-    /* Results cards */
-    .pairGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
-    .pairGrid img{width:100%;border-radius:12px;display:block;background:#f5f5f5;}
-    .kpiRow{display:flex;gap:10px;margin-top:10px;}
-    .kpi{
-      flex:1;
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:10px;
-      background:#fff;
+    .ghost{
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--stroke);
+      background: transparent;
+      color: var(--text);
+      cursor:pointer;
+      font-weight: 800;
     }
-    .kpi .n{font-size:18px;font-weight:900;}
-    .kpi .t{font-size:12px;color:var(--muted);margin-top:2px;}
+    .ghost:active{ background: var(--tap); }
 
     .toast{
-      position:fixed;
-      left:50%;
-      transform:translateX(-50%);
-      bottom:18px;
-      background:rgba(17,24,39,.92);
-      color:#fff;
-      padding:10px 12px;
-      border-radius:999px;
-      font-size:13px;
-      box-shadow:var(--shadow);
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      color: var(--muted);
+      font-size: 13px;
       display:none;
-      max-width:min(520px,92vw);
+    }
+    .toast.show{ display:block; }
+
+    /* Bottom nav (после первого действия; показываем не на Home) */
+    .bottomNav{
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      background: linear-gradient(to top, rgba(0,0,0,.60), rgba(0,0,0,0));
+      backdrop-filter: blur(12px);
+      z-index: 20;
+      display:none;
+    }
+    @media (prefers-color-scheme: light){
+      .bottomNav{
+        background: linear-gradient(to top, rgba(246,247,251,.92), rgba(246,247,251,0));
+      }
+    }
+    .bottomNavInner{
+      max-width: 560px;
+      margin: 0 auto;
+      display:flex;
+      gap: 10px;
+    }
+    .tab{
+      flex:1;
       text-align:center;
+      padding: 12px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--stroke);
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 13px;
+      background: rgba(255,255,255,.03);
+    }
+    @media (prefers-color-scheme: light){
+      .tab{ background: rgba(0,0,0,.02); }
+    }
+    .tab.active{
+      color: var(--text);
+      border-color: rgba(255,255,255,.22);
     }
   </style>
 </head>
 
 <body>
+  <header>
+    <div class="brand">LookingGreat</div>
+  </header>
+
   <div class="wrap">
-    <div class="top">
-      <div class="logo">LookingGreat</div>
-      <div class="link" id="goVoteTop">Голосовать</div>
-    </div>
-
-    <!-- VIEW: VOTE -->
-    <div class="card" id="viewVote">
-      <div class="h1">Кто выглядит лучше?</div>
-      <div class="sub">Анонимное голосование. Просто выбери один вариант.</div>
-
-      <div class="voteGrid">
-        <div class="voteTile" id="tileLeft" data-side="left">
-          <div class="voteBadge">ЛЕВО</div>
-          <img id="imgLeft" alt="Левое фото" />
+    <!-- HOME (первый экран) -->
+    <section id="screen-home" class="screen active" aria-label="Главная">
+      <div class="hero">
+        <h1 class="h1">Кто выглядит лучше?</h1>
+        <div class="sub">
+          <span class="pill">Анонимно</span>
+          <span class="pill">1 тап</span>
+          <span class="pill">Без регистрации</span>
         </div>
-        <div class="voteTile" id="tileRight" data-side="right">
-          <div class="voteBadge">ПРАВО</div>
-          <img id="imgRight" alt="Правое фото" />
+
+        <!-- Превью-пара (замыленная, не интерактив) -->
+        <div class="previewCard" aria-hidden="true">
+          <div class="pairGrid">
+            <div class="imgBox"><img id="homePrevA" alt="" /></div>
+            <div class="imgBox"><img id="homePrevB" alt="" /></div>
+          </div>
         </div>
+
+        <button id="btnStartVote" class="cta">Начать голосовать</button>
+        <div class="micro">Сначала голосуешь — потом можешь загрузить свои фото</div>
+
+        <!-- Навигация НЕ в шапке -->
+        <nav class="softNav" aria-label="Навигация">
+          <a href="#create" id="linkCreateSoft">Создать</a>
+          <a href="#results" id="linkResultsSoft">Мои результаты</a>
+        </nav>
+      </div>
+    </section>
+
+    <!-- VOTE -->
+    <section id="screen-vote" class="screen" aria-label="Голосование">
+      <div class="blockTitle">Выбери, что лучше</div>
+
+      <div class="voteCard">
+        <div class="voteGrid" id="voteGrid">
+          <button class="voteBtn" id="voteA" aria-label="Выбрать фото A">
+            <div class="imgBox"><img id="voteImgA" alt="Фото A" /></div>
+          </button>
+          <button class="voteBtn" id="voteB" aria-label="Выбрать фото B">
+            <div class="imgBox"><img id="voteImgB" alt="Фото B" /></div>
+          </button>
+        </div>
+        <div class="voteHint">Просто тапни по фото. Без комментариев.</div>
       </div>
 
-      <div class="btnRow">
-        <button class="btn2" id="btnNext">Другое</button>
-        <button class="btn" id="btnCreateFromVote">Создать своё</button>
+      <div class="row">
+        <button class="ghost" id="btnSkip">Пропустить</button>
+        <button class="ghost" id="btnNext">Дальше</button>
       </div>
 
-      <div class="centerNote" id="voteHint">Нажми на фото, чтобы проголосовать</div>
-      <div class="status" id="voteStatus"></div>
-    </div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </section>
 
-    <!-- VIEW: CREATE -->
-    <div class="card hidden" id="viewCreate">
-      <div class="h1">Создай голосование</div>
-      <div class="sub">Загрузи 2 фото. Люди будут выбирать анонимно.</div>
-
-      <div class="field">
-        <div class="label">Фото слева</div>
-        <input class="file" id="fileLeft" type="file" accept="image/*" />
+    <!-- CREATE -->
+    <section id="screen-create" class="screen" aria-label="Создать пару">
+      <div class="blockTitle">Создать пару</div>
+      <div class="toast show">
+        Здесь будет ваш текущий экран создания пары (форма/загрузка).<br><br>
+        Я оставил заглушку, чтобы первый экран был «эмоциональный» и не показывал формы сразу.
       </div>
+    </section>
 
-      <div class="field">
-        <div class="label">Фото справа</div>
-        <input class="file" id="fileRight" type="file" accept="image/*" />
+    <!-- RESULTS -->
+    <section id="screen-results" class="screen" aria-label="Мои результаты">
+      <div class="blockTitle">Мои результаты</div>
+      <div class="toast show">
+        Здесь будет ваш текущий экран результатов.<br><br>
+        Если он уже есть — просто перенесём сюда ваш рендер.
       </div>
-
-      <button class="btn" id="btnUploadCreate">Загрузить и создать</button>
-      <div style="height:8px"></div>
-      <button class="btn2" id="btnBackFromCreate">Назад к голосованию</button>
-      <div class="status" id="uploadStatus"></div>
-    </div>
-
-    <!-- VIEW: RESULTS -->
-    <div class="card hidden" id="viewResults">
-      <div class="h1">Мои результаты</div>
-      <div class="sub">Твои созданные пары и их результаты.</div>
-
-      <div class="kpiRow">
-        <div class="kpi"><div class="n" id="kpiPairs">—</div><div class="t">пар создано</div></div>
-        <div class="kpi"><div class="n" id="kpiVotes">—</div><div class="t">голосов всего</div></div>
-      </div>
-
-      <div style="height:10px"></div>
-      <button class="btn2" id="btnLoadMy">Обновить результаты</button>
-      <div style="height:8px"></div>
-      <button class="btn2" id="btnBackFromResults">Назад</button>
-
-      <div class="status" id="myStatus"></div>
-      <div id="myResults"></div>
-    </div>
-
-    <div class="pillRow">
-      <div class="pill pillActive" id="pillVote">Голосовать</div>
-      <div class="pill" id="pillCreate">Создать</div>
-      <div class="pill" id="pillResults">Мои результаты</div>
-    </div>
-
-    <!-- скрытый контейнер для совместимости (мы не показываем ленту списком на первом экране) -->
-    <div class="hidden" id="feed"></div>
+    </section>
   </div>
 
-  <div class="toast" id="toast"></div>
+  <!-- Bottom nav (не показываем на Home) -->
+  <nav class="bottomNav" id="bottomNav" aria-label="Нижняя навигация">
+    <div class="bottomNavInner">
+      <a class="tab" href="#vote" id="tabVote">Голосовать</a>
+      <a class="tab" href="#create" id="tabCreate">Создать</a>
+      <a class="tab" href="#results" id="tabResults">Мои</a>
+    </div>
+  </nav>
 
-<script>
-  // Потом просто заменишь на https://api.lookingreat.ru
-  const API_BASE = "https://orange-math-fa5e.89123631000g.workers.dev";
-
-  function toast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.style.display = "block";
-    clearTimeout(toast._tm);
-    toast._tm = setTimeout(()=>{ t.style.display="none"; }, 1600);
-  }
-
-  function setStatus(id, msg) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = msg || "";
-  }
-
-  function getTelegramId() {
-    const tg = window.Telegram?.WebApp;
-    const id = tg?.initDataUnsafe?.user?.id;
-    return id ? String(id) : null;
-  }
-
-  async function fetchJson(url, options) {
-    const resp = await fetch(url, options);
-    const data = await resp.json().catch(() => null);
-    if (!resp.ok) {
-      throw new Error(data?.error || `HTTP ${resp.status}`);
-    }
-    return data;
-  }
-
-  function normalizeImageUrl(u) {
-    if (!u) return u;
-    try {
-      const url = new URL(u);
-      if (url.pathname === "/r2img") return u;
-      if (url.pathname.startsWith("/r2/")) {
-        const key = url.pathname.slice("/r2/".length);
-        return `${url.origin}/r2img?key=${encodeURIComponent(key)}`;
-      }
-      return u;
-    } catch {
-      return u;
-    }
-  }
-
-  function makeImgEl(imgEl, src) {
-    imgEl.src = normalizeImageUrl(src);
-    imgEl.onerror = () => {
-      imgEl.style.opacity = "0.35";
-      imgEl.title = "Не удалось загрузить изображение";
+  <script>
+    /***********************
+     * CONFIG
+     ***********************/
+    // Если фронт на GitHub Pages, а API на Worker — укажи API_BASE.
+    // Можно оставить '' (тогда запросы идут на тот же домен).
+    const API_BASE = ''; // пример: 'https://lookingreat.ru' или 'https://<your-domain>'
+    const ENDPOINTS = {
+      // Подстрой под свои реальные пути (если отличаются) — это единственное место.
+      nextPair: '/api/vote/next',     // GET -> { pair_id, left_url, right_url }
+      vote:     '/api/vote',          // POST -> { pair_id, choice: "A"|"B" }
+      skip:     '/api/vote/skip'      // POST -> { pair_id }
     };
-    imgEl.onload = () => {
-      imgEl.style.opacity = "1";
-      imgEl.title = "";
+
+    /***********************
+     * Telegram init (аккуратно)
+     ***********************/
+    try{
+      if (window.Telegram && Telegram.WebApp){
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+        // Цвета можно потом синхронизировать с темой Telegram, если захочешь.
+      }
+    }catch(e){}
+
+    /***********************
+     * Router
+     ***********************/
+    const screens = {
+      home: document.getElementById('screen-home'),
+      vote: document.getElementById('screen-vote'),
+      create: document.getElementById('screen-create'),
+      results: document.getElementById('screen-results')
     };
-  }
+    const bottomNav = document.getElementById('bottomNav');
+    const tabs = {
+      vote: document.getElementById('tabVote'),
+      create: document.getElementById('tabCreate'),
+      results: document.getElementById('tabResults')
+    };
 
-  async function uploadTwoPhotosToR2(leftFile, rightFile, telegramId) {
-    const fd = new FormData();
-    fd.append("left", leftFile);
-    fd.append("right", rightFile);
-    fd.append("telegram_id", telegramId);
-
-    try {
-      const resp = await fetch(`${API_BASE}/api/upload_photos`, { method: "POST", body: fd });
-      const data = await resp.json().catch(() => null);
-      if (!resp.ok || !data?.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
-      return data;
-    } catch (e) {
-      throw new Error(e?.message || "Load failed");
-    }
-  }
-
-  async function createPair(leftUrl, rightUrl, telegramId) {
-    return await fetchJson(`${API_BASE}/api/create_pair`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        telegram_id: telegramId,
-        photo_left_url: normalizeImageUrl(leftUrl),
-        photo_right_url: normalizeImageUrl(rightUrl),
-      }),
-    });
-  }
-
-  async function loadFeed(telegramId) {
-    return await fetchJson(`${API_BASE}/api/feed?telegram_id=${encodeURIComponent(telegramId)}&limit=30`, {
-      method: "GET",
-    });
-  }
-
-  async function vote(photoPairId, choice, telegramId) {
-    return await fetchJson(`${API_BASE}/api/vote`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        telegram_id: telegramId,
-        photo_pair_id: photoPairId,
-        choice: choice,
-      }),
-    });
-  }
-
-  async function loadMy(telegramId) {
-    return await fetchJson(`${API_BASE}/api/my_results?telegram_id=${encodeURIComponent(telegramId)}&limit=30`, {
-      method: "GET",
-    });
-  }
-
-  function el(tag, attrs = {}, children = []) {
-    const n = document.createElement(tag);
-    Object.entries(attrs).forEach(([k, v]) => {
-      if (k === "class") n.className = v;
-      else if (k === "html") n.innerHTML = v;
-      else n.setAttribute(k, v);
-    });
-    children.forEach(c => n.appendChild(c));
-    return n;
-  }
-
-  function showView(name) {
-    document.getElementById("viewVote").classList.add("hidden");
-    document.getElementById("viewCreate").classList.add("hidden");
-    document.getElementById("viewResults").classList.add("hidden");
-    document.getElementById(name).classList.remove("hidden");
-
-    document.getElementById("pillVote").classList.remove("pillActive");
-    document.getElementById("pillCreate").classList.remove("pillActive");
-    document.getElementById("pillResults").classList.remove("pillActive");
-
-    if (name === "viewVote") document.getElementById("pillVote").classList.add("pillActive");
-    if (name === "viewCreate") document.getElementById("pillCreate").classList.add("pillActive");
-    if (name === "viewResults") document.getElementById("pillResults").classList.add("pillActive");
-  }
-
-  // ----------------- Vote-first state -----------------
-  let feedItems = [];
-  let feedIndex = 0;
-  let currentItem = null;
-  let voteLocked = false;
-
-  async function ensureTelegramId() {
-    const id = getTelegramId();
-    if (!id) throw new Error("Открой мини-приложение из Telegram.");
-    return id;
-  }
-
-  function pickNextItem() {
-    if (!feedItems || feedItems.length === 0) return null;
-    // чтобы не зависать на одной паре — крутим индекс по кругу
-    const item = feedItems[feedIndex % feedItems.length];
-    feedIndex++;
-    return item;
-  }
-
-  function renderCurrentVote() {
-    const leftImg = document.getElementById("imgLeft");
-    const rightImg = document.getElementById("imgRight");
-
-    if (!currentItem) {
-      leftImg.removeAttribute("src");
-      rightImg.removeAttribute("src");
-      document.getElementById("voteHint").textContent = "Пока нет голосований. Создай первое.";
-      setStatus("voteStatus", "");
-      return;
-    }
-
-    makeImgEl(leftImg, currentItem.photo_left_url);
-    makeImgEl(rightImg, currentItem.photo_right_url);
-
-    if (currentItem.my_choice) {
-      voteLocked = true;
-      document.getElementById("voteHint").textContent =
-        `Ты уже голосовал: ${currentItem.my_choice === "left" ? "левое" : "правое"}`;
-    } else {
-      voteLocked = false;
-      document.getElementById("voteHint").textContent = "Нажми на фото, чтобы проголосовать";
-    }
-
-    setStatus("voteStatus", "");
-  }
-
-  async function refreshFeedAndShow() {
-    const id = await ensureTelegramId();
-    setStatus("voteStatus", "Загружаю ленту…");
-    const data = await loadFeed(id);
-    feedItems = Array.isArray(data.items) ? data.items : [];
-    feedIndex = 0;
-
-    currentItem = pickNextItem();
-    renderCurrentVote();
-    setStatus("voteStatus", "");
-  }
-
-  async function showNextVote() {
-    if (!feedItems || feedItems.length === 0) {
-      await refreshFeedAndShow();
-      return;
-    }
-    currentItem = pickNextItem();
-    renderCurrentVote();
-  }
-
-  async function sendVote(choice) {
-    if (!currentItem) return;
-    if (voteLocked) return;
-
-    try {
-      voteLocked = true;
-      const id = await ensureTelegramId();
-      await vote(currentItem.id, choice, id);
-
-      toast("Голос засчитан");
-      currentItem.my_choice = choice;
-      document.getElementById("voteHint").textContent = "Спасибо! Хочешь создать своё голосование?";
-    } catch (e) {
-      voteLocked = false;
-      setStatus("voteStatus", "Ошибка: " + (e.message || e));
-    }
-  }
-
-  // ----------------- Results render -----------------
-  function renderMy(items) {
-    const root = document.getElementById("myResults");
-    root.innerHTML = "";
-
-    if (!items || items.length === 0) {
-      root.appendChild(el("div", { class: "muted", html: "У тебя пока нет созданных пар." }));
-      document.getElementById("kpiPairs").textContent = "0";
-      document.getElementById("kpiVotes").textContent = "0";
-      return;
-    }
-
-    let totalVotesAll = 0;
-    items.forEach(item => {
-      const total = item.total_votes || 0;
-      const l = item.left_votes || 0;
-      const r = item.right_votes || 0;
-      totalVotesAll += total;
-
-      const card = el("div", { class: "card" });
-      card.style.boxShadow = "none";
-      card.style.margin = "10px 0 0";
-
-      card.appendChild(el("div", { class: "muted", html: `Голосов: <b>${total}</b> (лево: ${l}, право: ${r})` }));
-
-      const pair = el("div", { class: "pairGrid" }, [
-        el("div", {}, [ el("img", { src: normalizeImageUrl(item.photo_left_url), alt: "left" }) ]),
-        el("div", {}, [ el("img", { src: normalizeImageUrl(item.photo_right_url), alt: "right" }) ])
-      ]);
-
-      card.appendChild(pair);
-      root.appendChild(card);
-    });
-
-    document.getElementById("kpiPairs").textContent = String(items.length);
-    document.getElementById("kpiVotes").textContent = String(totalVotesAll);
-  }
-
-  // ----------------- Init & events -----------------
-  (function init() {
-    try {
-      const tg = window.Telegram?.WebApp;
-      tg?.ready?.();
-      tg?.expand?.();
-    } catch {}
-
-    // vote first
-    showView("viewVote");
-
-    // первичная загрузка ленты
-    (async () => {
-      try {
-        await refreshFeedAndShow();
-      } catch (e) {
-        setStatus("voteStatus", "Ошибка: " + (e.message || e));
-        document.getElementById("voteHint").textContent = "Не удалось загрузить ленту.";
+    function showScreen(name){
+      for (const k in screens){
+        screens[k].classList.toggle('active', k === name);
       }
-    })();
+      // Bottom nav НЕ на первом экране
+      bottomNav.style.display = (name === 'home') ? 'none' : 'block';
 
-    // vote clicks
-    document.getElementById("tileLeft").addEventListener("click", () => sendVote("left"));
-    document.getElementById("tileRight").addEventListener("click", () => sendVote("right"));
-
-    document.getElementById("btnNext").addEventListener("click", async () => {
-      try { await showNextVote(); } catch(e){ setStatus("voteStatus","Ошибка: "+(e.message||e)); }
-    });
-
-    document.getElementById("btnCreateFromVote").addEventListener("click", () => showView("viewCreate"));
-    document.getElementById("btnBackFromCreate").addEventListener("click", () => showView("viewVote"));
-    document.getElementById("btnBackFromResults").addEventListener("click", () => showView("viewVote"));
-
-    document.getElementById("goVoteTop").addEventListener("click", () => showView("viewVote"));
-
-    document.getElementById("pillVote").addEventListener("click", () => showView("viewVote"));
-    document.getElementById("pillCreate").addEventListener("click", () => showView("viewCreate"));
-    document.getElementById("pillResults").addEventListener("click", async () => {
-      showView("viewResults");
-      const statusEl = document.getElementById("myStatus");
-      try {
-        const id = await ensureTelegramId();
-        statusEl.textContent = "Загружаю результаты…";
-        const data = await loadMy(id);
-        renderMy(data.items);
-        statusEl.textContent = "";
-      } catch (e) {
-        statusEl.textContent = "Ошибка: " + (e.message || e);
+      // Tabs active
+      for (const k in tabs){
+        tabs[k].classList.toggle('active', k === name);
       }
-    });
+    }
 
-    // Create flow
-    document.getElementById("btnUploadCreate").addEventListener("click", async () => {
-      const statusEl = document.getElementById("uploadStatus");
-      const left = document.getElementById("fileLeft")?.files?.[0];
-      const right = document.getElementById("fileRight")?.files?.[0];
+    function route(){
+      const hash = (location.hash || '#home').replace('#','');
+      const name = ['home','vote','create','results'].includes(hash) ? hash : 'home';
+      showScreen(name);
 
-      try {
-        statusEl.textContent = "Проверяю Telegram ID…";
-        const id = await ensureTelegramId();
-        if (!left || !right) throw new Error("Выбери два фото (слева и справа).");
-
-        statusEl.textContent = "Загружаю фото…";
-        const up = await uploadTwoPhotosToR2(left, right, id);
-
-        statusEl.textContent = "Создаю пару…";
-        const created = await createPair(up.left_url, up.right_url, id);
-
-        statusEl.textContent = `Готово! Пара создана (id: ${created.id}).`;
-        document.getElementById("fileLeft").value = "";
-        document.getElementById("fileRight").value = "";
-
-        // после создания — возвращаем в голосование и обновляем ленту
-        toast("Пара создана");
-        showView("viewVote");
-        await refreshFeedAndShow();
-      } catch (e) {
-        statusEl.textContent = "Ошибка: " + (e.message || e);
+      if (name === 'vote'){
+        ensureVoteLoaded();
       }
+    }
+    window.addEventListener('hashchange', route);
+
+    /***********************
+     * Home preview images (замыленное превью)
+     ***********************/
+    const homePrevA = document.getElementById('homePrevA');
+    const homePrevB = document.getElementById('homePrevB');
+
+    // Можно заменить на ваши "дефолтные" картинки или брать из nextPair
+    const FALLBACK_PREVIEW_A = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80';
+    const FALLBACK_PREVIEW_B = 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=900&q=80';
+
+    homePrevA.src = FALLBACK_PREVIEW_A;
+    homePrevB.src = FALLBACK_PREVIEW_B;
+
+    /***********************
+     * Vote logic
+     ***********************/
+    const voteImgA = document.getElementById('voteImgA');
+    const voteImgB = document.getElementById('voteImgB');
+    const voteA = document.getElementById('voteA');
+    const voteB = document.getElementById('voteB');
+    const btnStartVote = document.getElementById('btnStartVote');
+    const btnNext = document.getElementById('btnNext');
+    const btnSkip = document.getElementById('btnSkip');
+    const toast = document.getElementById('toast');
+
+    let currentPair = null;
+    let voteLoading = false;
+
+    function apiUrl(path){
+      return (API_BASE || '') + path;
+    }
+
+    function showToast(msg, ms=2200){
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(()=> toast.classList.remove('show'), ms);
+    }
+
+    async function fetchNextPair(){
+      const url = apiUrl(ENDPOINTS.nextPair);
+      const res = await fetch(url, { method:'GET', credentials:'include' });
+      if (!res.ok) throw new Error('nextPair HTTP ' + res.status);
+      return await res.json();
+    }
+
+    async function sendVote(pairId, choice){
+      const url = apiUrl(ENDPOINTS.vote);
+      const res = await fetch(url, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        credentials:'include',
+        body: JSON.stringify({ pair_id: pairId, choice })
+      });
+      if (!res.ok) throw new Error('vote HTTP ' + res.status);
+      return await res.json();
+    }
+
+    async function sendSkip(pairId){
+      const url = apiUrl(ENDPOINTS.skip);
+      const res = await fetch(url, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        credentials:'include',
+        body: JSON.stringify({ pair_id: pairId })
+      });
+      // skip может быть опциональным: если нет — просто игнорируем
+      return res.ok ? res.json().catch(()=> ({})) : {};
+    }
+
+    function setVoteImages(leftUrl, rightUrl){
+      // ВАЖНО: никаких бейджей "лево/право" — просто картинки
+      voteImgA.src = leftUrl || FALLBACK_PREVIEW_A;
+      voteImgB.src = rightUrl || FALLBACK_PREVIEW_B;
+    }
+
+    async function ensureVoteLoaded(force=false){
+      if (voteLoading) return;
+      if (currentPair && !force) return;
+
+      voteLoading = true;
+      try{
+        // Пытаемся взять реальную пару с бэка
+        const data = await fetchNextPair();
+
+        // Ожидаем поля: pair_id, left_url, right_url
+        const pairId = data.pair_id ?? data.id ?? data.pairId;
+        const leftUrl = data.left_url ?? data.photo_left_url ?? data.left ?? data.a;
+        const rightUrl = data.right_url ?? data.photo_right_url ?? data.right ?? data.b;
+
+        currentPair = { pairId, leftUrl, rightUrl };
+
+        // Если бэк отдаёт /r2img?key=... — оно и нужно
+        setVoteImages(leftUrl, rightUrl);
+
+      }catch(e){
+        // Если эндпоинты отличаются — голосование не ломаем, покажем заглушку и подсказку
+        currentPair = { pairId: null, leftUrl: FALLBACK_PREVIEW_A, rightUrl: FALLBACK_PREVIEW_B };
+        setVoteImages(currentPair.leftUrl, currentPair.rightUrl);
+        showToast('Не удалось загрузить пару. Проверь ENDPOINTS в index.html.', 3500);
+        console.warn(e);
+      }finally{
+        voteLoading = false;
+      }
+    }
+
+    async function vote(choice){
+      if (voteLoading) return;
+      if (!currentPair) await ensureVoteLoaded(true);
+
+      // Если pairId нет — просто перелистываем заглушку
+      if (!currentPair.pairId){
+        showToast('Демо-режим: эндпоинты не подключены.', 2200);
+        await ensureVoteLoaded(true);
+        return;
+      }
+
+      voteLoading = true;
+      try{
+        await sendVote(currentPair.pairId, choice);
+        // быстрая “дофаминовая” микро-реакция
+        showToast('Засчитано', 900);
+        // следующий батл
+        currentPair = null;
+        await ensureVoteLoaded(true);
+      }catch(e){
+        showToast('Не получилось отправить голос', 2200);
+        console.warn(e);
+      }finally{
+        voteLoading = false;
+      }
+    }
+
+    async function skip(){
+      if (voteLoading) return;
+      if (!currentPair) await ensureVoteLoaded(true);
+
+      voteLoading = true;
+      try{
+        if (currentPair?.pairId) await sendSkip(currentPair.pairId);
+        currentPair = null;
+        await ensureVoteLoaded(true);
+      }catch(e){
+        showToast('Не получилось пропустить', 2200);
+        console.warn(e);
+      }finally{
+        voteLoading = false;
+      }
+    }
+
+    /***********************
+     * Events
+     ***********************/
+    btnStartVote.addEventListener('click', () => {
+      // Уводим с первого экрана сразу в голосование (первое действие)
+      location.hash = '#vote';
     });
 
-    // Results refresh button
-    document.getElementById("btnLoadMy").addEventListener("click", async () => {
-      const statusEl = document.getElementById("myStatus");
-      try {
-        const id = await ensureTelegramId();
-        statusEl.textContent = "Загружаю результаты…";
-        const data = await loadMy(id);
-        renderMy(data.items);
-        statusEl.textContent = "";
-      } catch (e) {
-        statusEl.textContent = "Ошибка: " + (e.message || e);
-      }
-    });
-  })();
-</script>
+    voteA.addEventListener('click', () => vote('A'));
+    voteB.addEventListener('click', () => vote('B'));
+    btnNext.addEventListener('click', () => ensureVoteLoaded(true));
+    btnSkip.addEventListener('click', () => skip());
+
+    /***********************
+     * Boot
+     ***********************/
+    route();
+  </script>
 </body>
 </html>
