@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="light dark" />
   <title>LookingGreat</title>
 
-  <!-- Telegram WebApp (если открыто внутри Telegram) -->
+  <!-- Telegram WebApp -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
@@ -21,8 +21,6 @@
       --radius2:22px;
       --cta:#ffffff;
       --ctaText:#0b0c10;
-      --danger:#ff4d4d;
-      --ok:#2ecc71;
       --tap: rgba(255,255,255,.08);
     }
     @media (prefers-color-scheme: light){
@@ -50,16 +48,16 @@
       -moz-osx-font-smoothing: grayscale;
       padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
-
     a{ color: inherit; text-decoration: none; }
     button{ font: inherit; }
+
     .wrap{
       max-width: 560px;
       margin: 0 auto;
       padding: 16px 16px 110px;
     }
 
-    /* Header: ТОЛЬКО бренд. Без кнопок и ссылок "Голосовать" */
+    /* Header: ТОЛЬКО бренд. НИКАКИХ кнопок/ссылок "Голосовать" */
     header{
       display:flex;
       align-items:center;
@@ -89,11 +87,10 @@
       .brand{ background: rgba(0,0,0,.02); }
     }
 
-    /* Screens */
     .screen{ display:none; }
     .screen.active{ display:block; }
 
-    /* Home hero */
+    /* Home */
     .hero{
       margin-top: 16px;
       background: radial-gradient(1200px 420px at 50% -120px, rgba(255,255,255,.08), transparent 60%);
@@ -153,9 +150,12 @@
       width:100%;
       height:100%;
       object-fit: cover;
+      display:block;
+    }
+    /* Home превью — специально “замылено”, чтобы не было “втыкания”, а было желание нажать кнопку */
+    .homeBlur img{
       filter: blur(10px) brightness(.9);
       transform: scale(1.08);
-      display:block;
     }
     .imgBox::after{
       content:"";
@@ -187,7 +187,7 @@
       text-align:center;
     }
 
-    /* Soft nav (не в шапке) */
+    /* Soft nav (НЕ в шапке) */
     .softNav{
       margin-top: 14px;
       display:flex;
@@ -203,7 +203,7 @@
     }
     .softNav a:active{ background: var(--tap); }
 
-    /* Vote screen */
+    /* Vote */
     .blockTitle{
       font-size: 18px;
       font-weight: 900;
@@ -233,11 +233,7 @@
       cursor:pointer;
       position:relative;
     }
-    .voteBtn .imgBox img{
-      filter: none;
-      transform:none;
-    }
-    /* ВАЖНО: никаких "ЛЕВО/ПРАВО" */
+    /* ВАЖНО: никаких “ЛЕВО/ПРАВО” бейджей — тут вообще нет оверлеев */
     .voteBtn:active{
       outline: 3px solid rgba(255,255,255,.22);
       outline-offset: -3px;
@@ -274,10 +270,11 @@
       color: var(--muted);
       font-size: 13px;
       display:none;
+      white-space: pre-wrap;
     }
     .toast.show{ display:block; }
 
-    /* Bottom nav (после первого действия; показываем не на Home) */
+    /* Bottom nav (после первого действия; НЕ на Home) */
     .bottomNav{
       position: fixed;
       left: 0;
@@ -327,7 +324,7 @@
   </header>
 
   <div class="wrap">
-    <!-- HOME (первый экран) -->
+    <!-- HOME -->
     <section id="screen-home" class="screen active" aria-label="Главная">
       <div class="hero">
         <h1 class="h1">Кто выглядит лучше?</h1>
@@ -337,18 +334,16 @@
           <span class="pill">Без регистрации</span>
         </div>
 
-        <!-- Превью-пара (замыленная, не интерактив) -->
         <div class="previewCard" aria-hidden="true">
           <div class="pairGrid">
-            <div class="imgBox"><img id="homePrevA" alt="" /></div>
-            <div class="imgBox"><img id="homePrevB" alt="" /></div>
+            <div class="imgBox homeBlur"><img id="homePrevA" alt="" /></div>
+            <div class="imgBox homeBlur"><img id="homePrevB" alt="" /></div>
           </div>
         </div>
 
         <button id="btnStartVote" class="cta">Начать голосовать</button>
         <div class="micro">Сначала голосуешь — потом можешь загрузить свои фото</div>
 
-        <!-- Навигация НЕ в шапке -->
         <nav class="softNav" aria-label="Навигация">
           <a href="#create" id="linkCreateSoft">Создать</a>
           <a href="#results" id="linkResultsSoft">Мои результаты</a>
@@ -361,7 +356,7 @@
       <div class="blockTitle">Выбери, что лучше</div>
 
       <div class="voteCard">
-        <div class="voteGrid" id="voteGrid">
+        <div class="voteGrid">
           <button class="voteBtn" id="voteA" aria-label="Выбрать фото A">
             <div class="imgBox"><img id="voteImgA" alt="Фото A" /></div>
           </button>
@@ -380,26 +375,24 @@
       <div id="toast" class="toast" role="status" aria-live="polite"></div>
     </section>
 
-    <!-- CREATE -->
+    <!-- CREATE (заглушка) -->
     <section id="screen-create" class="screen" aria-label="Создать пару">
       <div class="blockTitle">Создать пару</div>
       <div class="toast show">
-        Здесь будет ваш текущий экран создания пары (форма/загрузка).<br><br>
-        Я оставил заглушку, чтобы первый экран был «эмоциональный» и не показывал формы сразу.
+        Тут подключим твой текущий экран создания пары (загрузка в R2 + запись в D1).
       </div>
     </section>
 
-    <!-- RESULTS -->
+    <!-- RESULTS (заглушка) -->
     <section id="screen-results" class="screen" aria-label="Мои результаты">
       <div class="blockTitle">Мои результаты</div>
       <div class="toast show">
-        Здесь будет ваш текущий экран результатов.<br><br>
-        Если он уже есть — просто перенесём сюда ваш рендер.
+        Тут подключим твой текущий экран результатов.
       </div>
     </section>
   </div>
 
-  <!-- Bottom nav (не показываем на Home) -->
+  <!-- Bottom nav (НЕ на Home) -->
   <nav class="bottomNav" id="bottomNav" aria-label="Нижняя навигация">
     <div class="bottomNavInner">
       <a class="tab" href="#vote" id="tabVote">Голосовать</a>
@@ -409,27 +402,30 @@
   </nav>
 
   <script>
-    /***********************
-     * CONFIG
-     ***********************/
-    // Если фронт на GitHub Pages, а API на Worker — укажи API_BASE.
-    // Можно оставить '' (тогда запросы идут на тот же домен).
-    const API_BASE = ''; // пример: 'https://lookingreat.ru' или 'https://<your-domain>'
+    /******************************************************************
+     * CONFIG — ВАЖНО
+     * GitHub Pages = фронт, Cloudflare Worker = API.
+     * Чтобы iOS без VPN НЕ упирался в workers.dev — используем lookingreat.ru
+     ******************************************************************/
+    const API_BASE = 'https://lookingreat.ru';
+
+    /**
+     * Если твои реальные пути отличаются — можно поправить тут.
+     * Но чтобы не угадывать, ниже есть AUTO-DETECT (кандидаты).
+     */
     const ENDPOINTS = {
-      // Подстрой под свои реальные пути (если отличаются) — это единственное место.
-      nextPair: '/api/vote/next',     // GET -> { pair_id, left_url, right_url }
-      vote:     '/api/vote',          // POST -> { pair_id, choice: "A"|"B" }
-      skip:     '/api/vote/skip'      // POST -> { pair_id }
+      nextPair: '/api/vote/next',   // основной кандидат
+      vote:     '/api/vote',        // основной кандидат
+      skip:     '/api/vote/skip'    // основной кандидат (может отсутствовать)
     };
 
     /***********************
-     * Telegram init (аккуратно)
+     * Telegram init
      ***********************/
     try{
       if (window.Telegram && Telegram.WebApp){
         Telegram.WebApp.ready();
         Telegram.WebApp.expand();
-        // Цвета можно потом синхронизировать с темой Telegram, если захочешь.
       }
     }catch(e){}
 
@@ -453,10 +449,7 @@
       for (const k in screens){
         screens[k].classList.toggle('active', k === name);
       }
-      // Bottom nav НЕ на первом экране
       bottomNav.style.display = (name === 'home') ? 'none' : 'block';
-
-      // Tabs active
       for (const k in tabs){
         tabs[k].classList.toggle('active', k === name);
       }
@@ -466,20 +459,16 @@
       const hash = (location.hash || '#home').replace('#','');
       const name = ['home','vote','create','results'].includes(hash) ? hash : 'home';
       showScreen(name);
-
-      if (name === 'vote'){
-        ensureVoteLoaded();
-      }
+      if (name === 'vote') ensureVoteLoaded();
     }
     window.addEventListener('hashchange', route);
 
     /***********************
-     * Home preview images (замыленное превью)
+     * Home preview images
      ***********************/
     const homePrevA = document.getElementById('homePrevA');
     const homePrevB = document.getElementById('homePrevB');
 
-    // Можно заменить на ваши "дефолтные" картинки или брать из nextPair
     const FALLBACK_PREVIEW_A = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80';
     const FALLBACK_PREVIEW_B = 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?auto=format&fit=crop&w=900&q=80';
 
@@ -502,51 +491,131 @@
     let voteLoading = false;
 
     function apiUrl(path){
-      return (API_BASE || '') + path;
+      const base = (API_BASE || '').replace(/\/+$/,'');
+      const p = (path || '').startsWith('/') ? path : '/' + path;
+      return base + p;
     }
 
-    function showToast(msg, ms=2200){
+    function showToast(msg, ms=2600){
       toast.textContent = msg;
       toast.classList.add('show');
       clearTimeout(showToast._t);
       showToast._t = setTimeout(()=> toast.classList.remove('show'), ms);
     }
 
-    async function fetchNextPair(){
-      const url = apiUrl(ENDPOINTS.nextPair);
-      const res = await fetch(url, { method:'GET', credentials:'include' });
-      if (!res.ok) throw new Error('nextPair HTTP ' + res.status);
-      return await res.json();
-    }
-
-    async function sendVote(pairId, choice){
-      const url = apiUrl(ENDPOINTS.vote);
-      const res = await fetch(url, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        credentials:'include',
-        body: JSON.stringify({ pair_id: pairId, choice })
-      });
-      if (!res.ok) throw new Error('vote HTTP ' + res.status);
-      return await res.json();
-    }
-
-    async function sendSkip(pairId){
-      const url = apiUrl(ENDPOINTS.skip);
-      const res = await fetch(url, {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        credentials:'include',
-        body: JSON.stringify({ pair_id: pairId })
-      });
-      // skip может быть опциональным: если нет — просто игнорируем
-      return res.ok ? res.json().catch(()=> ({})) : {};
+    function normalizePairPayload(data){
+      // Подстраховка под разные форматы:
+      // pair_id/id/pairId, left_url/photo_left_url/left/a, right_url/photo_right_url/right/b
+      const pairId = data?.pair_id ?? data?.id ?? data?.pairId ?? null;
+      const leftUrl = data?.left_url ?? data?.photo_left_url ?? data?.left ?? data?.a ?? null;
+      const rightUrl = data?.right_url ?? data?.photo_right_url ?? data?.right ?? data?.b ?? null;
+      return { pairId, leftUrl, rightUrl };
     }
 
     function setVoteImages(leftUrl, rightUrl){
-      // ВАЖНО: никаких бейджей "лево/право" — просто картинки
       voteImgA.src = leftUrl || FALLBACK_PREVIEW_A;
       voteImgB.src = rightUrl || FALLBACK_PREVIEW_B;
+    }
+
+    async function tryGetJson(url){
+      const res = await fetch(url, { method:'GET', credentials:'include' });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`);
+      return await res.json();
+    }
+
+    /**
+     * AUTO-DETECT для nextPair:
+     * Мы НЕ знаем 100% твои реальные пути, поэтому пробуем несколько вариантов.
+     * В консоль и в toast покажем, что реально сработало.
+     */
+    async function fetchNextPairAuto(){
+      const candidates = [
+        ENDPOINTS.nextPair,
+
+        // Частые варианты:
+        '/api/next',
+        '/api/pairs/next',
+        '/api/feed/next',
+        '/api/votes/next',
+        '/vote/next',
+        '/next'
+      ];
+
+      let lastErr = null;
+      for (const p of candidates){
+        try{
+          const data = await tryGetJson(apiUrl(p));
+          const norm = normalizePairPayload(data);
+          if (norm.leftUrl && norm.rightUrl) {
+            return { ...norm, usedPath: p };
+          }
+          // Если ответ есть, но поля другие — тоже считаем “успехом” и дадим подсказку
+          return { ...norm, usedPath: p, raw: data };
+        }catch(e){
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('No nextPair endpoint matched');
+    }
+
+    /**
+     * Vote endpoint — тоже делаем авто-подбор.
+     */
+    async function postJson(url, body){
+      const res = await fetch(url, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        credentials:'include',
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${url}`);
+      return res.json().catch(()=> ({}));
+    }
+
+    async function sendVoteAuto(pairId, choice){
+      const candidates = [
+        ENDPOINTS.vote,
+
+        // Частые варианты:
+        '/api/vote/add',
+        '/api/votes',
+        '/api/votes/add',
+        '/api/pairs/vote',
+        '/vote',
+      ];
+
+      let lastErr = null;
+      for (const p of candidates){
+        try{
+          return await postJson(apiUrl(p), { pair_id: pairId, choice });
+        }catch(e){
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('No vote endpoint matched');
+    }
+
+    async function sendSkipAuto(pairId){
+      const candidates = [
+        ENDPOINTS.skip,
+
+        // Частые варианты:
+        '/api/skip',
+        '/api/vote/skip',
+        '/api/pairs/skip',
+        '/skip',
+      ];
+
+      let lastErr = null;
+      for (const p of candidates){
+        try{
+          return await postJson(apiUrl(p), { pair_id: pairId });
+        }catch(e){
+          lastErr = e;
+        }
+      }
+      // skip не критичен — просто молча отдаём
+      return {};
     }
 
     async function ensureVoteLoaded(force=false){
@@ -555,25 +624,40 @@
 
       voteLoading = true;
       try{
-        // Пытаемся взять реальную пару с бэка
-        const data = await fetchNextPair();
+        const data = await fetchNextPairAuto();
+        currentPair = { pairId: data.pairId, leftUrl: data.leftUrl, rightUrl: data.rightUrl };
 
-        // Ожидаем поля: pair_id, left_url, right_url
-        const pairId = data.pair_id ?? data.id ?? data.pairId;
-        const leftUrl = data.left_url ?? data.photo_left_url ?? data.left ?? data.a;
-        const rightUrl = data.right_url ?? data.photo_right_url ?? data.right ?? data.b;
+        if (data.leftUrl && data.rightUrl){
+          setVoteImages(data.leftUrl, data.rightUrl);
 
-        currentPair = { pairId, leftUrl, rightUrl };
+          // приятная “служебка” только для тебя (в консоль)
+          console.log('[LookingGreat] nextPair OK via', data.usedPath, currentPair);
 
-        // Если бэк отдаёт /r2img?key=... — оно и нужно
-        setVoteImages(leftUrl, rightUrl);
-
+          // бонус: обновим превью на Home реальными фотками (но замыленными)
+          homePrevA.src = data.leftUrl;
+          homePrevB.src = data.rightUrl;
+        } else {
+          // Ответ пришёл, но поля не те — покажем в тост, что надо поправить маппинг полей
+          setVoteImages(FALLBACK_PREVIEW_A, FALLBACK_PREVIEW_B);
+          console.warn('[LookingGreat] nextPair payload not recognized', data.raw || data);
+          showToast(
+            'API отвечает, но формат пары не распознан.\n' +
+            'Нужно привести ответ к полям: pair_id, left_url, right_url.',
+            4500
+          );
+        }
       }catch(e){
-        // Если эндпоинты отличаются — голосование не ломаем, покажем заглушку и подсказку
         currentPair = { pairId: null, leftUrl: FALLBACK_PREVIEW_A, rightUrl: FALLBACK_PREVIEW_B };
         setVoteImages(currentPair.leftUrl, currentPair.rightUrl);
-        showToast('Не удалось загрузить пару. Проверь ENDPOINTS в index.html.', 3500);
+
+        // ВАЖНО: если тут “TypeError: Failed to fetch” — почти всегда CORS или HTTPS/домен.
         console.warn(e);
+        showToast(
+          'Не удалось загрузить пару.\n' +
+          'Проверь: API_BASE=' + API_BASE + '\n' +
+          'И что домен отдаёт CORS для GitHub Pages.',
+          5000
+        );
       }finally{
         voteLoading = false;
       }
@@ -583,24 +667,21 @@
       if (voteLoading) return;
       if (!currentPair) await ensureVoteLoaded(true);
 
-      // Если pairId нет — просто перелистываем заглушку
-      if (!currentPair.pairId){
-        showToast('Демо-режим: эндпоинты не подключены.', 2200);
+      if (!currentPair?.pairId){
+        showToast('Демо-режим: API не подключён.', 2200);
         await ensureVoteLoaded(true);
         return;
       }
 
       voteLoading = true;
       try{
-        await sendVote(currentPair.pairId, choice);
-        // быстрая “дофаминовая” микро-реакция
+        await sendVoteAuto(currentPair.pairId, choice);
         showToast('Засчитано', 900);
-        // следующий батл
         currentPair = null;
         await ensureVoteLoaded(true);
       }catch(e){
-        showToast('Не получилось отправить голос', 2200);
         console.warn(e);
+        showToast('Не получилось отправить голос.\nПроверь vote endpoint / CORS.', 3500);
       }finally{
         voteLoading = false;
       }
@@ -612,12 +693,13 @@
 
       voteLoading = true;
       try{
-        if (currentPair?.pairId) await sendSkip(currentPair.pairId);
+        if (currentPair?.pairId) await sendSkipAuto(currentPair.pairId);
         currentPair = null;
         await ensureVoteLoaded(true);
       }catch(e){
-        showToast('Не получилось пропустить', 2200);
         console.warn(e);
+        currentPair = null;
+        await ensureVoteLoaded(true);
       }finally{
         voteLoading = false;
       }
@@ -627,7 +709,6 @@
      * Events
      ***********************/
     btnStartVote.addEventListener('click', () => {
-      // Уводим с первого экрана сразу в голосование (первое действие)
       location.hash = '#vote';
     });
 
