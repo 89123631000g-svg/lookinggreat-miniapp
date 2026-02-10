@@ -417,7 +417,7 @@
 
       resetPicks();
       setLoading(true);
-      pairCounter.textContent = "Пара…";
+      pairCounter.textContent = "Новый батл…";
 
       try {
         const data = await apiGet(`/api/vote/next?telegram_id=${encodeURIComponent(telegramId)}`);
