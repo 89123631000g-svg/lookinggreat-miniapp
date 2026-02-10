@@ -55,7 +55,7 @@
       line-height: 1.25;
     }
 
-    /* кнопки сверху: НЕТ "Голосовать" */
+    /* кнопка сверху: НЕТ "Голосовать" */
     .chip{
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.06);
@@ -238,9 +238,10 @@
         <div class="t2">Батл: выбери фото, которое выглядит лучше</div>
       </div>
 
-      <div class="chip" id="btnResults" title="Мои результаты">
+      <!-- Меню вместо "Результаты" -->
+      <div class="chip" id="btnMenu" title="Меню">
         <span class="dot"></span>
-        <span>Результаты</span>
+        <span>Меню</span>
       </div>
     </div>
 
@@ -260,7 +261,7 @@
           <div class="fail" id="leftFail">
             <div class="failbox">
               <div class="t">Фото не загрузилось</div>
-              <div class="s">Иногда источники блокируются в Telegram. Нажми “Пропустить”.</div>
+              <div class="s">Источник может блокироваться. Лучше грузить через R2.</div>
               <button class="btn" id="leftSkipBtn" type="button">Пропустить</button>
             </div>
           </div>
@@ -272,7 +273,7 @@
           <div class="fail" id="rightFail">
             <div class="failbox">
               <div class="t">Фото не загрузилось</div>
-              <div class="s">Иногда источники блокируются в Telegram. Нажми “Пропустить”.</div>
+              <div class="s">Источник может блокироваться. Лучше грузить через R2.</div>
               <button class="btn" id="rightSkipBtn" type="button">Пропустить</button>
             </div>
           </div>
@@ -289,6 +290,9 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    // ВАЖНО: фронт на GitHub Pages, API на lookingreat.ru
+    const API_BASE = "https://lookingreat.ru";
+
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) {
       tg.ready();
@@ -313,7 +317,7 @@
     const toast = $('toast');
     const pairCounter = $('pairCounter');
 
-    const btnResults = $('btnResults');
+    const btnMenu = $('btnMenu');
     const btnSkip = $('btnSkip');
 
     let telegramId = null;
@@ -372,10 +376,15 @@
     }
 
     function cacheBust(url) {
-      // чтобы не залипали кэши и WebView не показывал старую ошибку
-      const u = new URL(url, location.href);
-      u.searchParams.set('_t', String(Date.now()));
-      return u.toString();
+      try {
+        const u = new URL(url);
+        u.searchParams.set('_t', String(Date.now()));
+        return u.toString();
+      } catch(e) {
+        // если url не парсится как URL (редко) — просто добавим хвост
+        const sep = url.includes('?') ? '&' : '?';
+        return url + sep + '_t=' + Date.now();
+      }
     }
 
     async function loadNextPair(retry = 0) {
@@ -383,10 +392,13 @@
       busy = true;
 
       resetTiles();
-      pairCounter.textContent = "Новый батл";
+      pairCounter.textContent = "Загружаем…";
 
       try {
-        const data = await apiGetWithTimeout(`/api/vote/next?telegram_id=${encodeURIComponent(telegramId)}`, 8000);
+        const data = await apiGetWithTimeout(
+          `${API_BASE}/api/vote/next?telegram_id=${encodeURIComponent(telegramId)}`,
+          9000
+        );
 
         if (!data || !data.ok || !data.item) {
           busy = false;
@@ -406,7 +418,7 @@
           if (loaded >= 2) busy = false;
         };
 
-        // ВАЖНО: обработчики ставим ДО src
+        // обработчики ДО src
         leftImg.onload = () => { leftSkel.style.display = 'none'; doneOne(); };
         rightImg.onload = () => { rightSkel.style.display = 'none'; doneOne(); };
 
@@ -414,28 +426,25 @@
           leftSkel.style.display = 'none';
           leftFail.classList.add('show');
           doneOne();
-          showToast("Одно фото не загрузилось");
         };
         rightImg.onerror = () => {
           rightSkel.style.display = 'none';
           rightFail.classList.add('show');
           doneOne();
-          showToast("Одно фото не загрузилось");
         };
 
-        // ставим src (с cache-bust)
+        // ставим src
         leftImg.src = cacheBust(currentItem.photo_left_url);
         rightImg.src = cacheBust(currentItem.photo_right_url);
 
       } catch (e) {
         busy = false;
-        // тихий ретрай, без "ошибка"
         if (retry < 2) {
           pairCounter.textContent = "Загружаем…";
           setTimeout(() => loadNextPair(retry + 1), 700);
         } else {
           pairCounter.textContent = "Загружаем…";
-          showToast("Проверь сеть/VPN и обнови");
+          showToast("Проверь сеть и открой ещё раз");
         }
       }
     }
@@ -444,14 +453,13 @@
       if (busy) return;
       if (!currentItem) return;
 
-      // если на выбранной стороне фейл-оверлей — голосовать нельзя
       if (choice === 'left' && leftFail.classList.contains('show')) { showToast("Фото не загрузилось"); return; }
       if (choice === 'right' && rightFail.classList.contains('show')) { showToast("Фото не загрузилось"); return; }
 
       busy = true;
 
       try {
-        const res = await apiPost('/api/vote', {
+        const res = await apiPost(`${API_BASE}/api/vote`, {
           telegram_id: telegramId,
           pair_id: currentItem.id,
           choice: choice
@@ -473,7 +481,10 @@
 
     async function openResults() {
       try {
-        const data = await apiGetWithTimeout(`/api/my_results?telegram_id=${encodeURIComponent(telegramId)}`, 8000);
+        const data = await apiGetWithTimeout(
+          `${API_BASE}/api/my_results?telegram_id=${encodeURIComponent(telegramId)}`,
+          9000
+        );
         if (!data || !data.ok) { showToast("Результаты недоступны"); return; }
 
         const voted = data.total_votes ?? data.voted ?? 0;
@@ -492,14 +503,46 @@
       }
     }
 
+    function goUpload() {
+      // Заглушка: потом сделаем upload.html
+      const base = location.href.split('?')[0].replace(/index\.html$/,'');
+      const url = base.endsWith('/') ? (base + 'upload.html') : (base + '/upload.html');
+      location.href = url;
+    }
+
+    function openMenu() {
+      const useTg = tg && tg.showPopup;
+
+      if (useTg) {
+        tg.showPopup({
+          title: "LookingGreat",
+          message: "Что сделать?",
+          buttons: [
+            { id: "results", type: "default", text: "Результаты" },
+            { id: "upload", type: "default", text: "Загрузить фото" },
+            { id: "cancel", type: "cancel", text: "Закрыть" }
+          ]
+        }, (id) => {
+          if (id === "results") openResults();
+          if (id === "upload") goUpload();
+        });
+      } else {
+        const ans = prompt("1 — Результаты\n2 — Загрузить фото");
+        if (ans === "1") openResults();
+        if (ans === "2") goUpload();
+      }
+    }
+
+    // events
     leftTile.addEventListener('click', () => vote('left'));
     rightTile.addEventListener('click', () => vote('right'));
     btnSkip.addEventListener('click', () => loadNextPair());
-    btnResults.addEventListener('click', () => openResults());
+    btnMenu.addEventListener('click', () => openMenu());
 
     leftSkipBtn.addEventListener('click', (e) => { e.stopPropagation(); loadNextPair(); });
     rightSkipBtn.addEventListener('click', (e) => { e.stopPropagation(); loadNextPair(); });
 
+    // start
     telegramId = getTelegramId();
     loadNextPair();
   </script>
