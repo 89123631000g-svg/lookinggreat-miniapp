@@ -467,14 +467,18 @@
           if (busy) { setLoading(false); busy = false; }
         }, 2500);
 
-      } catch (e) {
-        setLoading(false);
-        busy = false;
-        showToast("Ошибка загрузки 😕");
-        pairCounter.textContent = "Ошибка";
-      }
-    }
+      catch (e) {
+  // тихий ретрай, без слова "ошибка" в UI
+  setLoading(false);
+  busy = false;
 
+  pairCounter.textContent = "Загружаем…";
+
+  setTimeout(() => {
+    loadNextPair();
+  }, 600);
+}
+      
     async function vote(choice) {
       if (busy) return;
       if (!currentItem) return;
