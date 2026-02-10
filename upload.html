@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>LookingGreat — Загрузка</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0c10;
+      --text:#fff;
+      --muted:rgba(255,255,255,.72);
+      --stroke:rgba(255,255,255,.12);
+      --card: rgba(255,255,255,.06);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap{
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 14px;
+      padding-top: calc(14px + env(safe-area-inset-top));
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    .card{
+      border:1px solid var(--stroke);
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px;
+    }
+    h1{
+      margin:0 0 6px 0;
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .p{
+      margin:0 0 12px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .row{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    label{
+      font-size: 12px;
+      color: var(--muted);
+      display:block;
+      margin-bottom:6px;
+    }
+    input{
+      width:100%;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.25);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      outline:none;
+    }
+    .btn{
+      width:100%;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.10);
+      color: rgba(255,255,255,.95);
+      padding: 12px 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+    }
+    .btn:active{transform:scale(.99)}
+    .btn.secondary{
+      background: transparent;
+      border:1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.9);
+      margin-top: 8px;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .ph{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      border-radius: 14px;
+      overflow:hidden;
+      height: 220px;
+    }
+    .ph img{
+      width:100%; height:100%;
+      object-fit: cover;
+      display:block;
+    }
+    .status{
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+      min-height: 18px;
+    }
+    code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,.85);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Загрузить фото</h1>
+      <p class="p">
+        Для iOS/Telegram надёжнее всего: <b>загрузить фото в R2</b> и вставить сюда <b>key</b> (путь) каждого файла.
+        Тогда фото будут показываться через <code>https://lookingreat.ru/r2img?key=...</code>.
+      </p>
+
+      <div class="row">
+        <div>
+          <label>R2 key (левое фото) — например: <code>u_999/left.jpg</code></label>
+          <input id="keyLeft" placeholder="u_999/left.jpg" />
+        </div>
+
+        <div>
+          <label>R2 key (правое фото) — например: <code>u_999/right.jpg</code></label>
+          <input id="keyRight" placeholder="u_999/right.jpg" />
+        </div>
+
+        <button class="btn" id="btnPreview" type="button">Показать превью</button>
+
+        <div class="grid2">
+          <div class="ph"><img id="imgLeft" alt="" /></div>
+          <div class="ph"><img id="imgRight" alt="" /></div>
+        </div>
+
+        <button class="btn" id="btnCreate" type="button">Создать батл</button>
+        <button class="btn secondary" id="btnBack" type="button">Назад к батлу</button>
+
+        <div class="status" id="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "https://lookingreat.ru";
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) { tg.ready(); tg.expand(); }
+
+    const $ = (id) => document.getElementById(id);
+    const keyLeft = $("keyLeft");
+    const keyRight = $("keyRight");
+    const imgLeft = $("imgLeft");
+    const imgRight = $("imgRight");
+    const status = $("status");
+
+    function getTelegramId() {
+      try {
+        const id = tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id;
+        if (id) return String(id);
+      } catch(e) {}
+      const u = new URL(location.href);
+      return String(u.searchParams.get("telegram_id") || u.searchParams.get("tg_id") || "111");
+    }
+
+    function r2Url(key) {
+      return `${API_BASE}/r2img?key=${encodeURIComponent(key)}`;
+    }
+
+    function setStatus(text) { status.textContent = text || ""; }
+
+    async function apiPost(url, body) {
+      const r = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        credentials: "omit",
+        cache: "no-store"
+      });
+      return r.json();
+    }
+
+    $("btnPreview").addEventListener("click", () => {
+      const kl = keyLeft.value.trim();
+      const kr = keyRight.value.trim();
+      if (!kl || !kr) { setStatus("Вставь оба R2 key."); return; }
+
+      imgLeft.src = r2Url(kl);
+      imgRight.src = r2Url(kr);
+      setStatus("Превью загружается… Если не видно — проверь, что файлы есть в R2 и key указан точно.");
+    });
+
+    $("btnCreate").addEventListener("click", async () => {
+      const kl = keyLeft.value.trim();
+      const kr = keyRight.value.trim();
+      if (!kl || !kr) { setStatus("Вставь оба R2 key."); return; }
+
+      const telegram_id = getTelegramId();
+      const photo_left_url = r2Url(kl);
+      const photo_right_url = r2Url(kr);
+
+      setStatus("Создаю батл…");
+
+      try {
+        const res = await apiPost(`${API_BASE}/api/create_pair`, {
+          telegram_id,
+          photo_left_url,
+          photo_right_url
+        });
+
+        if (!res || !res.ok) {
+          setStatus("Не получилось создать батл. Пришли сюда ответ сервера (res), и я подстрою формат запроса.");
+          if (tg && tg.showAlert) tg.showAlert("Не получилось создать батл");
+          return;
+        }
+
+        setStatus("Готово ✅ Батл создан. Возвращайся в ленту и голосуй.");
+        if (tg && tg.showAlert) tg.showAlert("Батл создан ✅");
+      } catch (e) {
+        setStatus("Сеть/доступ до API не сработал. Проверь, что lookingreat.ru открывается.");
+      }
+    });
+
+    $("btnBack").addEventListener("click", () => {
+      const base = location.href.split("?")[0].replace(/upload\.html$/,"");
+      const url = base.endsWith("/") ? (base + "index.html") : (base + "/index.html");
+      location.href = url;
+    });
+  </script>
+</body>
+</html>
