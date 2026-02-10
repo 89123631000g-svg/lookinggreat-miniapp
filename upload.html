@@ -3,71 +3,125 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>LookingGreat — Загрузка</title>
-
+  <title>LookingGreat</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
   <style>
     :root{
-      --bg:#0b0c10;
-      --text:#fff;
-      --muted:rgba(255,255,255,.72);
-      --stroke:rgba(255,255,255,.12);
-      --card: rgba(255,255,255,.06);
+      --bg:#0b0c10; --text:#fff; --muted:rgba(255,255,255,.72);
+      --muted2:rgba(255,255,255,.52); --stroke:rgba(255,255,255,.10);
+      --card: rgba(255,255,255,.05);
     }
     *{box-sizing:border-box}
+    html,body{height:100%}
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: radial-gradient(1200px 600px at 50% 0%, rgba(120,86,255,.18), transparent 60%),
+                  radial-gradient(900px 500px at 90% 20%, rgba(0,220,255,.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      overflow-x:hidden;
     }
     .wrap{
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 14px;
+      max-width: 720px; margin: 0 auto; padding: 14px;
       padding-top: calc(14px + env(safe-area-inset-top));
       padding-bottom: calc(16px + env(safe-area-inset-bottom));
     }
-    .card{
-      border:1px solid var(--stroke);
-      background: var(--card);
-      border-radius: 16px;
-      padding: 14px;
+    .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+    .brand{display:flex;flex-direction:column;gap:4px;}
+    .brand .t1{font-weight:800;letter-spacing:.2px;font-size:18px;line-height:1.1;}
+    .brand .t2{font-size:12.5px;color:var(--muted);line-height:1.25;}
+    .chip{
+      border:1px solid var(--stroke); background: rgba(255,255,255,.06); color: var(--muted);
+      padding: 8px 10px; border-radius: 999px; font-size: 12px;
+      display:flex; gap:8px; align-items:center; cursor:pointer; user-select:none; -webkit-user-select:none;
+      white-space:nowrap;
     }
-    h1{
-      margin:0 0 6px 0;
-      font-size: 18px;
-      font-weight: 800;
+    .chip:active{transform:scale(.98)}
+    .dot{width:8px;height:8px;border-radius:99px;background: rgba(255,255,255,.35);}
+
+    .battle{
+      border:1px solid var(--stroke); background: var(--card);
+      border-radius: 18px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,.25);
     }
-    .p{
-      margin:0 0 12px 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.35;
+    .hero{
+      padding: 12px 12px 10px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
     }
-    .row{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-      margin-top: 10px;
+    .hero .h1{font-weight:800;font-size:16px;line-height:1.2;letter-spacing:.15px;}
+    .hero .h2{margin-top:4px;font-size:12.5px;color: var(--muted);line-height:1.25;}
+    .count{
+      font-size:12px;color: var(--muted2); border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04); padding:6px 10px; border-radius:999px; white-space:nowrap;
     }
-    label{
-      font-size: 12px;
-      color: var(--muted);
-      display:block;
-      margin-bottom:6px;
+
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;}
+    .tile{
+      position:relative; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.22); height:min(56vh,520px); min-height:270px;
+      cursor:pointer; user-select:none; -webkit-user-select:none; touch-action: manipulation;
     }
-    input{
-      width:100%;
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.25);
-      color: var(--text);
-      border-radius: 12px;
+    .tile:active{transform:scale(.995)}
+    .tile img{width:100%;height:100%;object-fit:cover;display:block;-webkit-user-drag:none;}
+
+    .skeleton{
+      position:absolute; inset:0;
+      background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06));
+      background-size: 200% 100%;
+      animation: shimmer 1.1s infinite linear;
+    }
+    @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+    .help{
+      padding: 10px 12px 12px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+      border-top: 1px solid rgba(255,255,255,.06); color: var(--muted); font-size:12.5px; line-height:1.3;
+    }
+    .mini{
+      display:flex; gap:8px; align-items:center;
+      border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04);
+      padding: 8px 10px; border-radius: 12px; cursor:pointer; user-select:none; -webkit-user-select:none;
+      white-space:nowrap;
+    }
+    .mini:active{transform:scale(.98)}
+
+    .toast{
+      position:fixed; left:50%; transform:translateX(-50%);
+      bottom: calc(14px + env(safe-area-inset-bottom));
+      background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.92); padding: 10px 12px; border-radius: 12px; font-size: 13px;
+      max-width: min(640px, calc(100vw - 28px));
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      opacity:0; pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .toast.show{opacity:1; transform:translateX(-50%) translateY(-2px);}
+
+    /* modal upload */
+    .modal{
+      position:fixed; inset:0; display:none; align-items:flex-end; justify-content:center;
+      background: rgba(0,0,0,.55);
       padding: 12px;
-      font-size: 14px;
-      outline:none;
     }
+    .modal.show{display:flex;}
+    .sheet{
+      width: min(720px, 100%);
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(15,17,26,.96);
+      border-radius: 18px;
+      padding: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.45);
+    }
+    .sheet h3{margin:4px 0 6px 0; font-size:16px; font-weight:900;}
+    .sheet p{margin:0 0 10px 0; color: var(--muted); font-size:12.5px; line-height:1.3;}
+    .fileRow{display:grid; grid-template-columns: 1fr; gap:10px; margin-top:10px;}
+    .fileBox{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+      border-radius: 14px;
+      padding: 10px;
+    }
+    .fileBox label{display:block; font-size:12px; color: var(--muted); margin-bottom:6px;}
+    .fileBox input{width:100%;}
     .btn{
       width:100%;
       border:1px solid rgba(255,255,255,.16);
@@ -75,82 +129,78 @@
       color: rgba(255,255,255,.95);
       padding: 12px 12px;
       border-radius: 12px;
-      font-weight: 800;
+      font-weight: 900;
       cursor:pointer;
-      user-select:none;
-      -webkit-user-select:none;
+      user-select:none;-webkit-user-select:none;
+      margin-top:10px;
     }
-    .btn:active{transform:scale(.99)}
     .btn.secondary{
       background: transparent;
       border:1px solid rgba(255,255,255,.14);
-      color: rgba(255,255,255,.9);
-      margin-top: 8px;
-    }
-    .grid2{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .ph{
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.22);
-      border-radius: 14px;
-      overflow:hidden;
-      height: 220px;
-    }
-    .ph img{
-      width:100%; height:100%;
-      object-fit: cover;
-      display:block;
-    }
-    .status{
-      margin-top: 10px;
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.35;
-      min-height: 18px;
-    }
-    code{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 12px;
-      color: rgba(255,255,255,.85);
+      font-weight:800;
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <h1>Загрузить фото</h1>
-      <p class="p">
-        Для iOS/Telegram надёжнее всего: <b>загрузить фото в R2</b> и вставить сюда <b>key</b> (путь) каждого файла.
-        Тогда фото будут показываться через <code>https://lookingreat.ru/r2img?key=...</code>.
-      </p>
-
-      <div class="row">
-        <div>
-          <label>R2 key (левое фото) — например: <code>u_999/left.jpg</code></label>
-          <input id="keyLeft" placeholder="u_999/left.jpg" />
-        </div>
-
-        <div>
-          <label>R2 key (правое фото) — например: <code>u_999/right.jpg</code></label>
-          <input id="keyRight" placeholder="u_999/right.jpg" />
-        </div>
-
-        <button class="btn" id="btnPreview" type="button">Показать превью</button>
-
-        <div class="grid2">
-          <div class="ph"><img id="imgLeft" alt="" /></div>
-          <div class="ph"><img id="imgRight" alt="" /></div>
-        </div>
-
-        <button class="btn" id="btnCreate" type="button">Создать батл</button>
-        <button class="btn secondary" id="btnBack" type="button">Назад к батлу</button>
-
-        <div class="status" id="status"></div>
+    <div class="top">
+      <div class="brand">
+        <div class="t1">LookingGreat</div>
+        <div class="t2">Батл: выбери фото, которое выглядит лучше</div>
       </div>
+      <div class="chip" id="btnMenu" title="Меню">
+        <span class="dot"></span><span>Меню</span>
+      </div>
+    </div>
+
+    <div class="battle">
+      <div class="hero">
+        <div>
+          <div class="h1">Тапни по фото — и реши спор</div>
+          <div class="h2">Без комментариев. Только честный выбор.</div>
+        </div>
+        <div class="count" id="pairCounter">Загружаем…</div>
+      </div>
+
+      <div class="grid">
+        <div class="tile" id="leftTile">
+          <div class="skeleton" id="leftSkel"></div>
+          <img id="leftImg" alt="" decoding="async" />
+        </div>
+        <div class="tile" id="rightTile">
+          <div class="skeleton" id="rightSkel"></div>
+          <img id="rightImg" alt="" decoding="async" />
+        </div>
+      </div>
+
+      <div class="help">
+        <div>Быстрый батл. Чем больше голосов — тем точнее результат.</div>
+        <div class="mini" id="btnSkip">Пропустить</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- upload modal -->
+  <div class="modal" id="uploadModal">
+    <div class="sheet">
+      <h3>Загрузить 2 фото</h3>
+      <p>Выбери левое и правое фото. Мы загрузим их и создадим батл.</p>
+
+      <div class="fileRow">
+        <div class="fileBox">
+          <label>Фото 1</label>
+          <input id="fileLeft" type="file" accept="image/*" />
+        </div>
+        <div class="fileBox">
+          <label>Фото 2</label>
+          <input id="fileRight" type="file" accept="image/*" />
+        </div>
+      </div>
+
+      <button class="btn" id="btnUpload" type="button">Загрузить и создать батл</button>
+      <button class="btn secondary" id="btnCloseUpload" type="button">Закрыть</button>
     </div>
   </div>
 
@@ -160,11 +210,33 @@
     if (tg) { tg.ready(); tg.expand(); }
 
     const $ = (id) => document.getElementById(id);
-    const keyLeft = $("keyLeft");
-    const keyRight = $("keyRight");
-    const imgLeft = $("imgLeft");
-    const imgRight = $("imgRight");
-    const status = $("status");
+    const toast = $("toast");
+    const pairCounter = $("pairCounter");
+    const leftSkel = $("leftSkel");
+    const rightSkel = $("rightSkel");
+    const leftImg = $("leftImg");
+    const rightImg = $("rightImg");
+    const leftTile = $("leftTile");
+    const rightTile = $("rightTile");
+    const btnSkip = $("btnSkip");
+    const btnMenu = $("btnMenu");
+
+    const uploadModal = $("uploadModal");
+    const fileLeft = $("fileLeft");
+    const fileRight = $("fileRight");
+    const btnUpload = $("btnUpload");
+    const btnCloseUpload = $("btnCloseUpload");
+
+    let telegramId = null;
+    let currentItem = null;
+    let busy = false;
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add("show");
+      clearTimeout(showToast._t);
+      showToast._t = setTimeout(() => toast.classList.remove("show"), 1500);
+    }
 
     function getTelegramId() {
       try {
@@ -175,69 +247,213 @@
       return String(u.searchParams.get("telegram_id") || u.searchParams.get("tg_id") || "111");
     }
 
-    function r2Url(key) {
-      return `${API_BASE}/r2img?key=${encodeURIComponent(key)}`;
+    async function apiGet(url) {
+      const r = await fetch(url, { method:"GET", credentials:"omit", cache:"no-store" });
+      return r.json();
     }
 
-    function setStatus(text) { status.textContent = text || ""; }
-
-    async function apiPost(url, body) {
+    async function apiPostJson(url, body) {
       const r = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
         body: JSON.stringify(body),
-        credentials: "omit",
-        cache: "no-store"
+        credentials:"omit",
+        cache:"no-store"
       });
       return r.json();
     }
 
-    $("btnPreview").addEventListener("click", () => {
-      const kl = keyLeft.value.trim();
-      const kr = keyRight.value.trim();
-      if (!kl || !kr) { setStatus("Вставь оба R2 key."); return; }
+    function resetTiles() {
+      leftSkel.style.display = "block";
+      rightSkel.style.display = "block";
+      leftImg.removeAttribute("src");
+      rightImg.removeAttribute("src");
+    }
 
-      imgLeft.src = r2Url(kl);
-      imgRight.src = r2Url(kr);
-      setStatus("Превью загружается… Если не видно — проверь, что файлы есть в R2 и key указан точно.");
-    });
+    function cacheBust(url) {
+      const sep = url.includes("?") ? "&" : "?";
+      return url + sep + "_t=" + Date.now();
+    }
 
-    $("btnCreate").addEventListener("click", async () => {
-      const kl = keyLeft.value.trim();
-      const kr = keyRight.value.trim();
-      if (!kl || !kr) { setStatus("Вставь оба R2 key."); return; }
+    async function loadNextPair() {
+      if (busy) return;
+      busy = true;
 
-      const telegram_id = getTelegramId();
-      const photo_left_url = r2Url(kl);
-      const photo_right_url = r2Url(kr);
-
-      setStatus("Создаю батл…");
+      resetTiles();
+      pairCounter.textContent = "Загружаем…";
 
       try {
-        const res = await apiPost(`${API_BASE}/api/create_pair`, {
-          telegram_id,
-          photo_left_url,
-          photo_right_url
-        });
+        const data = await apiGet(`${API_BASE}/api/vote/next?telegram_id=${encodeURIComponent(telegramId)}`);
 
-        if (!res || !res.ok) {
-          setStatus("Не получилось создать батл. Пришли сюда ответ сервера (res), и я подстрою формат запроса.");
-          if (tg && tg.showAlert) tg.showAlert("Не получилось создать батл");
+        if (!data || !data.ok || !data.item) {
+          busy = false;
+          leftSkel.style.display = "none";
+          rightSkel.style.display = "none";
+          pairCounter.textContent = "Пары закончились";
+          showToast("Пары закончились 😅");
           return;
         }
 
-        setStatus("Готово ✅ Батл создан. Возвращайся в ленту и голосуй.");
-        if (tg && tg.showAlert) tg.showAlert("Батл создан ✅");
-      } catch (e) {
-        setStatus("Сеть/доступ до API не сработал. Проверь, что lookingreat.ru открывается.");
-      }
-    });
+        currentItem = data.item;
+        pairCounter.textContent = `Батл #${currentItem.id}`;
 
-    $("btnBack").addEventListener("click", () => {
-      const base = location.href.split("?")[0].replace(/upload\.html$/,"");
-      const url = base.endsWith("/") ? (base + "index.html") : (base + "/index.html");
-      location.href = url;
+        let loaded = 0;
+        const doneOne = () => {
+          loaded++;
+          if (loaded >= 2) busy = false;
+        };
+
+        leftImg.onload = () => { leftSkel.style.display="none"; doneOne(); };
+        rightImg.onload = () => { rightSkel.style.display="none"; doneOne(); };
+
+        leftImg.onerror = () => { leftSkel.style.display="none"; doneOne(); showToast("Фото не загрузилось"); };
+        rightImg.onerror = () => { rightSkel.style.display="none"; doneOne(); showToast("Фото не загрузилось"); };
+
+        leftImg.src = cacheBust(currentItem.photo_left_url);
+        rightImg.src = cacheBust(currentItem.photo_right_url);
+
+      } catch (e) {
+        busy = false;
+        pairCounter.textContent = "Загружаем…";
+        showToast("Проверь сеть и открой ещё раз");
+      }
+    }
+
+    async function vote(choice) {
+      if (busy || !currentItem) return;
+      busy = true;
+
+      try {
+        const res = await apiPostJson(`${API_BASE}/api/vote`, {
+          telegram_id: telegramId,
+          pair_id: currentItem.id,
+          choice
+        });
+
+        if (!res || !res.ok) {
+          busy = false;
+          showToast("Голос не отправился");
+          return;
+        }
+
+        busy = false;
+        loadNextPair();
+      } catch(e) {
+        busy = false;
+        showToast("Сеть подвела");
+      }
+    }
+
+    function openUpload() {
+      uploadModal.classList.add("show");
+      if (tg && tg.MainButton) {
+        tg.MainButton.hide();
+      }
+    }
+    function closeUpload() {
+      uploadModal.classList.remove("show");
+      fileLeft.value = "";
+      fileRight.value = "";
+    }
+
+    async function uploadPair() {
+      const f1 = fileLeft.files && fileLeft.files[0];
+      const f2 = fileRight.files && fileRight.files[0];
+      if (!f1 || !f2) { showToast("Выбери 2 фото"); return; }
+
+      btnUpload.disabled = true;
+      btnUpload.textContent = "Загружаю…";
+
+      try {
+        const fd = new FormData();
+        fd.append("telegram_id", telegramId);
+        fd.append("left", f1, f1.name || "left.jpg");
+        fd.append("right", f2, f2.name || "right.jpg");
+
+        const r = await fetch(`${API_BASE}/api/upload_pair`, {
+          method: "POST",
+          body: fd,
+          credentials: "omit",
+          cache: "no-store"
+        });
+        const data = await r.json();
+
+        if (!data || !data.ok) {
+          showToast("Не загрузилось");
+          btnUpload.disabled = false;
+          btnUpload.textContent = "Загрузить и создать батл";
+          return;
+        }
+
+        showToast("Батл создан ✅");
+        closeUpload();
+        btnUpload.disabled = false;
+        btnUpload.textContent = "Загрузить и создать батл";
+
+        // сразу подхватим новую ленту
+        loadNextPair();
+
+      } catch (e) {
+        showToast("Ошибка сети");
+        btnUpload.disabled = false;
+        btnUpload.textContent = "Загрузить и создать батл";
+      }
+    }
+
+    async function openResults() {
+      try {
+        const data = await apiGet(`${API_BASE}/api/my_results?telegram_id=${encodeURIComponent(telegramId)}`);
+        if (!data || !data.ok) { showToast("Результаты недоступны"); return; }
+
+        const voted = data.total_votes ?? data.voted ?? 0;
+        const winrate = data.winrate ?? data.my_winrate ?? null;
+
+        let text = `Твои голоса: ${voted}`;
+        if (winrate !== null && winrate !== undefined) text += ` • Победы: ${Math.round(Number(winrate) * 100)}%`;
+
+        if (tg && tg.showAlert) tg.showAlert(text);
+        else alert(text);
+      } catch(e) {
+        showToast("Не удалось получить результаты");
+      }
+    }
+
+    function openMenu() {
+      if (tg && tg.showPopup) {
+        tg.showPopup({
+          title: "LookingGreat",
+          message: "Что сделать?",
+          buttons: [
+            { id: "upload", type: "default", text: "Загрузить фото" },
+            { id: "results", type: "default", text: "Результаты" },
+            { id: "cancel", type: "cancel", text: "Закрыть" }
+          ]
+        }, (id) => {
+          if (id === "upload") openUpload();
+          if (id === "results") openResults();
+        });
+      } else {
+        const ans = prompt("1 — Загрузить фото\n2 — Результаты");
+        if (ans === "1") openUpload();
+        if (ans === "2") openResults();
+      }
+    }
+
+    // events
+    leftTile.addEventListener("click", () => vote("left"));
+    rightTile.addEventListener("click", () => vote("right"));
+    btnSkip.addEventListener("click", () => loadNextPair());
+    btnMenu.addEventListener("click", () => openMenu());
+
+    uploadModal.addEventListener("click", (e) => {
+      if (e.target === uploadModal) closeUpload();
     });
+    btnCloseUpload.addEventListener("click", closeUpload);
+    btnUpload.addEventListener("click", uploadPair);
+
+    // start
+    telegramId = getTelegramId();
+    loadNextPair();
   </script>
 </body>
 </html>
