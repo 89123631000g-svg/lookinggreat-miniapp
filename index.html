@@ -4,325 +4,538 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>LookingGreat</title>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <style>
     :root{
-      --appH: 100vh;
-      --pad: 16px;
-      --safeB: env(safe-area-inset-bottom, 0px);
-    }
-    html, body { height: 100%; }
-    body {
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      margin:0; background:#0b0b14; color:#fff;
-      overflow: hidden; /* важно: убираем скролл страницы */
+      --bg:#0b0e16;
+      --card:#0f1422;
+      --card2:#0c111e;
+      --text:#ffffff;
+      --muted:rgba(255,255,255,.72);
+      --muted2:rgba(255,255,255,.55);
+      --stroke:rgba(255,255,255,.10);
+      --stroke2:rgba(255,255,255,.14);
+      --btn:#1f2a44;
+      --btn2:#121a2d;
+      --accent:#4ea1ff;
+
+      --pad:14px;
+      --r:18px;
+
+      --safeTop: env(safe-area-inset-top, 0px);
+      --safeBottom: env(safe-area-inset-bottom, 0px);
     }
 
-    .wrap {
-      max-width: 920px;
-      margin: 0 auto;
-      padding: var(--pad);
-      height: var(--appH);
-      box-sizing: border-box;
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 20% 0%, #111a33 0%, var(--bg) 60%);
+      color:var(--text);
+      min-height:100dvh;
+    }
+
+    .wrap{
+      max-width:720px;
+      margin:0 auto;
+      padding: calc(var(--pad) + var(--safeTop)) var(--pad) calc(var(--pad) + var(--safeBottom));
+    }
+
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--stroke);
+      border-radius: 22px;
+      padding: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    }
+
+    .topline{
       display:flex;
-      flex-direction:column;
-      gap: 12px;
-      padding-bottom: calc(var(--pad) + var(--safeB));
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
     }
 
-    .top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .h1 { font-size: 22px; font-weight: 800; }
-    .sub { opacity:.75; margin-top:4px; font-size:13px; }
-    .pill { padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); font-size:12px; opacity:.9; }
-
-    .card {
-      border: 1px solid rgba(255,255,255,.08);
-      border-radius: 16px;
-      padding: 12px;
-      background: rgba(255,255,255,.04);
-      flex: 1;                 /* занимает всё оставшееся */
-      min-height: 0;           /* критично для flex */
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
+    .title{
+      margin:0;
+      font-size:16px;
+      font-weight:600;
+      line-height:1.25;
+    }
+    .subtitle{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.35;
     }
 
-    .grid {
+    .chip{
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--stroke);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size:12px;
+      color: var(--muted);
+      white-space:nowrap;
+      user-select:none;
+    }
+
+    .photos{
       display:grid;
-      grid-template-columns: 1fr 1fr; /* на мобиле тоже 2 колонки */
-      gap: 10px;
-      flex: 1;
-      min-height: 0;
+      gap:10px;
+      margin-top:12px;
     }
 
-    .imgbox {
-      border:1px solid rgba(255,255,255,.10);
-      border-radius: 14px;
+    /* Голосование: по умолчанию 2 колонки */
+    .photos.vote{
+      grid-template-columns: 1fr 1fr;
+      height: min(62dvh, 520px);
+    }
+
+    /* Загрузка: всегда 1 колонка (друг под другом) */
+    .photos.upload{
+      grid-template-columns: 1fr;
+      height:auto;
+    }
+
+    .photo{
+      position:relative;
+      border-radius: 20px;
       overflow:hidden;
-      background: rgba(255,255,255,.03);
+      background: #0a0f1c;
+      border:1px solid var(--stroke2);
+      cursor:pointer;
+      min-height: 240px;
+    }
+
+    .photo img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+
+    .photo .hint{
+      position:absolute;
+      left:10px;
+      top:10px;
+      padding:6px 10px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.18);
+      color: rgba(255,255,255,.9);
+      font-size:12px;
+      backdrop-filter: blur(8px);
+    }
+
+    .photo .empty{
+      height:100%;
       display:flex;
       align-items:center;
       justify-content:center;
-      cursor:pointer;
-      min-height: 0;
-    }
-    .imgbox img {
-      width:100%;
-      height:100%;
-      object-fit: cover;
-      display:block;
-      background: rgba(255,255,255,.02);
+      flex-direction:column;
+      gap:8px;
+      padding:18px;
+      color: var(--muted);
+      text-align:center;
     }
 
-    .muted { opacity:.7; font-size: 13px; }
-    .row { display:flex; gap:10px; flex-wrap:nowrap; align-items:center; justify-content:space-between; }
-    button {
-      background: rgba(255,255,255,.08);
+    .photo .empty b{
       color:#fff;
-      border:1px solid rgba(255,255,255,.12);
-      border-radius: 12px;
-      padding: 10px 12px;
+      font-weight:600;
+    }
+
+    .actions{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      border:1px solid var(--stroke2);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      color:#fff;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size:14px;
+      font-weight:600;
       cursor:pointer;
-      white-space: nowrap;
+      user-select:none;
+      flex: 1 1 auto;
+      min-width: 180px;
     }
-    button:disabled { opacity:.5; cursor:not-allowed; }
 
-    /* bottom sheet */
-    .sheetBack {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.55);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      padding: 10px;
-      box-sizing:border-box;
+    .btn:active{ transform: translateY(1px); }
+
+    .btn.secondary{
+      background: rgba(255,255,255,.05);
+      font-weight:600;
+      color: rgba(255,255,255,.88);
     }
-    .sheet {
-      width: min(920px, 100%);
-      background: #121223;
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 16px;
+
+    .linkbtn{
+      background: transparent;
+      border: 0;
+      color: rgba(255,255,255,.70);
+      font-size:14px;
+      padding: 10px 6px;
+      cursor:pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      user-select:none;
+      flex: 0 0 auto;
+    }
+
+    .status{
+      margin-top:10px;
+      color: var(--muted2);
+      font-size:12px;
+      min-height: 16px;
+    }
+
+    .divider{
+      height:1px;
+      background: rgba(255,255,255,.08);
+      margin: 12px 0;
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .file{
+      width:100%;
+      background: rgba(255,255,255,.05);
+      border:1px solid var(--stroke);
+      border-radius: 14px;
       padding: 12px;
-      box-sizing:border-box;
-      padding-bottom: calc(12px + var(--safeB));
     }
-    .sheet .row { gap: 8px; flex-wrap: wrap; justify-content:flex-end; }
-    .sheet input[type="file"] { width: 100%; }
 
-    @media (min-width: 980px) {
-      .wrap { padding: 18px; }
-      .grid { gap: 12px; }
+    .file label{
+      display:block;
+      color: var(--muted);
+      font-size:12px;
+      margin-bottom:8px;
+    }
+
+    input[type="file"]{
+      width:100%;
+      color: rgba(255,255,255,.82);
+    }
+
+    /* Если экран низкий — голосование в 1 колонку, чтобы не требовался скролл */
+    @media (max-height: 720px){
+      .photos.vote{
+        grid-template-columns: 1fr;
+        height:auto;
+      }
+      .photo img{ max-height: 44dvh; }
     }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <div class="top">
-      <div>
-        <div class="h1">LookingGreat</div>
-        <div class="sub">Батл: тапни на фото, которое выглядит лучше</div>
-      </div>
-      <div class="pill" id="statusPill">Готово</div>
-    </div>
-
-    <div class="card">
-      <div class="grid">
-        <div class="imgbox" id="leftBox" title="Выбрать">
-          <img id="leftImg" alt="" />
+    <div class="panel">
+      <div class="topline">
+        <div>
+          <p class="title">Тапни по фото — голос засчитается.</p>
+          <p class="subtitle">Если не хочется выбирать — можно пропустить пару.</p>
         </div>
-        <div class="imgbox" id="rightBox" title="Выбрать">
-          <img id="rightImg" alt="" />
-        </div>
+        <div class="chip" id="chip">Загрузка…</div>
       </div>
 
-      <div class="row">
-        <div class="muted" id="hint">Тапни по фото — голос засчитается.</div>
-        <div style="display:flex; gap:8px;">
-          <button id="uploadOpenBtn">Загрузить пару</button>
-          <button id="skipBtn">Пропустить</button>
-        </div>
-      </div>
-    </div>
-  </div>
+      <!-- VOTE VIEW -->
+      <div id="voteView">
+        <div class="photos vote">
+          <div class="photo" id="leftCard" title="Голосовать за левое фото">
+            <img id="leftImg" alt="Фото 1" />
+          </div>
 
-  <!-- bottom sheet -->
-  <div class="sheetBack" id="sheetBack">
-    <div class="sheet">
-      <div class="muted" style="margin-bottom:10px;">Загрузить свою пару:</div>
-      <form id="uploadForm">
-        <div style="display:grid; gap:10px;">
-          <input type="file" id="fileLeft" accept="image/*" required />
-          <input type="file" id="fileRight" accept="image/*" required />
-          <div class="row">
-            <button type="button" id="sheetCloseBtn">Закрыть</button>
-            <button type="submit" id="uploadBtn">Загрузить</button>
+          <div class="photo" id="rightCard" title="Голосовать за правое фото">
+            <img id="rightImg" alt="Фото 2" />
           </div>
         </div>
-      </form>
+
+        <div class="actions">
+          <button class="btn" id="openUpload">Загрузить пару</button>
+          <button class="linkbtn" id="skipBtn">Пропустить</button>
+        </div>
+
+        <div class="status" id="status"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- UPLOAD VIEW -->
+      <div id="uploadView" style="display:none;">
+        <p class="subtitle" style="margin:0 0 10px;">Загрузка пары: выбери два фото (они будут показаны людям для голосования).</p>
+
+        <div class="photos upload">
+          <div class="photo" id="u1Preview">
+            <div class="empty">
+              <b>Фото 1</b>
+              <div>Выбери изображение ниже</div>
+            </div>
+          </div>
+
+          <div class="photo" id="u2Preview">
+            <div class="empty">
+              <b>Фото 2</b>
+              <div>Выбери изображение ниже</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+          <div class="file">
+            <label>Фото 1</label>
+            <input type="file" id="file1" accept="image/*" />
+          </div>
+          <div class="file">
+            <label>Фото 2</label>
+            <input type="file" id="file2" accept="image/*" />
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:12px;">
+          <button class="btn" id="sendUpload">Отправить пару</button>
+          <button class="btn secondary" id="cancelUpload">Отмена</button>
+        </div>
+
+        <div class="status" id="uploadStatus"></div>
+      </div>
     </div>
   </div>
 
-<script>
-  const API_BASE = "https://api.lookingreat.ru";
+  <script>
+    // ====== SETTINGS ======
+    const API_BASE = "https://api.lookingreat.ru"; // <-- при необходимости замени на свой URL
 
-  const tg = window.Telegram?.WebApp;
-  try { tg?.ready(); } catch(e) {}
-  try { tg?.expand(); } catch(e) {}
-  try { tg?.disableVerticalSwipes?.(); } catch(e) {}
-
-  function applyAppHeight(){
-    const h = (tg?.viewportStableHeight || tg?.viewportHeight || window.innerHeight);
-    document.documentElement.style.setProperty("--appH", h + "px");
-  }
-  applyAppHeight();
-  try { tg?.onEvent?.("viewportChanged", applyAppHeight); } catch(e) {}
-  window.addEventListener("resize", applyAppHeight);
-
-  const statusPill = document.getElementById("statusPill");
-  const leftBox = document.getElementById("leftBox");
-  const rightBox = document.getElementById("rightBox");
-  const leftImg = document.getElementById("leftImg");
-  const rightImg = document.getElementById("rightImg");
-  const skipBtn = document.getElementById("skipBtn");
-
-  const uploadOpenBtn = document.getElementById("uploadOpenBtn");
-  const sheetBack = document.getElementById("sheetBack");
-  const sheetCloseBtn = document.getElementById("sheetCloseBtn");
-
-  const uploadForm = document.getElementById("uploadForm");
-  const uploadBtn = document.getElementById("uploadBtn");
-  const fileLeft = document.getElementById("fileLeft");
-  const fileRight = document.getElementById("fileRight");
-
-  let tgId = "0";
-  let currentPairId = null;
-  let busy = false;
-
-  function setStatus(text) { statusPill.textContent = text; }
-
-  function getTelegramId() {
-    const id = tg?.initDataUnsafe?.user?.id;
-    return String(id || "1"); // тест вне Telegram
-  }
-
-  async function apiGet(path) {
-    const r = await fetch(API_BASE + path, { method:"GET" });
-    return await r.json();
-  }
-
-  async function apiPostJson(path, body) {
-    const r = await fetch(API_BASE + path, {
-      method:"POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify(body)
-    });
-    return await r.json();
-  }
-
-  function showEmpty() {
-    currentPairId = null;
-    leftImg.src = "";
-    rightImg.src = "";
-    setStatus("Пары закончились");
-  }
-
-  function renderItem(item) {
-    currentPairId = item.id;
-
-    // небольшой cache-bust, чтобы iOS не упрямился после голосования
-    const v = "v=" + item.id + "_" + Date.now();
-    leftImg.src = item.left_url + (item.left_url.includes("?") ? "&" : "?") + v;
-    rightImg.src = item.right_url + (item.right_url.includes("?") ? "&" : "?") + v;
-
-    setStatus("Выбирай");
-  }
-
-  async function loadFeed() {
-    if (busy) return;
-    busy = true;
-    setStatus("Загружаем…");
-    try {
-      const data = await apiGet(`/feed?tg_id=${encodeURIComponent(tgId)}`);
-      if (!data.ok) throw new Error(data.error || "api_error");
-      if (data.empty) return showEmpty();
-      renderItem(data.item);
-    } catch (e) {
-      setStatus("Ошибка загрузки");
-      console.error(e);
-    } finally {
-      busy = false;
+    // ====== Telegram init ======
+    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    if (tg) {
+      try { tg.expand(); } catch(e){}
+      try { tg.disableVerticalSwipes(); } catch(e){}
+      try { tg.ready(); } catch(e){}
     }
-  }
 
-  async function vote(choice) {
-    if (busy || !currentPairId) return;
-    busy = true;
-    setStatus("Сохраняем…");
-    try {
-      const data = await apiPostJson(`/vote`, { tg_id: tgId, pair_id: currentPairId, choice });
-      if (!data.ok) {
-        if (data.error === "already_voted") return await loadFeed();
-        if (data.error === "cannot_vote_own_pair") {
-          setStatus("Нельзя голосовать за свою пару");
-          return;
-        }
-        throw new Error(data.error || "vote_error");
+    function getTgId() {
+      try {
+        const u = tg?.initDataUnsafe?.user;
+        return u?.id ? String(u.id) : "";
+      } catch (e) {
+        return "";
       }
-      if (data.empty) return showEmpty();
-      renderItem(data.item);
-    } catch (e) {
-      setStatus("Ошибка голоса");
-      console.error(e);
-    } finally {
-      busy = false;
     }
-  }
 
-  leftBox.addEventListener("click", () => vote("left"));
-  rightBox.addEventListener("click", () => vote("right"));
-  skipBtn.addEventListener("click", () => loadFeed());
+    const tg_id = getTgId();
 
-  uploadOpenBtn.addEventListener("click", () => { sheetBack.style.display = "flex"; });
-  sheetCloseBtn.addEventListener("click", () => { sheetBack.style.display = "none"; });
-  sheetBack.addEventListener("click", (e) => { if (e.target === sheetBack) sheetBack.style.display = "none"; });
+    // ====== UI refs ======
+    const chip = document.getElementById("chip");
+    const statusEl = document.getElementById("status");
+    const leftCard = document.getElementById("leftCard");
+    const rightCard = document.getElementById("rightCard");
+    const leftImg = document.getElementById("leftImg");
+    const rightImg = document.getElementById("rightImg");
 
-  uploadForm.addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    if (busy) return;
-    const l = fileLeft.files?.[0];
-    const r = fileRight.files?.[0];
-    if (!l || !r) return;
+    const voteView = document.getElementById("voteView");
+    const uploadView = document.getElementById("uploadView");
 
-    busy = true;
-    uploadBtn.disabled = true;
-    setStatus("Загрузка…");
+    const openUpload = document.getElementById("openUpload");
+    const cancelUpload = document.getElementById("cancelUpload");
+    const skipBtn = document.getElementById("skipBtn");
 
-    try {
-      const fd = new FormData();
-      fd.append("tg_id", tgId);
-      fd.append("left", l);
-      fd.append("right", r);
+    const file1 = document.getElementById("file1");
+    const file2 = document.getElementById("file2");
+    const sendUpload = document.getElementById("sendUpload");
+    const uploadStatus = document.getElementById("uploadStatus");
 
-      const resp = await fetch(API_BASE + "/upload_pair", { method:"POST", body: fd });
-      const data = await resp.json();
-      if (!data.ok) throw new Error(data.error || "upload_error");
+    const u1Preview = document.getElementById("u1Preview");
+    const u2Preview = document.getElementById("u2Preview");
 
-      setStatus("Загружено");
-      sheetBack.style.display = "none";
+    // ====== State ======
+    let currentItem = null; // {id, photo_left_url, photo_right_url, my_choice, ...}
+
+    function setStatus(msg) {
+      statusEl.textContent = msg || "";
+    }
+    function setUploadStatus(msg) {
+      uploadStatus.textContent = msg || "";
+    }
+
+    function showVote() {
+      uploadView.style.display = "none";
+      voteView.style.display = "block";
+      setUploadStatus("");
+    }
+
+    function showUpload() {
+      voteView.style.display = "none";
+      uploadView.style.display = "block";
+      setStatus("");
+    }
+
+    function safeSetImg(imgEl, url) {
+      if (!url) return;
+      imgEl.src = url;
+    }
+
+    function renderCurrent() {
+      if (!currentItem) return;
+      chip.textContent = tg_id ? `tg_id: ${tg_id}` : "tg_id: нет";
+
+      // ВАЖНО: никаких “лево/право” бейджей не рисуем
+      safeSetImg(leftImg, currentItem.photo_left_url);
+      safeSetImg(rightImg, currentItem.photo_right_url);
+
+      setStatus("");
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(API_BASE + path, {
+        method: options.method || "GET",
+        headers: Object.assign({ "Content-Type": "application/json" }, options.headers || {}),
+        body: options.body ? JSON.stringify(options.body) : undefined
+      });
+
+      const text = await res.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch(e) { data = { ok:false, error:"bad_json", raw:text }; }
+      return data;
+    }
+
+    // ====== FEED ======
+    async function loadFeed() {
+      setStatus("Загружаю пару…");
+      const q = tg_id ? `?tg_id=${encodeURIComponent(tg_id)}` : "";
+      const data = await api(`/feed${q}`);
+
+      if (!data || data.ok === false) {
+        setStatus("Ошибка загрузки пары. Проверь API.");
+        return;
+      }
+
+      currentItem = data.item || data;
+      renderCurrent();
+      setStatus("");
+    }
+
+    // ====== VOTE ======
+    async function vote(choice) {
+      if (!currentItem) return;
+
+      setStatus("Сохраняю голос…");
+
+      const payload = {
+        tg_id: tg_id || "",
+        pair_id: currentItem.id,
+        choice // "left" | "right"
+      };
+
+      const data = await api("/vote", { method:"POST", body: payload });
+
+      if (!data || data.ok === false) {
+        if (data?.error === "cannot_vote_own_pair") {
+          setStatus("Нельзя голосовать за свою пару.");
+        } else {
+          setStatus("Не удалось сохранить голос.");
+        }
+        return;
+      }
+
+      // грузим следующую
       await loadFeed();
-    } catch (e) {
-      console.error(e);
-      setStatus("Ошибка загрузки");
-    } finally {
-      busy = false;
-      uploadBtn.disabled = false;
-      uploadForm.reset();
     }
-  });
 
-  // старт
-  tgId = getTelegramId();
-  loadFeed();
-</script>
+    // ====== SKIP ======
+    async function skip() {
+      // без API-скипа: просто грузим следующую пару
+      setStatus("Пропускаю…");
+      await loadFeed();
+    }
+
+    // ====== UPLOAD PREVIEW ======
+    function previewFile(file, el) {
+      if (!file) {
+        el.innerHTML = '<div class="empty"><b>Фото</b><div>Выбери изображение ниже</div></div>';
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      el.innerHTML = `<img alt="preview" src="${url}">`;
+    }
+
+    file1.addEventListener("change", () => previewFile(file1.files[0], u1Preview));
+    file2.addEventListener("change", () => previewFile(file2.files[0], u2Preview));
+
+    // ====== UPLOAD (примерный поток; под твою реализацию /upload) ======
+    async function uploadPair() {
+      const f1 = file1.files[0];
+      const f2 = file2.files[0];
+
+      if (!f1 || !f2) {
+        setUploadStatus("Нужно выбрать два фото.");
+        return;
+      }
+
+      setUploadStatus("Загрузка…");
+
+      // Если у тебя уже есть готовый endpoint загрузки (например /upload),
+      // лучше грузить через FormData (без JSON).
+      const form = new FormData();
+      form.append("tg_id", tg_id || "");
+      form.append("left", f1);
+      form.append("right", f2);
+
+      let res, data;
+      try {
+        res = await fetch(API_BASE + "/upload", { method:"POST", body: form });
+        const text = await res.text();
+        try { data = JSON.parse(text); } catch(e) { data = { ok:false, error:"bad_json", raw:text }; }
+      } catch (e) {
+        data = { ok:false, error:"network_error" };
+      }
+
+      if (!data || data.ok === false) {
+        setUploadStatus("Не удалось загрузить. Проверь /upload в Worker.");
+        return;
+      }
+
+      setUploadStatus("Готово! Пара загружена.");
+      // очистка
+      file1.value = "";
+      file2.value = "";
+      u1Preview.innerHTML = '<div class="empty"><b>Фото 1</b><div>Выбери изображение ниже</div></div>';
+      u2Preview.innerHTML = '<div class="empty"><b>Фото 2</b><div>Выбери изображение ниже</div></div>';
+
+      // назад к голосованию
+      showVote();
+      await loadFeed();
+    }
+
+    // ====== Events ======
+    leftCard.addEventListener("click", () => vote("left"));
+    rightCard.addEventListener("click", () => vote("right"));
+
+    openUpload.addEventListener("click", showUpload);
+    cancelUpload.addEventListener("click", showVote);
+    skipBtn.addEventListener("click", skip);
+
+    sendUpload.addEventListener("click", uploadPair);
+
+    // старт
+    loadFeed();
+  </script>
 </body>
 </html>
