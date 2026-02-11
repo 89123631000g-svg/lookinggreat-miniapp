@@ -6,22 +6,113 @@
   <title>LookingGreat</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:0; background:#0b0b14; color:#fff; }
-    .wrap { max-width: 920px; margin: 0 auto; padding: 16px; }
+    :root{
+      --appH: 100vh;
+      --pad: 16px;
+      --safeB: env(safe-area-inset-bottom, 0px);
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      margin:0; background:#0b0b14; color:#fff;
+      overflow: hidden; /* важно: убираем скролл страницы */
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: var(--pad);
+      height: var(--appH);
+      box-sizing: border-box;
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+      padding-bottom: calc(var(--pad) + var(--safeB));
+    }
+
     .top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .h1 { font-size: 22px; font-weight: 800; }
     .sub { opacity:.75; margin-top:4px; font-size:13px; }
-    .card { margin-top: 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 12px; background: rgba(255,255,255,.04); }
-    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .imgbox { border:1px solid rgba(255,255,255,.10); border-radius: 14px; overflow:hidden; background: rgba(255,255,255,.03); height: 520px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
-    .imgbox img { width:100%; height:100%; object-fit: cover; display:block; }
-    .muted { opacity:.7; font-size: 13px; }
-    .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; margin-top: 10px; }
-    button { background: rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 10px 12px; cursor:pointer; }
-    button:disabled { opacity:.5; cursor:not-allowed; }
     .pill { padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); font-size:12px; opacity:.9; }
-    .hidden { display:none; }
-    @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } .imgbox { height: 420px; } }
+
+    .card {
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      padding: 12px;
+      background: rgba(255,255,255,.04);
+      flex: 1;                 /* занимает всё оставшееся */
+      min-height: 0;           /* критично для flex */
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+
+    .grid {
+      display:grid;
+      grid-template-columns: 1fr 1fr; /* на мобиле тоже 2 колонки */
+      gap: 10px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .imgbox {
+      border:1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      overflow:hidden;
+      background: rgba(255,255,255,.03);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      min-height: 0;
+    }
+    .imgbox img {
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+      background: rgba(255,255,255,.02);
+    }
+
+    .muted { opacity:.7; font-size: 13px; }
+    .row { display:flex; gap:10px; flex-wrap:nowrap; align-items:center; justify-content:space-between; }
+    button {
+      background: rgba(255,255,255,.08);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor:pointer;
+      white-space: nowrap;
+    }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* bottom sheet */
+    .sheetBack {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 10px;
+      box-sizing:border-box;
+    }
+    .sheet {
+      width: min(920px, 100%);
+      background: #121223;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 12px;
+      box-sizing:border-box;
+      padding-bottom: calc(12px + var(--safeB));
+    }
+    .sheet .row { gap: 8px; flex-wrap: wrap; justify-content:flex-end; }
+    .sheet input[type="file"] { width: 100%; }
+
+    @media (min-width: 980px) {
+      .wrap { padding: 18px; }
+      .grid { gap: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -36,27 +127,38 @@
 
     <div class="card">
       <div class="grid">
-        <div class="imgbox" id="leftBox" title="Выбрать левое">
+        <div class="imgbox" id="leftBox" title="Выбрать">
           <img id="leftImg" alt="" />
         </div>
-        <div class="imgbox" id="rightBox" title="Выбрать правое">
+        <div class="imgbox" id="rightBox" title="Выбрать">
           <img id="rightImg" alt="" />
         </div>
       </div>
 
       <div class="row">
         <div class="muted" id="hint">Тапни по фото — голос засчитается.</div>
-        <button id="skipBtn">Пропустить</button>
+        <div style="display:flex; gap:8px;">
+          <button id="uploadOpenBtn">Загрузить пару</button>
+          <button id="skipBtn">Пропустить</button>
+        </div>
       </div>
+    </div>
+  </div>
 
-      <div class="row">
-        <div class="muted">Загрузить свою пару:</div>
-        <form id="uploadForm">
+  <!-- bottom sheet -->
+  <div class="sheetBack" id="sheetBack">
+    <div class="sheet">
+      <div class="muted" style="margin-bottom:10px;">Загрузить свою пару:</div>
+      <form id="uploadForm">
+        <div style="display:grid; gap:10px;">
           <input type="file" id="fileLeft" accept="image/*" required />
           <input type="file" id="fileRight" accept="image/*" required />
-          <button type="submit" id="uploadBtn">Загрузить</button>
-        </form>
-      </div>
+          <div class="row">
+            <button type="button" id="sheetCloseBtn">Закрыть</button>
+            <button type="submit" id="uploadBtn">Загрузить</button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -65,9 +167,16 @@
 
   const tg = window.Telegram?.WebApp;
   try { tg?.ready(); } catch(e) {}
-
   try { tg?.expand(); } catch(e) {}
   try { tg?.disableVerticalSwipes?.(); } catch(e) {}
+
+  function applyAppHeight(){
+    const h = (tg?.viewportStableHeight || tg?.viewportHeight || window.innerHeight);
+    document.documentElement.style.setProperty("--appH", h + "px");
+  }
+  applyAppHeight();
+  try { tg?.onEvent?.("viewportChanged", applyAppHeight); } catch(e) {}
+  window.addEventListener("resize", applyAppHeight);
 
   const statusPill = document.getElementById("statusPill");
   const leftBox = document.getElementById("leftBox");
@@ -75,6 +184,10 @@
   const leftImg = document.getElementById("leftImg");
   const rightImg = document.getElementById("rightImg");
   const skipBtn = document.getElementById("skipBtn");
+
+  const uploadOpenBtn = document.getElementById("uploadOpenBtn");
+  const sheetBack = document.getElementById("sheetBack");
+  const sheetCloseBtn = document.getElementById("sheetCloseBtn");
 
   const uploadForm = document.getElementById("uploadForm");
   const uploadBtn = document.getElementById("uploadBtn");
@@ -89,7 +202,7 @@
 
   function getTelegramId() {
     const id = tg?.initDataUnsafe?.user?.id;
-    return String(id || "1"); // "1" для теста вне Telegram
+    return String(id || "1"); // тест вне Telegram
   }
 
   async function apiGet(path) {
@@ -115,8 +228,12 @@
 
   function renderItem(item) {
     currentPairId = item.id;
-    leftImg.src = item.left_url;
-    rightImg.src = item.right_url;
+
+    // небольшой cache-bust, чтобы iOS не упрямился после голосования
+    const v = "v=" + item.id + "_" + Date.now();
+    leftImg.src = item.left_url + (item.left_url.includes("?") ? "&" : "?") + v;
+    rightImg.src = item.right_url + (item.right_url.includes("?") ? "&" : "?") + v;
+
     setStatus("Выбирай");
   }
 
@@ -144,8 +261,10 @@
     try {
       const data = await apiPostJson(`/vote`, { tg_id: tgId, pair_id: currentPairId, choice });
       if (!data.ok) {
-        if (data.error === "already_voted") {
-          return await loadFeed();
+        if (data.error === "already_voted") return await loadFeed();
+        if (data.error === "cannot_vote_own_pair") {
+          setStatus("Нельзя голосовать за свою пару");
+          return;
         }
         throw new Error(data.error || "vote_error");
       }
@@ -162,6 +281,10 @@
   leftBox.addEventListener("click", () => vote("left"));
   rightBox.addEventListener("click", () => vote("right"));
   skipBtn.addEventListener("click", () => loadFeed());
+
+  uploadOpenBtn.addEventListener("click", () => { sheetBack.style.display = "flex"; });
+  sheetCloseBtn.addEventListener("click", () => { sheetBack.style.display = "none"; });
+  sheetBack.addEventListener("click", (e) => { if (e.target === sheetBack) sheetBack.style.display = "none"; });
 
   uploadForm.addEventListener("submit", async (ev) => {
     ev.preventDefault();
@@ -185,7 +308,7 @@
       if (!data.ok) throw new Error(data.error || "upload_error");
 
       setStatus("Загружено");
-      // после загрузки сразу обновим фид
+      sheetBack.style.display = "none";
       await loadFeed();
     } catch (e) {
       console.error(e);
