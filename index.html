@@ -10,20 +10,13 @@
   <style>
     :root{
       --bg:#0b0e16;
-      --card:#0f1422;
-      --card2:#0c111e;
-      --text:#ffffff;
+      --text:#fff;
       --muted:rgba(255,255,255,.72);
       --muted2:rgba(255,255,255,.55);
       --stroke:rgba(255,255,255,.10);
       --stroke2:rgba(255,255,255,.14);
-      --btn:#1f2a44;
-      --btn2:#121a2d;
-      --accent:#4ea1ff;
 
       --pad:14px;
-      --r:18px;
-
       --safeTop: env(safe-area-inset-top, 0px);
       --safeBottom: env(safe-area-inset-bottom, 0px);
     }
@@ -62,7 +55,7 @@
 
     .title{
       margin:0;
-      font-size:16px;
+      font-size:14px;
       font-weight:600;
       line-height:1.25;
     }
@@ -96,7 +89,7 @@
       height: min(62dvh, 520px);
     }
 
-    /* Загрузка: всегда 1 колонка (друг под другом) */
+    /* Загрузка: всегда 1 колонка */
     .photos.upload{
       grid-template-columns: 1fr;
       height:auto;
@@ -121,20 +114,7 @@
       -webkit-user-drag:none;
     }
 
-    .photo .hint{
-      position:absolute;
-      left:10px;
-      top:10px;
-      padding:6px 10px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.18);
-      color: rgba(255,255,255,.9);
-      font-size:12px;
-      backdrop-filter: blur(8px);
-    }
-
-    .photo .empty{
+    .empty{
       height:100%;
       display:flex;
       align-items:center;
@@ -145,8 +125,7 @@
       color: var(--muted);
       text-align:center;
     }
-
-    .photo .empty b{
+    .empty b{
       color:#fff;
       font-weight:600;
     }
@@ -173,9 +152,6 @@
       flex: 1 1 auto;
       min-width: 180px;
     }
-
-    .btn:active{ transform: translateY(1px); }
-
     .btn.secondary{
       background: rgba(255,255,255,.05);
       font-weight:600;
@@ -234,7 +210,7 @@
       color: rgba(255,255,255,.82);
     }
 
-    /* Если экран низкий — голосование в 1 колонку, чтобы не требовался скролл */
+    /* Низкий экран (частый кейс Android + панели Telegram): голосование в 1 колонку */
     @media (max-height: 720px){
       .photos.vote{
         grid-template-columns: 1fr;
@@ -259,11 +235,11 @@
       <!-- VOTE VIEW -->
       <div id="voteView">
         <div class="photos vote">
-          <div class="photo" id="leftCard" title="Голосовать за левое фото">
+          <div class="photo" id="leftCard" title="Голосовать за фото 1">
             <img id="leftImg" alt="Фото 1" />
           </div>
 
-          <div class="photo" id="rightCard" title="Голосовать за правое фото">
+          <div class="photo" id="rightCard" title="Голосовать за фото 2">
             <img id="rightImg" alt="Фото 2" />
           </div>
         </div>
@@ -280,7 +256,7 @@
 
       <!-- UPLOAD VIEW -->
       <div id="uploadView" style="display:none;">
-        <p class="subtitle" style="margin:0 0 10px;">Загрузка пары: выбери два фото (они будут показаны людям для голосования).</p>
+        <p class="subtitle" style="margin:0 0 10px;">Загрузка пары: выбери два фото.</p>
 
         <div class="photos upload">
           <div class="photo" id="u1Preview">
@@ -320,10 +296,9 @@
   </div>
 
   <script>
-    // ====== SETTINGS ======
-    const API_BASE = "https://api.lookingreat.ru"; // <-- при необходимости замени на свой URL
+    const API_BASE = "https://api.lookingreat.ru";
 
-    // ====== Telegram init ======
+    // Telegram init
     const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
     if (tg) {
       try { tg.expand(); } catch(e){}
@@ -334,15 +309,15 @@
     function getTgId() {
       try {
         const u = tg?.initDataUnsafe?.user;
-        return u?.id ? String(u.id) : "";
+        return u?.id ? String(u.id) : "1"; // вне Telegram для теста
       } catch (e) {
-        return "";
+        return "1";
       }
     }
 
     const tg_id = getTgId();
 
-    // ====== UI refs ======
+    // UI refs
     const chip = document.getElementById("chip");
     const statusEl = document.getElementById("status");
     const leftCard = document.getElementById("leftCard");
@@ -365,15 +340,11 @@
     const u1Preview = document.getElementById("u1Preview");
     const u2Preview = document.getElementById("u2Preview");
 
-    // ====== State ======
-    let currentItem = null; // {id, photo_left_url, photo_right_url, my_choice, ...}
+    let currentPairId = null;
+    let busy = false;
 
-    function setStatus(msg) {
-      statusEl.textContent = msg || "";
-    }
-    function setUploadStatus(msg) {
-      uploadStatus.textContent = msg || "";
-    }
+    function setStatus(msg) { statusEl.textContent = msg || ""; }
+    function setUploadStatus(msg) { uploadStatus.textContent = msg || ""; }
 
     function showVote() {
       uploadView.style.display = "none";
@@ -387,154 +358,153 @@
       setStatus("");
     }
 
-    function safeSetImg(imgEl, url) {
-      if (!url) return;
-      imgEl.src = url;
+    async function apiGet(path) {
+      const r = await fetch(API_BASE + path, { method:"GET" });
+      return await r.json();
     }
 
-    function renderCurrent() {
-      if (!currentItem) return;
-      chip.textContent = tg_id ? `tg_id: ${tg_id}` : "tg_id: нет";
-
-      // ВАЖНО: никаких “лево/право” бейджей не рисуем
-      safeSetImg(leftImg, currentItem.photo_left_url);
-      safeSetImg(rightImg, currentItem.photo_right_url);
-
-      setStatus("");
-    }
-
-    async function api(path, options = {}) {
-      const res = await fetch(API_BASE + path, {
-        method: options.method || "GET",
-        headers: Object.assign({ "Content-Type": "application/json" }, options.headers || {}),
-        body: options.body ? JSON.stringify(options.body) : undefined
+    async function apiPostJson(path, body) {
+      const r = await fetch(API_BASE + path, {
+        method:"POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify(body)
       });
-
-      const text = await res.text();
-      let data = null;
-      try { data = JSON.parse(text); } catch(e) { data = { ok:false, error:"bad_json", raw:text }; }
-      return data;
+      return await r.json();
     }
 
-    // ====== FEED ======
-    async function loadFeed() {
-      setStatus("Загружаю пару…");
-      const q = tg_id ? `?tg_id=${encodeURIComponent(tg_id)}` : "";
-      const data = await api(`/feed${q}`);
+    function showEmpty() {
+      currentPairId = null;
+      leftImg.removeAttribute("src");
+      rightImg.removeAttribute("src");
+      setStatus("Пары закончились");
+    }
 
-      if (!data || data.ok === false) {
-        setStatus("Ошибка загрузки пары. Проверь API.");
-        return;
-      }
-
-      currentItem = data.item || data;
-      renderCurrent();
+    function renderItem(item) {
+      currentPairId = item.id;
+      leftImg.src = item.left_url;
+      rightImg.src = item.right_url;
       setStatus("");
     }
 
-    // ====== VOTE ======
-    async function vote(choice) {
-      if (!currentItem) return;
+    async function loadFeed() {
+      if (busy) return;
+      busy = true;
+      chip.textContent = "Загрузка…";
+      setStatus("Загружаю пару…");
 
+      try {
+        const data = await apiGet(`/feed?tg_id=${encodeURIComponent(tg_id)}`);
+        if (!data.ok) throw new Error(data.error || "api_error");
+        chip.textContent = `tg_id: ${tg_id}`;
+
+        if (data.empty) return showEmpty();
+        renderItem(data.item);
+      } catch (e) {
+        console.error(e);
+        chip.textContent = "Ошибка";
+        setStatus("Ошибка загрузки пары");
+      } finally {
+        busy = false;
+      }
+    }
+
+    async function vote(choice) {
+      if (busy || !currentPairId) return;
+      busy = true;
       setStatus("Сохраняю голос…");
 
-      const payload = {
-        tg_id: tg_id || "",
-        pair_id: currentItem.id,
-        choice // "left" | "right"
-      };
+      try {
+        const data = await apiPostJson(`/vote`, { tg_id, pair_id: currentPairId, choice });
 
-      const data = await api("/vote", { method:"POST", body: payload });
-
-      if (!data || data.ok === false) {
-        if (data?.error === "cannot_vote_own_pair") {
-          setStatus("Нельзя голосовать за свою пару.");
-        } else {
-          setStatus("Не удалось сохранить голос.");
+        if (!data.ok) {
+          if (data.error === "cannot_vote_own_pair") {
+            setStatus("Нельзя голосовать за свою пару.");
+            return;
+          }
+          if (data.error === "already_voted") {
+            await loadFeed();
+            return;
+          }
+          throw new Error(data.error || "vote_error");
         }
-        return;
+
+        if (data.empty) return showEmpty();
+        renderItem(data.item);
+      } catch (e) {
+        console.error(e);
+        setStatus("Ошибка голоса");
+      } finally {
+        busy = false;
       }
-
-      // грузим следующую
-      await loadFeed();
     }
 
-    // ====== SKIP ======
     async function skip() {
-      // без API-скипа: просто грузим следующую пару
-      setStatus("Пропускаю…");
       await loadFeed();
     }
 
-    // ====== UPLOAD PREVIEW ======
-    function previewFile(file, el) {
+    function previewFile(file, el, title) {
       if (!file) {
-        el.innerHTML = '<div class="empty"><b>Фото</b><div>Выбери изображение ниже</div></div>';
+        el.innerHTML = `<div class="empty"><b>${title}</b><div>Выбери изображение ниже</div></div>`;
         return;
       }
       const url = URL.createObjectURL(file);
       el.innerHTML = `<img alt="preview" src="${url}">`;
     }
 
-    file1.addEventListener("change", () => previewFile(file1.files[0], u1Preview));
-    file2.addEventListener("change", () => previewFile(file2.files[0], u2Preview));
+    file1.addEventListener("change", () => previewFile(file1.files[0], u1Preview, "Фото 1"));
+    file2.addEventListener("change", () => previewFile(file2.files[0], u2Preview, "Фото 2"));
 
-    // ====== UPLOAD (примерный поток; под твою реализацию /upload) ======
     async function uploadPair() {
-      const f1 = file1.files[0];
-      const f2 = file2.files[0];
+      if (busy) return;
 
-      if (!f1 || !f2) {
-        setUploadStatus("Нужно выбрать два фото.");
-        return;
-      }
+      const f1 = file1.files?.[0];
+      const f2 = file2.files?.[0];
+      if (!f1 || !f2) { setUploadStatus("Нужно выбрать два фото."); return; }
 
+      busy = true;
+      sendUpload.disabled = true;
       setUploadStatus("Загрузка…");
 
-      // Если у тебя уже есть готовый endpoint загрузки (например /upload),
-      // лучше грузить через FormData (без JSON).
-      const form = new FormData();
-      form.append("tg_id", tg_id || "");
-      form.append("left", f1);
-      form.append("right", f2);
-
-      let res, data;
       try {
-        res = await fetch(API_BASE + "/upload", { method:"POST", body: form });
-        const text = await res.text();
-        try { data = JSON.parse(text); } catch(e) { data = { ok:false, error:"bad_json", raw:text }; }
+        const fd = new FormData();
+        fd.append("tg_id", tg_id);
+        fd.append("left", f1);
+        fd.append("right", f2);
+
+        // ВАЖНО: твой Worker ожидает /upload_pair
+        const resp = await fetch(API_BASE + "/upload_pair", { method:"POST", body: fd });
+        const data = await resp.json();
+
+        if (!data.ok) throw new Error(data.error || "upload_error");
+
+        setUploadStatus("Готово! Пара загружена.");
+        file1.value = "";
+        file2.value = "";
+        u1Preview.innerHTML = `<div class="empty"><b>Фото 1</b><div>Выбери изображение ниже</div></div>`;
+        u2Preview.innerHTML = `<div class="empty"><b>Фото 2</b><div>Выбери изображение ниже</div></div>`;
+
+        showVote();
+        await loadFeed();
       } catch (e) {
-        data = { ok:false, error:"network_error" };
+        console.error(e);
+        setUploadStatus("Ошибка загрузки");
+      } finally {
+        busy = false;
+        sendUpload.disabled = false;
       }
-
-      if (!data || data.ok === false) {
-        setUploadStatus("Не удалось загрузить. Проверь /upload в Worker.");
-        return;
-      }
-
-      setUploadStatus("Готово! Пара загружена.");
-      // очистка
-      file1.value = "";
-      file2.value = "";
-      u1Preview.innerHTML = '<div class="empty"><b>Фото 1</b><div>Выбери изображение ниже</div></div>';
-      u2Preview.innerHTML = '<div class="empty"><b>Фото 2</b><div>Выбери изображение ниже</div></div>';
-
-      // назад к голосованию
-      showVote();
-      await loadFeed();
     }
 
-    // ====== Events ======
+    // Events
     leftCard.addEventListener("click", () => vote("left"));
     rightCard.addEventListener("click", () => vote("right"));
+    skipBtn.addEventListener("click", skip);
 
     openUpload.addEventListener("click", showUpload);
     cancelUpload.addEventListener("click", showVote);
-    skipBtn.addEventListener("click", skip);
-
     sendUpload.addEventListener("click", uploadPair);
 
-    // старт
+    // Start
+    chip.textContent = `tg_id: ${tg_id}`;
     loadFeed();
   </script>
 </body>
