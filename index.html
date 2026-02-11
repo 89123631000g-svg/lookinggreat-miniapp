@@ -37,10 +37,10 @@
     <div class="card">
       <div class="grid">
         <div class="imgbox" id="leftBox" title="Выбрать левое">
-          <img id="leftImg" alt="left" />
+          <img id="leftImg" alt="" />
         </div>
         <div class="imgbox" id="rightBox" title="Выбрать правое">
-          <img id="rightImg" alt="right" />
+          <img id="rightImg" alt="" />
         </div>
       </div>
 
@@ -65,6 +65,9 @@
 
   const tg = window.Telegram?.WebApp;
   try { tg?.ready(); } catch(e) {}
+
+  try { tg?.expand(); } catch(e) {}
+  try { tg?.disableVerticalSwipes?.(); } catch(e) {}
 
   const statusPill = document.getElementById("statusPill");
   const leftBox = document.getElementById("leftBox");
@@ -105,8 +108,8 @@
 
   function showEmpty() {
     currentPairId = null;
-    leftImg.removeAttribute("src");
-    rightImg.removeAttribute("src");
+    leftImg.src = "";
+    rightImg.src = "";
     setStatus("Пары закончились");
   }
 
