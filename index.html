@@ -1,745 +1,333 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>LookingGreat</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>LookingGreat</title>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <style>
-    :root{
-      --bg:#0b0f1a;
-      --card:#10182a;
-      --card2:#0e1524;
-      --stroke:rgba(255,255,255,.10);
-      --stroke2:rgba(255,255,255,.14);
-      --text:#eef2ff;
-      --muted:rgba(238,242,255,.72);
-      --muted2:rgba(238,242,255,.55);
-      --btn:#1f6feb;
-      --btn2:rgba(255,255,255,.08);
-      --btn2b:rgba(255,255,255,.14);
-      --danger:#ff4d4f;
-      --ok:#2ecc71;
-      --shadow: 0 18px 40px rgba(0,0,0,.35);
-      --radius:18px;
-      --radius2:22px;
-    }
+<style>
+* { box-sizing: border-box; }
 
-    *{ box-sizing:border-box; }
-    html, body{
-      margin:0; padding:0;
-      height:100%;
-      overflow:hidden; /* ключ: убираем общий скролл */
-      background:var(--bg);
-      color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100dvh;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: #ffffff;
+  color: #111;
+}
 
-    /* Telegram safe-area */
-    body{
-      padding-top: env(safe-area-inset-top);
-      padding-right: env(safe-area-inset-right);
-      padding-bottom: env(safe-area-inset-bottom);
-      padding-left: env(safe-area-inset-left);
-    }
+.app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
-    .app{
-      height:100dvh; /* ключ: корректная высота в mini app */
-      display:flex;
-      flex-direction:column;
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 14px;
-      gap: 10px;
-    }
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+}
 
-    .top{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border:1px solid var(--stroke);
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      box-shadow: var(--shadow);
-      flex: 0 0 auto;
-      min-height: 72px;
-    }
+.tab {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #eee;
+  background: #f5f5f5;
+  text-align: center;
+  font-weight: 600;
+  cursor: pointer;
+}
 
-    .brand{
-      display:flex;
-      flex-direction:column;
-      gap: 4px;
-      min-width: 0;
-    }
-    .brand h1{
-      margin:0;
-      font-size: 24px;
-      letter-spacing:.2px;
-      line-height: 1.05;
-    }
-    .brand .sub{
-      margin:0;
-      font-size: 14px;
-      color: var(--muted);
-      line-height: 1.25;
-      max-width: 54ch;
-    }
+.tab.active {
+  background: #111;
+  color: #fff;
+}
 
-    .topActions{
-      display:flex;
-      gap: 8px;
-      flex: 0 0 auto;
-      align-items:center;
-    }
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  min-height: 0;
+}
 
-    .btn{
-      appearance:none;
-      border: 1px solid transparent;
-      background: var(--btn);
-      color: white;
-      padding: 10px 12px;
-      border-radius: 14px;
-      font-weight: 700;
-      font-size: 14px;
-      cursor:pointer;
-      user-select:none;
-      white-space:nowrap;
-    }
-    .btn.secondary{
-      background: var(--btn2);
-      border-color: var(--btn2b);
-      color: var(--text);
-      font-weight: 650;
-    }
-    .btn:active{ transform: translateY(1px); }
+.vote-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-height: 0;
+}
 
-    .main{
-      flex: 1 1 auto;
-      min-height: 0; /* ключ: чтобы флекс нормально ужимался */
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-    }
+.vote-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+  cursor: pointer;
+}
 
-    .panel{
-      flex: 1 1 auto;
-      min-height: 0;
-      border-radius: var(--radius2);
-      border:1px solid var(--stroke);
-      background: radial-gradient(1200px 600px at 30% 0%, rgba(31,111,235,.20), rgba(16,24,42,0) 60%),
-                  radial-gradient(1000px 600px at 90% 110%, rgba(161,98,247,.16), rgba(16,24,42,0) 55%),
-                  linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      box-shadow: var(--shadow);
-      padding: 12px;
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
-      overflow:hidden; /* не даём внутреннему скроллу появляться */
-    }
+.controls {
+  padding-top: 12px;
+}
 
-    .hint{
-      padding: 6px 6px 0 6px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.35;
-      flex: 0 0 auto;
-    }
+button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
 
-    /* Vote grid */
-    .pair{
-      flex: 1 1 auto;
-      min-height: 0;
-      display:grid;
-      gap: 10px;
-      grid-template-columns: 1fr 1fr; /* desktop: рядом */
-      overflow:hidden;
-    }
+.primary {
+  background: #111;
+  color: #fff;
+}
 
-    /* mobile: друг под другом */
-    @media (max-width: 560px){
-      .pair{ grid-template-columns: 1fr; }
-      .top{ min-height: 64px; }
-      .brand h1{ font-size: 22px; }
-      .brand .sub{ font-size: 13px; }
-      .btn{ padding: 10px 11px; }
-    }
+.secondary {
+  background: #eee;
+  margin-top: 8px;
+}
 
-    .photoCard{
-      position:relative;
-      border-radius: 18px;
-      overflow:hidden;
-      border: 1px solid var(--stroke2);
-      background: #0a0f1a;
-      min-height: 0;
-      cursor:pointer;
-      user-select:none;
-      display:flex;
-      align-items:stretch;
-      justify-content:stretch;
-    }
+.upload-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  min-height: 0;
+}
 
-    /* фикс: чтобы всегда влезало без скролла — контролируем высоту через aspect-ratio */
-    .photoCard::before{
-      content:"";
-      display:block;
-      padding-top: 135%; /* портретный блок */
-    }
+.upload-card {
+  border: 2px dashed #ccc;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  overflow: hidden;
+}
 
-    .photoCard img{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit: cover;
-      display:block;
-      transform: translateZ(0);
-    }
+.upload-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-    .photoCard .overlay{
-      position:absolute;
-      inset:auto 10px 10px 10px;
-      display:flex;
-      gap:8px;
-      align-items:center;
-      justify-content:space-between;
-      pointer-events:none;
-    }
+.hidden {
+  display: none;
+}
 
-    .badge{
-      font-size: 12px;
-      color: rgba(255,255,255,.92);
-      background: rgba(0,0,0,.35);
-      border: 1px solid rgba(255,255,255,.18);
-      padding: 6px 8px;
-      border-radius: 999px;
-      backdrop-filter: blur(8px);
-    }
-
-    .footerRow{
-      flex: 0 0 auto;
-      display:flex;
-      gap: 10px;
-      justify-content:space-between;
-      align-items:center;
-      padding: 0 2px;
-    }
-
-    .status{
-      font-size: 13px;
-      color: var(--muted2);
-      min-height: 18px;
-    }
-
-    /* Upload view */
-    .uploadWrap{
-      flex: 1 1 auto;
-      min-height: 0;
-      display:none;
-      flex-direction:column;
-      gap: 10px;
-      overflow:hidden;
-    }
-
-    .uploadGrid{
-      flex: 1 1 auto;
-      min-height: 0;
-      display:grid;
-      gap:10px;
-      grid-template-columns: 1fr 1fr;
-      overflow:hidden;
-    }
-
-    @media (max-width: 560px){
-      .uploadGrid{ grid-template-columns: 1fr; }
-    }
-
-    .drop{
-      border-radius: 18px;
-      border: 1px dashed rgba(255,255,255,.22);
-      background: rgba(0,0,0,.18);
-      position:relative;
-      overflow:hidden;
-      min-height: 0;
-      cursor:pointer;
-      user-select:none;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      padding: 12px;
-    }
-
-    .drop::before{
-      content:"";
-      display:block;
-      padding-top: 105%;
-    }
-
-    .dropInner{
-      position:absolute;
-      inset:0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap: 8px;
-      padding: 14px;
-    }
-
-    .dropTitle{
-      font-size: 18px;
-      font-weight: 800;
-      margin:0;
-    }
-    .dropText{
-      margin:0;
-      font-size: 14px;
-      color: var(--muted);
-      line-height:1.3;
-    }
-
-    .preview{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:none;
-    }
-
-    .uploadActions{
-      flex: 0 0 auto;
-      display:flex;
-      gap: 10px;
-    }
-    .uploadActions .btn{ flex: 1 1 0; }
-
-    .error{
-      color: #ffd0d0;
-      font-size: 13px;
-      min-height: 18px;
-    }
-
-    /* Small loading shimmer */
-    .shimmer{
-      position:absolute; inset:0;
-      background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06));
-      background-size: 200% 100%;
-      animation: shimmer 1.15s infinite linear;
-    }
-    @keyframes shimmer{
-      0%{ background-position: 200% 0; }
-      100%{ background-position: -200% 0; }
-    }
-
-    .hiddenInput{ display:none; }
-  </style>
+.status {
+  text-align: center;
+  font-size: 14px;
+  padding-top: 6px;
+}
+</style>
 </head>
 
 <body>
-  <div class="app">
-    <div class="top">
-      <div class="brand">
-        <!-- Заголовок оставляем один раз (внутри страницы). В шапке Telegram он уже есть, но там мелко — этот можно оставить как основной. -->
-        <h1>LookingGreat</h1>
-        <p class="sub">Тапни по фото — голос засчитается.</p>
-      </div>
-      <div class="topActions">
-        <button id="btnUpload" class="btn secondary" type="button">Загрузить пару</button>
-        <button id="btnSkip" class="btn secondary" type="button">Пропустить</button>
-      </div>
-    </div>
+<div class="app">
 
-    <div class="main">
-      <div class="panel">
-        <!-- VOTE VIEW -->
-        <div id="voteView" style="display:flex; flex-direction:column; gap:10px; flex:1 1 auto; min-height:0;">
-          <div class="hint" id="hintLine"></div>
-
-          <div class="pair" id="pairGrid">
-            <div class="photoCard" id="leftCard" role="button" aria-label="Голосовать за левое фото">
-              <div class="shimmer" id="leftShim"></div>
-              <img id="leftImg" alt="Фото 1" />
-              <div class="overlay"><span class="badge">Фото 1</span></div>
-            </div>
-
-            <div class="photoCard" id="rightCard" role="button" aria-label="Голосовать за правое фото">
-              <div class="shimmer" id="rightShim"></div>
-              <img id="rightImg" alt="Фото 2" />
-              <div class="overlay"><span class="badge">Фото 2</span></div>
-            </div>
-          </div>
-
-          <div class="footerRow">
-            <div class="status" id="statusLine"></div>
-          </div>
-        </div>
-
-        <!-- UPLOAD VIEW -->
-        <div id="uploadView" class="uploadWrap">
-          <div class="hint">Загрузка пары: выбери два фото.</div>
-
-          <div class="uploadGrid">
-            <div class="drop" id="drop1" role="button" aria-label="Загрузить фото 1">
-              <img class="preview" id="prev1" alt="Превью фото 1" />
-              <div class="dropInner">
-                <p class="dropTitle">Фото 1</p>
-                <p class="dropText">Нажми, чтобы загрузить</p>
-              </div>
-            </div>
-
-            <div class="drop" id="drop2" role="button" aria-label="Загрузить фото 2">
-              <img class="preview" id="prev2" alt="Превью фото 2" />
-              <div class="dropInner">
-                <p class="dropTitle">Фото 2</p>
-                <p class="dropText">Нажми, чтобы загрузить</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="error" id="uploadErr"></div>
-
-          <div class="uploadActions">
-            <button id="btnSend" class="btn" type="button">Отправить пару</button>
-            <button id="btnCancel" class="btn secondary" type="button">Отмена</button>
-          </div>
-
-          <input class="hiddenInput" id="file1" type="file" accept="image/*" />
-          <input class="hiddenInput" id="file2" type="file" accept="image/*" />
-        </div>
-      </div>
-    </div>
+  <div class="tabs">
+    <div class="tab active" id="tabVote">Голосование</div>
+    <div class="tab" id="tabUpload">Загрузка пары</div>
   </div>
 
-  <script>
-    // ====== SETTINGS ======
-    // ВАЖНО: укажи точный домен API (Worker), например:
-    // const API_BASE = "https://api.lookinggreat.ru";
-    const API_BASE = (function(){
-      // по умолчанию берем текущий origin (если index.html тоже на api-домене)
-      // если у тебя фронт на другом домене (GitHub Pages), то прямо впиши API_BASE строкой выше.
-      return window.API_BASE_OVERRIDE || window.location.origin;
-    })();
+  <div class="content">
 
-    // ====== TELEGRAM INIT ======
-    const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+    <!-- VOTE -->
+    <div id="voteScreen" class="vote-grid">
+      <img id="leftImg" class="vote-img" />
+      <img id="rightImg" class="vote-img" />
+    </div>
 
-    function getTgId(){
-      const id = tg?.initDataUnsafe?.user?.id;
-      if (id) return String(id);
+    <!-- UPLOAD -->
+    <div id="uploadScreen" class="upload-grid hidden">
+      <div class="upload-card" id="cardLeft">Нажмите чтобы загрузить<br>Фото 1</div>
+      <div class="upload-card" id="cardRight">Нажмите чтобы загрузить<br>Фото 2</div>
+    </div>
 
-      // fallback (если открыто не из Telegram)
-      let stored = localStorage.getItem("tg_id_demo");
-      if (!stored){
-        stored = String(Math.floor(Math.random()*900000)+100000);
-        localStorage.setItem("tg_id_demo", stored);
-      }
-      return stored;
-    }
+    <div class="controls">
+      <button id="nextBtn" class="primary">Следующая</button>
+      <button id="sendBtn" class="primary hidden">Отправить пару</button>
+      <button id="clearBtn" class="secondary hidden">Очистить</button>
+      <div class="status" id="status"></div>
+    </div>
 
-    const TG_ID = getTgId();
+  </div>
+</div>
 
-    function tgSetup(){
-      try{
-        if (!tg) return;
-        tg.expand();
-        tg.ready();
+<input type="file" id="fileLeft" accept="image/*" class="hidden">
+<input type="file" id="fileRight" accept="image/*" class="hidden">
 
-        // не везде есть, но если есть — ок
-        if (typeof tg.disableVerticalSwipes === "function") {
-          tg.disableVerticalSwipes();
-        }
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-        // темная тема Telegram — оставляем
-        tg.setHeaderColor && tg.setHeaderColor("#0b0f1a");
-        tg.setBackgroundColor && tg.setBackgroundColor("#0b0f1a");
-      } catch(e){}
-    }
-    tgSetup();
+const API_BASE = window.location.origin;
 
-    // ====== UI ELEMENTS ======
-    const voteView = document.getElementById("voteView");
-    const uploadView = document.getElementById("uploadView");
+let tg_id = tg.initDataUnsafe?.user?.id || "0";
+let currentPair = null;
+let leftFile = null;
+let rightFile = null;
 
-    const btnUpload = document.getElementById("btnUpload");
-    const btnSkip = document.getElementById("btnSkip");
-    const statusLine = document.getElementById("statusLine");
-    const hintLine = document.getElementById("hintLine");
+const voteScreen = document.getElementById("voteScreen");
+const uploadScreen = document.getElementById("uploadScreen");
 
-    const leftCard = document.getElementById("leftCard");
-    const rightCard = document.getElementById("rightCard");
-    const leftImg = document.getElementById("leftImg");
-    const rightImg = document.getElementById("rightImg");
-    const leftShim = document.getElementById("leftShim");
-    const rightShim = document.getElementById("rightShim");
+const tabVote = document.getElementById("tabVote");
+const tabUpload = document.getElementById("tabUpload");
 
-    const drop1 = document.getElementById("drop1");
-    const drop2 = document.getElementById("drop2");
-    const file1 = document.getElementById("file1");
-    const file2 = document.getElementById("file2");
-    const prev1 = document.getElementById("prev1");
-    const prev2 = document.getElementById("prev2");
+const leftImg = document.getElementById("leftImg");
+const rightImg = document.getElementById("rightImg");
 
-    const btnSend = document.getElementById("btnSend");
-    const btnCancel = document.getElementById("btnCancel");
-    const uploadErr = document.getElementById("uploadErr");
+const nextBtn = document.getElementById("nextBtn");
+const sendBtn = document.getElementById("sendBtn");
+const clearBtn = document.getElementById("clearBtn");
 
-    // ====== STATE ======
-    let currentPair = null;
-    let busy = false;
+const cardLeft = document.getElementById("cardLeft");
+const cardRight = document.getElementById("cardRight");
 
-    function setBusy(flag, msg){
-      busy = flag;
-      statusLine.textContent = msg || "";
-      btnSkip.disabled = flag;
-      btnUpload.disabled = flag;
-      leftCard.style.pointerEvents = flag ? "none" : "auto";
-      rightCard.style.pointerEvents = flag ? "none" : "auto";
-    }
+const fileLeft = document.getElementById("fileLeft");
+const fileRight = document.getElementById("fileRight");
 
-    function showVote(){
-      uploadView.style.display = "none";
-      voteView.style.display = "flex";
-      uploadErr.textContent = "";
-      // на всякий случай, чтобы Telegram пересчитал высоту
-      try{ tg && tg.expand(); }catch(e){}
-    }
+const statusEl = document.getElementById("status");
 
-    function showUpload(){
-      voteView.style.display = "none";
-      uploadView.style.display = "flex";
-      uploadErr.textContent = "";
-      try{ tg && tg.expand(); }catch(e){}
-    }
+function setStatus(text) {
+  statusEl.textContent = text || "";
+}
 
-    function showShimmers(flag){
-      leftShim.style.display = flag ? "block" : "none";
-      rightShim.style.display = flag ? "block" : "none";
-    }
+function switchTab(mode) {
+  if (mode === "vote") {
+    tabVote.classList.add("active");
+    tabUpload.classList.remove("active");
+    voteScreen.classList.remove("hidden");
+    uploadScreen.classList.add("hidden");
+    nextBtn.classList.remove("hidden");
+    sendBtn.classList.add("hidden");
+    clearBtn.classList.add("hidden");
+    loadNext();
+  } else {
+    tabUpload.classList.add("active");
+    tabVote.classList.remove("active");
+    voteScreen.classList.add("hidden");
+    uploadScreen.classList.remove("hidden");
+    nextBtn.classList.add("hidden");
+    sendBtn.classList.remove("hidden");
+    clearBtn.classList.remove("hidden");
+  }
+}
 
-    function setImages(leftUrl, rightUrl){
-      // сброс
-      leftImg.removeAttribute("src");
-      rightImg.removeAttribute("src");
-      showShimmers(true);
+tabVote.onclick = () => switchTab("vote");
+tabUpload.onclick = () => switchTab("upload");
 
-      // Важно: iOS иногда не триггерит load при кешировании.
-      // Поэтому добавим cache-bust параметр только для отображения (не для /r2 кеша можно оставить как есть),
-      // но лучше не трогать. Оставим чисто.
-      leftImg.onload = () => { leftShim.style.display = "none"; };
-      rightImg.onload = () => { rightShim.style.display = "none"; };
+async function loadNext() {
+  setStatus("Загрузка...");
+  const res = await fetch(`${API_BASE}/feed?tg_id=${tg_id}`);
+  const data = await res.json();
+  if (data.empty) {
+    setStatus("Пока нет новых пар");
+    return;
+  }
+  currentPair = data.item;
+  leftImg.src = currentPair.left_url;
+  rightImg.src = currentPair.right_url;
+  setStatus("");
+}
 
-      leftImg.onerror = () => { leftShim.style.display = "none"; statusLine.textContent = "Не удалось загрузить фото 1"; };
-      rightImg.onerror = () => { rightShim.style.display = "none"; statusLine.textContent = "Не удалось загрузить фото 2"; };
+async function vote(choice) {
+  if (!currentPair) return;
+  await fetch(`${API_BASE}/vote`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tg_id,
+      pair_id: currentPair.id,
+      choice
+    })
+  });
+  loadNext();
+}
 
-      leftImg.src = leftUrl;
-      rightImg.src = rightUrl;
-    }
+leftImg.onclick = () => vote("left");
+rightImg.onclick = () => vote("right");
+nextBtn.onclick = loadNext;
 
-    // ====== API ======
-    async function apiGet(path){
-      const r = await fetch(API_BASE + path, { method:"GET" });
-      const j = await r.json().catch(()=>null);
-      return { ok: r.ok, status:r.status, data:j };
-    }
+cardLeft.onclick = () => fileLeft.click();
+cardRight.onclick = () => fileRight.click();
 
-    async function apiPost(path, payload){
-      const r = await fetch(API_BASE + path, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(payload)
-      });
-      const j = await r.json().catch(()=>null);
-      return { ok: r.ok, status:r.status, data:j };
-    }
+fileLeft.onchange = () => {
+  leftFile = fileLeft.files[0];
+  previewImage(leftFile, cardLeft);
+};
 
-    async function loadFeed(){
-      setBusy(true, "Загружаю…");
-      hintLine.textContent = "";
-      try{
-        const res = await apiGet("/feed?tg_id=" + encodeURIComponent(TG_ID));
-        if (!res.ok || !res.data) {
-          setBusy(false, "Ошибка загрузки");
-          return;
-        }
+fileRight.onchange = () => {
+  rightFile = fileRight.files[0];
+  previewImage(rightFile, cardRight);
+};
 
-        if (res.data.empty) {
-          currentPair = null;
-          showShimmers(false);
-          leftImg.removeAttribute("src");
-          rightImg.removeAttribute("src");
-          hintLine.textContent = "Пока нет новых пар для голосования.";
-          setBusy(false, "");
-          return;
-        }
+function previewImage(file, card) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    card.innerHTML = `<img src="${e.target.result}">`;
+  };
+  reader.readAsDataURL(file);
+}
 
-        currentPair = res.data.item;
-        setImages(currentPair.left_url, currentPair.right_url);
-        setBusy(false, "");
-      } catch(e){
-        setBusy(false, "Ошибка сети");
-      }
-    }
+sendBtn.onclick = async () => {
+  if (!leftFile || !rightFile) {
+    setStatus("Загрузите оба фото");
+    return;
+  }
 
-    async function vote(choice){
-      if (busy) return;
-      if (!currentPair?.id) return;
+  setStatus("Отправка...");
 
-      setBusy(true, "Считаю голос…");
-      try{
-        const res = await apiPost("/vote", {
-          tg_id: TG_ID,
-          pair_id: currentPair.id,
-          choice: choice
-        });
+  const form = new FormData();
+  form.append("tg_id", tg_id);
+  form.append("left", leftFile);
+  form.append("right", rightFile);
 
-        if (!res.ok || !res.data) {
-          const err = res.data?.error || "Ошибка";
-          if (err === "cannot_vote_own_pair") {
-            setBusy(false, "Нельзя голосовать за свою пару");
-            // Просто загружаем следующую
-            await loadFeed();
-            return;
-          }
-          setBusy(false, "Ошибка голосования");
-          return;
-        }
+  const res = await fetch(`${API_BASE}/upload_pair`, {
+    method: "POST",
+    body: form
+  });
 
-        if (res.data.empty) {
-          currentPair = null;
-          showShimmers(false);
-          leftImg.removeAttribute("src");
-          rightImg.removeAttribute("src");
-          hintLine.textContent = "Пока нет новых пар для голосования.";
-          setBusy(false, "");
-          return;
-        }
+  if (!res.ok) {
+    setStatus("Ошибка загрузки");
+    return;
+  }
 
-        currentPair = res.data.item;
-        setImages(currentPair.left_url, currentPair.right_url);
-        setBusy(false, "");
-      } catch(e){
-        setBusy(false, "Ошибка сети");
-      }
-    }
+  const data = await res.json();
+  if (!data.ok) {
+    setStatus("Ошибка: " + (data.error || "upload_failed"));
+    return;
+  }
 
-    // skip: просто загрузить следующую пару
-    async function skip(){
-      if (busy) return;
-      await loadFeed();
-    }
+  setStatus("Пара успешно загружена");
+  clearUpload();
+};
 
-    // ====== UPLOAD ======
-    function resetUpload(){
-      file1.value = "";
-      file2.value = "";
-      prev1.src = "";
-      prev2.src = "";
-      prev1.style.display = "none";
-      prev2.style.display = "none";
-      uploadErr.textContent = "";
-    }
+clearBtn.onclick = clearUpload;
 
-    function setPreview(file, imgEl){
-      const url = URL.createObjectURL(file);
-      imgEl.src = url;
-      imgEl.style.display = "block";
-      imgEl.onload = () => URL.revokeObjectURL(url);
-    }
+function clearUpload() {
+  leftFile = null;
+  rightFile = null;
+  fileLeft.value = "";
+  fileRight.value = "";
+  cardLeft.innerHTML = "Нажмите чтобы загрузить<br>Фото 1";
+  cardRight.innerHTML = "Нажмите чтобы загрузить<br>Фото 2";
+  setStatus("");
+}
 
-    async function uploadPair(){
-      uploadErr.textContent = "";
-      const f1 = file1.files && file1.files[0];
-      const f2 = file2.files && file2.files[0];
-
-      if (!f1 || !f2){
-        uploadErr.textContent = "Выбери два фото.";
-        return;
-      }
-
-      btnSend.disabled = true;
-      btnCancel.disabled = true;
-      uploadErr.textContent = "Загружаю…";
-
-      try{
-        const fd = new FormData();
-        fd.append("tg_id", TG_ID);
-        fd.append("left", f1);
-        fd.append("right", f2);
-
-        // ВАЖНО: в твоём Worker эндпоинт называется /upload_pair (а не /upload)
-        const r = await fetch(API_BASE + "/upload_pair", {
-          method:"POST",
-          body: fd
-        });
-
-        const j = await r.json().catch(()=>null);
-
-        if (!r.ok || !j?.ok){
-          const err = j?.error || "upload_failed";
-          uploadErr.textContent = "Не удалось загрузить. Ошибка: " + err;
-          btnSend.disabled = false;
-          btnCancel.disabled = false;
-          return;
-        }
-
-        uploadErr.textContent = "Готово! Пара загружена.";
-        // после загрузки возвращаемся в голосование и грузим фид
-        setTimeout(async ()=>{
-          resetUpload();
-          showVote();
-          await loadFeed();
-          btnSend.disabled = false;
-          btnCancel.disabled = false;
-          uploadErr.textContent = "";
-        }, 450);
-
-      } catch(e){
-        uploadErr.textContent = "Не удалось загрузить. Проверь соединение.";
-        btnSend.disabled = false;
-        btnCancel.disabled = false;
-      }
-    }
-
-    // ====== EVENTS ======
-    leftCard.addEventListener("click", ()=>vote("left"));
-    rightCard.addEventListener("click", ()=>vote("right"));
-
-    btnSkip.addEventListener("click", skip);
-    btnUpload.addEventListener("click", ()=>{
-      resetUpload();
-      showUpload();
-    });
-
-    btnCancel.addEventListener("click", ()=>{
-      resetUpload();
-      showVote();
-    });
-
-    drop1.addEventListener("click", ()=>file1.click());
-    drop2.addEventListener("click", ()=>file2.click());
-
-    file1.addEventListener("change", ()=>{
-      const f = file1.files && file1.files[0];
-      if (f) setPreview(f, prev1);
-    });
-    file2.addEventListener("change", ()=>{
-      const f = file2.files && file2.files[0];
-      if (f) setPreview(f, prev2);
-    });
-
-    btnSend.addEventListener("click", uploadPair);
-
-    // ====== START ======
-    (async function init(){
-      // Подсказка вверху не про "можно пропустить" — кнопка есть, достаточно.
-      hintLine.textContent = "";
-      await loadFeed();
-    })();
-  </script>
+loadNext();
+</script>
 </body>
 </html>
