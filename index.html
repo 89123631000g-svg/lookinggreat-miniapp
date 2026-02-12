@@ -245,7 +245,11 @@ async function loadNext() {
 
 async function vote(choice) {
   if (!currentPair) return;
-  await fetch(`${API_BASE}/vote`, {
+
+  // мгновенный визуальный отклик
+  setStatus("Голос учтён");
+
+  const res = await fetch(`${API_BASE}/vote`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -254,7 +258,18 @@ async function vote(choice) {
       choice
     })
   });
-  loadNext();
+
+  // если вдруг ошибка — покажем её, но не ломаем экран
+  if (!res.ok) {
+    setStatus("Ошибка голосования");
+    return;
+  }
+
+  // через 0.5 сек подгружаем следующую пару
+  setTimeout(() => {
+    setStatus("Загрузка...");
+    loadNext();
+  }, 500);
 }
 
 leftImg.onclick = () => vote("left");
