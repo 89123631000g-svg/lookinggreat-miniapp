@@ -131,6 +131,43 @@ button {
   font-size: 14px;
   padding-top: 6px;
 }
+  .vote-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(255,255,255,0.70);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 16px;
+}
+
+.overlay-card {
+  background: rgba(17,17,17,0.88);
+  color: #fff;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-weight: 700;
+  text-align: center;
+  max-width: 320px;
+  width: 100%;
+}
+
+.overlay-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
 </style>
 </head>
 
@@ -145,10 +182,19 @@ button {
   <div class="content">
 
     <!-- VOTE -->
-    <div id="voteScreen" class="vote-grid">
-      <img id="leftImg" class="vote-img" />
-      <img id="rightImg" class="vote-img" />
+<div class="vote-wrap" id="voteWrap">
+  <div id="voteScreen" class="vote-grid">
+    <img id="leftImg" class="vote-img" />
+    <img id="rightImg" class="vote-img" />
+  </div>
+
+  <div id="emptyOverlay" class="overlay hidden">
+    <div class="overlay-card">
+      Пока нет новых пар
+      <div class="overlay-sub">Ожидаем новые…</div>
     </div>
+  </div>
+</div>
 
     <!-- UPLOAD -->
     <div id="uploadScreen" class="upload-grid hidden">
@@ -179,9 +225,14 @@ let tg_id = tg.initDataUnsafe?.user?.id || "0";
 let currentPair = null;
 let leftFile = null;
 let rightFile = null;
+let emptyPollTimer = null;
+let loadingFeed = false;
+
 
 const voteScreen = document.getElementById("voteScreen");
 const uploadScreen = document.getElementById("uploadScreen");
+const emptyOverlay = document.getElementById("emptyOverlay");
+
 
 const tabVote = document.getElementById("tabVote");
 const tabUpload = document.getElementById("tabUpload");
@@ -206,6 +257,8 @@ function setStatus(text) {
 }
 
 function switchTab(mode) {
+  if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
+emptyOverlay.classList.add("hidden");
   if (mode === "vote") {
     tabVote.classList.add("active");
     tabUpload.classList.remove("active");
@@ -230,17 +283,41 @@ tabVote.onclick = () => switchTab("vote");
 tabUpload.onclick = () => switchTab("upload");
 
 async function loadNext() {
-  setStatus("Загрузка...");
-  const res = await fetch(`${API_BASE}/feed?tg_id=${tg_id}`);
-  const data = await res.json();
-  if (data.empty) {
-    setStatus("Пока нет новых пар");
-    return;
+  if (loadingFeed) return;
+  loadingFeed = true;
+
+  try {
+    setStatus("Загрузка...");
+    const res = await fetch(`${API_BASE}/feed?tg_id=${tg_id}`);
+    const data = await res.json();
+
+    if (data.empty) {
+      setStatus("");
+      emptyOverlay.classList.remove("hidden");
+
+      // авто-проверка новых пар
+      if (!emptyPollTimer) {
+        emptyPollTimer = setInterval(() => {
+          // обновляем только если мы на вкладке голосования
+          if (!voteScreen.classList.contains("hidden")) loadNext();
+        }, 3000);
+      }
+      return;
+    }
+
+    // есть пара — отключаем авто-пулл
+    if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
+    emptyOverlay.classList.add("hidden");
+
+    currentPair = data.item;
+    leftImg.src = currentPair.left_url;
+    rightImg.src = currentPair.right_url;
+    setStatus("");
+  } catch (e) {
+    setStatus("Ошибка загрузки");
+  } finally {
+    loadingFeed = false;
   }
-  currentPair = data.item;
-  leftImg.src = currentPair.left_url;
-  rightImg.src = currentPair.right_url;
-  setStatus("");
 }
 
 async function vote(choice) {
