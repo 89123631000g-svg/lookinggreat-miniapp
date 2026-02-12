@@ -210,6 +210,7 @@ position: absolute;
   </div>
 
   <div id="emptyOverlay" class="overlay hidden">
+    <div id="toast" class="toast hidden">Голос учтён</div>
     <div class="overlay-card">
   Пока нет новых пар
   <div class="overlay-sub">Если вы загрузили пару — её увидят другие</div>
@@ -253,6 +254,7 @@ let loadingFeed = false;
 const voteScreen = document.getElementById("voteScreen");
 const uploadScreen = document.getElementById("uploadScreen");
 const emptyOverlay = document.getElementById("emptyOverlay");
+const toast = document.getElementById("toast");  
 
 
 const tabVote = document.getElementById("tabVote");
@@ -276,7 +278,14 @@ const statusEl = document.getElementById("status");
 function setStatus(text) {
   statusEl.textContent = text || "";
 }
+function showToast(text, ms = 900) {
+  toast.textContent = text;
+  toast.classList.remove("hidden");
 
+  setTimeout(() => {
+    toast.classList.add("hidden");
+  }, ms);
+}
 function switchTab(mode) {
   if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
 emptyOverlay.classList.add("hidden");
@@ -345,7 +354,8 @@ async function vote(choice) {
   if (!currentPair) return;
 
   // мгновенный визуальный отклик
-  setStatus("Голос учтён");
+  showToast("Голос учтён", 900);
+setStatus(""); // чтобы внизу ничего не писалось
 
   const res = await fetch(`${API_BASE}/vote`, {
     method: "POST",
