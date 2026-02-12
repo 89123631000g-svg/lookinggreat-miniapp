@@ -341,28 +341,30 @@ async function loadNext() {
     setStatus("Загрузка...");
     const res = await fetch(`${API_BASE}/feed?tg_id=${tg_id}`);
     const data = await res.json();
+
     console.log("FEED DATA:", data);
 
-    // ВАЖНО: поддерживаем оба варианта ответа бэка:
-    // 1) { empty: true }
-    // 2) { item: null }
-    const isEmpty = !!data.empty || !data.item;
-
-    if (isEmpty) {
+    // ЕСЛИ НЕТ ПАР
+    if (!data.item) {
       setStatus("");
       emptyOverlay.classList.remove("hidden");
 
-      // авто-проверка новых пар (только когда реально пусто)
       if (!emptyPollTimer) {
         emptyPollTimer = setInterval(() => {
           if (!voteScreen.classList.contains("hidden")) loadNext();
         }, 3000);
       }
+
       return;
     }
 
-    // Есть пара -> скрываем overlay и отключаем авто-пулл
-    if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
+    // ЕСЛИ ПАРА ЕСТЬ
+
+    if (emptyPollTimer) {
+      clearInterval(emptyPollTimer);
+      emptyPollTimer = null;
+    }
+
     emptyOverlay.classList.add("hidden");
 
     currentPair = data.item;
@@ -370,6 +372,7 @@ async function loadNext() {
     rightImg.src = currentPair.right_url;
 
     setStatus("");
+
   } catch (e) {
     setStatus("Ошибка загрузки");
   } finally {
