@@ -341,6 +341,7 @@ async function loadNext() {
     setStatus("Загрузка...");
     const res = await fetch(`${API_BASE}/feed?tg_id=${tg_id}`);
     const data = await res.json();
+    console.log("FEED DATA:", data);
 
     // ВАЖНО: поддерживаем оба варианта ответа бэка:
     // 1) { empty: true }
