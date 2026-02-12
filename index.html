@@ -189,7 +189,10 @@ button {
   animation: pop 0.25s ease;
 }
 
-.toast.hidden { display: none; }
+.toast.hidden {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
 @keyframes pop {
   from {
     transform: translate(-50%, -50%) scale(0.9);
@@ -338,9 +341,17 @@ async function loadNext() {
     const res = await fetch(`${API_BASE}/feed?tg_id=${tg_id}`);
     const data = await res.json();
 
-    if (data.empty) {
-      setStatus("");
-      emptyOverlay.classList.remove("hidden");
+    if (!data.item) {
+  setStatus("");
+  emptyOverlay.classList.remove("hidden");
+
+  if (!emptyPollTimer) {
+    emptyPollTimer = setInterval(() => {
+      if (!voteScreen.classList.contains("hidden")) loadNext();
+    }, 3000);
+  }
+  return;
+}
 
       // авто-проверка новых пар
       if (!emptyPollTimer) {
@@ -371,7 +382,7 @@ async function vote(choice) {
   if (!currentPair) return;
 
   // мгновенный визуальный отклик
-  showToast("Голос учтён", 900);
+  showToast("Голос учтён", 1500);
 setStatus(""); // чтобы внизу ничего не писалось
 
   const res = await fetch(`${API_BASE}/vote`, {
