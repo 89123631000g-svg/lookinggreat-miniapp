@@ -137,7 +137,6 @@ button {
   position: relative;
 }
 
-. {
 .overlay {
   position: absolute;
   inset: 0;
@@ -230,7 +229,8 @@ button {
 </div>
 
 <div id="toast" class="toast hidden">Голос учтён</div>
-
+</div>
+    
     <!-- UPLOAD -->
     <div id="uploadScreen" class="upload-grid hidden">
       <div class="upload-card" id="cardLeft">Нажмите чтобы загрузить<br>Фото 1</div>
@@ -262,6 +262,7 @@ let leftFile = null;
 let rightFile = null;
 let emptyPollTimer = null;
 let loadingFeed = false;
+let toastTimer = null;
 
 
 const voteScreen = document.getElementById("voteScreen");
@@ -292,11 +293,14 @@ function setStatus(text) {
   statusEl.textContent = text || "";
 }
 function showToast(text, ms = 900) {
+  if (toastTimer) clearTimeout(toastTimer);
+
   toast.innerHTML = "✅ " + text;
   toast.classList.remove("hidden");
 
-  setTimeout(() => {
+  toastTimer = setTimeout(() => {
     toast.classList.add("hidden");
+    toastTimer = null;
   }, ms);
 }
 function switchTab(mode) {
