@@ -187,10 +187,11 @@ button {
   max-width: 320px;
   width: calc(100% - 36px);
   animation: pop 0.25s ease;
+  opacity: 1;
 }
 
 .toast.hidden {
-  opacity: 1;
+  opacity: 0;
   transition: opacity 0.2s ease;
 }
 @keyframes pop {
@@ -352,16 +353,6 @@ async function loadNext() {
   }
   return;
 }
-
-      // авто-проверка новых пар
-      if (!emptyPollTimer) {
-        emptyPollTimer = setInterval(() => {
-          // обновляем только если мы на вкладке голосования
-          if (!voteScreen.classList.contains("hidden")) loadNext();
-        }, 3000);
-      }
-      return;
-    }
 
     // есть пара — отключаем авто-пулл
     if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
