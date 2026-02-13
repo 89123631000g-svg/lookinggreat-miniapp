@@ -263,6 +263,7 @@ button {
       <button id="sendBtn" class="primary hidden">Отправить пару</button>
       <button id="clearBtn" class="secondary hidden">Очистить</button>
       <div class="status" id="status"></div>
+      <div class="status hidden" id="myStats"></div>
     </div>
 
   </div>
@@ -285,7 +286,8 @@ let emptyPollTimer = null;
 let loadingFeed = false;
 let votingLock = false;
 let toastTimer = null;
-
+const skippedPairIds = new Set();
+let brokenStreak = 0;
 
 const voteScreen = document.getElementById("voteScreen");
 const uploadScreen = document.getElementById("uploadScreen");
@@ -310,7 +312,12 @@ const fileLeft = document.getElementById("fileLeft");
 const fileRight = document.getElementById("fileRight");
 
 const statusEl = document.getElementById("status");
-
+const myStatsEl = document.getElementById("myStats");
+function setMyStats(text) {
+  if (!text) { myStatsEl.classList.add("hidden"); myStatsEl.textContent = ""; return; }
+  myStatsEl.textContent = text;
+  myStatsEl.classList.remove("hidden");
+}
 function setStatus(text) {
   statusEl.textContent = text || "";
 }
@@ -347,14 +354,17 @@ async function fadeSwapPair(item) {
   if (!item?.left_url || !item?.right_url) return;
 
   // 1) ПРЕДЗАГРУЗКА (оба изображения)
-  voteScreen.classList.add("loading");
+    voteScreen.classList.add("loading");
   try {
     await Promise.all([
       preloadImage(item.left_url),
       preloadImage(item.right_url),
     ]);
   } catch (e) {
-    // Если preload упал — всё равно попробуем показать
+    voteScreen.classList.remove("loading");
+    setStatus("Не удалось загрузить фото — пропускаю…");
+    setTimeout(loadNext, 150);
+    return false;
   }
 
   // 2) FADE OUT
@@ -439,9 +449,15 @@ async function loadNext() {
 
     emptyOverlay.classList.add("hidden");
     currentPair = data.item;
+    if (skippedPairIds.has(currentPair.id)) {
+    loadingFeed = false;
+    setTimeout(loadNext, 50);
+    return;
+    }
 
     // Плавно показываем новую пару с предзагрузкой
-    await fadeSwapPair(currentPair);
+    const okSwap = await fadeSwapPair(currentPair);
+    if (okSwap === false) return;
 
     setStatus("");
 
@@ -533,15 +549,30 @@ sendBtn.onclick = async () => {
     return;
   }
 
-  const data = await res.json();
-  if (!data.ok) {
-    setStatus("Ошибка: " + (data.error || "upload_failed"));
-    return;
-  }
+    const data = await res.json();
+  if (!data.ok) { setStatus("Ошибка: " + (data.error || "upload_failed")); return; }
 
   setStatus("Пара успешно загружена");
+
+  // Показываем статистику владельцу по этой паре
+  try {
+    const pairId = data.pair?.id;
+    if (pairId) {
+      const sRes = await fetch(`${API_BASE}/pair_stats?id=${pairId}&tg_id=${tg_id}`);
+      const sData = await sRes.json();
+      if (sRes.ok && sData.ok && sData.stats) {
+        setMyStats(`Статистика: Левое ${sData.stats.left} · Правое ${sData.stats.right}`);
+      } else {
+        setMyStats("");
+      }
+    } else {
+      setMyStats("");
+    }
+  } catch (e) {
+    setMyStats("");
+  }
+
   clearUpload();
-};
 
 clearBtn.onclick = clearUpload;
 
@@ -553,6 +584,7 @@ function clearUpload() {
   cardLeft.innerHTML = "Нажмите чтобы загрузить<br>Фото 1";
   cardRight.innerHTML = "Нажмите чтобы загрузить<br>Фото 2";
   setStatus("");
+  setMyStats("");
 }
 
 loadNext();
