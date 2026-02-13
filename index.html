@@ -380,10 +380,18 @@ async function fadeSwapPair(item) {
 
   // 4) FADE IN
   // Если браузер поддерживает decode — немного ровнее
-  try {
+    try {
     if (leftImg.decode) await leftImg.decode();
     if (rightImg.decode) await rightImg.decode();
   } catch (e) {}
+
+  // 🔥 Проверка на реально битое изображение
+  if (leftImg.naturalWidth === 0 || rightImg.naturalWidth === 0) {
+    voteScreen.classList.remove("loading");
+    setStatus("Фото повреждено — пропускаю…");
+    setTimeout(loadNext, 150);
+    return false;
+  }
 
   leftImg.classList.remove("fading");
   rightImg.classList.remove("fading");
