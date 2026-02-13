@@ -366,8 +366,8 @@ async function fadeSwapPair(item) {
       preloadImage(item.left_url),
       preloadImage(item.right_url),
     ]);
-  } catch (e) {
-    voteScreen.classList.remove("loading");
+    } catch (e) {
+    cleanupAfterBroken();
     setStatus("Не удалось загрузить фото — пропускаю…");
     setTimeout(loadNext, 150);
     return false;
@@ -386,14 +386,16 @@ async function fadeSwapPair(item) {
 
   // 4) FADE IN
   // Если браузер поддерживает decode — немного ровнее
-    try {
+      // 4) FADE IN
+  // Если браузер поддерживает decode — немного ровнее
+  try {
     if (leftImg.decode) await leftImg.decode();
     if (rightImg.decode) await rightImg.decode();
   } catch (e) {}
 
   // 🔥 Проверка на реально битое изображение
   if (leftImg.naturalWidth === 0 || rightImg.naturalWidth === 0) {
-    voteScreen.classList.remove("loading");
+    cleanupAfterBroken();
     setStatus("Фото повреждено — пропускаю…");
     setTimeout(loadNext, 150);
     return false;
@@ -402,6 +404,8 @@ async function fadeSwapPair(item) {
   leftImg.classList.remove("fading");
   rightImg.classList.remove("fading");
   voteScreen.classList.remove("loading");
+
+  return true;
 }
   function switchTab(mode) {
   if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
