@@ -122,9 +122,7 @@ button {
   object-fit: cover;
 }
 
-.hidden {
-  display: none;
-}
+.hidden { display: none !important; }
 
 .status {
   text-align: center;
@@ -190,9 +188,12 @@ button {
   opacity: 1;
 }
 
-.toast.hidden {
-  opacity: 0;
+.toast {
   transition: opacity 0.2s ease;
+}
+
+.toast.fadeout {
+  opacity: 0;
 }
 @keyframes pop {
   from {
@@ -296,15 +297,22 @@ const statusEl = document.getElementById("status");
 function setStatus(text) {
   statusEl.textContent = text || "";
 }
-function showToast(text, ms = 900) {
+function showToast(text, ms = 1500) {
   if (toastTimer) clearTimeout(toastTimer);
 
   toast.innerHTML = "✅ " + text;
-  toast.classList.remove("hidden");
 
+  // показываем
+  toast.classList.remove("hidden");
+  toast.classList.remove("fadeout");
+
+  // прячем через ms: сначала fadeout, потом display:none
   toastTimer = setTimeout(() => {
-    toast.classList.add("hidden");
-    toastTimer = null;
+    toast.classList.add("fadeout");
+    setTimeout(() => {
+      toast.classList.add("hidden");
+      toastTimer = null;
+    }, 200); // должно совпадать с transition 0.2s
   }, ms);
 }
 function switchTab(mode) {
