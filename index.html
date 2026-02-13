@@ -273,12 +273,11 @@ button {
 <input type="file" id="fileRight" accept="image/*" class="hidden">
 
 <script>
-const tg = window.Telegram.WebApp;
+
 const tg = window.Telegram.WebApp;
 try { tg.ready(); } catch(e) {}
 try { tg.expand(); } catch(e) {}
 try { tg.disableVerticalSwipes?.(); } catch(e) {}
-tg.expand();
 
 const API_BASE = "https://api.lookingreat.ru";
 
@@ -465,11 +464,6 @@ async function loadNext() {
 
     emptyOverlay.classList.add("hidden");
     currentPair = data.item;
-    if (skippedPairIds.has(currentPair.id)) {
-    loadingFeed = false;
-    setTimeout(loadNext, 50);
-    return;
-    }
 
     // Плавно показываем новую пару с предзагрузкой
     const okSwap = await fadeSwapPair(currentPair);
