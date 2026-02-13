@@ -350,8 +350,14 @@ function preloadImage(url) {
 }
 
 async function fadeSwapPair(item) {
-  // Небольшая защита
   if (!item?.left_url || !item?.right_url) return;
+
+  function cleanupAfterBroken() {
+    // вернуть видимость картинок, если мы уже начали fade
+    leftImg.classList.remove("fading");
+    rightImg.classList.remove("fading");
+    voteScreen.classList.remove("loading");
+  }
 
   // 1) ПРЕДЗАГРУЗКА (оба изображения)
     voteScreen.classList.add("loading");
