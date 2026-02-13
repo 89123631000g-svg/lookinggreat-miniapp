@@ -274,6 +274,10 @@ button {
 
 <script>
 const tg = window.Telegram.WebApp;
+const tg = window.Telegram.WebApp;
+try { tg.ready(); } catch(e) {}
+try { tg.expand(); } catch(e) {}
+try { tg.disableVerticalSwipes?.(); } catch(e) {}
 tg.expand();
 
 const API_BASE = "https://api.lookingreat.ru";
@@ -350,23 +354,22 @@ function preloadImage(url) {
 }
 
 async function fadeSwapPair(item) {
-  if (!item?.left_url || !item?.right_url) return;
+  if (!item?.left_url || !item?.right_url) return false;
 
   function cleanupAfterBroken() {
-    // вернуть видимость картинок, если мы уже начали fade
     leftImg.classList.remove("fading");
     rightImg.classList.remove("fading");
     voteScreen.classList.remove("loading");
   }
 
   // 1) ПРЕДЗАГРУЗКА (оба изображения)
-    voteScreen.classList.add("loading");
+  voteScreen.classList.add("loading");
   try {
     await Promise.all([
       preloadImage(item.left_url),
       preloadImage(item.right_url),
     ]);
-    } catch (e) {
+  } catch (e) {
     cleanupAfterBroken();
     setStatus("Не удалось загрузить фото — пропускаю…");
     setTimeout(loadNext, 150);
@@ -376,24 +379,19 @@ async function fadeSwapPair(item) {
   // 2) FADE OUT
   leftImg.classList.add("fading");
   rightImg.classList.add("fading");
-
-  // даём CSS успеть примениться
   await new Promise(r => setTimeout(r, 180));
 
   // 3) СМЕНА SRC
   leftImg.src = item.left_url;
   rightImg.src = item.right_url;
 
-  // 4) FADE IN
-  // Если браузер поддерживает decode — немного ровнее
-      // 4) FADE IN
-  // Если браузер поддерживает decode — немного ровнее
+  // 4) FADE IN + decode
   try {
     if (leftImg.decode) await leftImg.decode();
     if (rightImg.decode) await rightImg.decode();
   } catch (e) {}
 
-  // 🔥 Проверка на реально битое изображение
+  // 🔥 Реально битая картинка (бывает complete=true, но naturalWidth=0)
   if (leftImg.naturalWidth === 0 || rightImg.naturalWidth === 0) {
     cleanupAfterBroken();
     setStatus("Фото повреждено — пропускаю…");
@@ -404,9 +402,9 @@ async function fadeSwapPair(item) {
   leftImg.classList.remove("fading");
   rightImg.classList.remove("fading");
   voteScreen.classList.remove("loading");
-
   return true;
 }
+
   function switchTab(mode) {
   if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
 emptyOverlay.classList.add("hidden");
@@ -476,6 +474,7 @@ async function loadNext() {
     // Плавно показываем новую пару с предзагрузкой
     const okSwap = await fadeSwapPair(currentPair);
     if (okSwap === false) return;
+
 
     setStatus("");
 
