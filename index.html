@@ -418,8 +418,14 @@
       const totalVotes = Number(item?.total_votes ?? item?.votes_total ?? item?.votes ?? 0);
       const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
 
-      const leftUrl  = item?.photo_left_url  || "";
-      const rightUrl = item?.photo_right_url || "";
+      const leftUrl =
+      item?.photo_left_url ||
+      (item?.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}` : "");
+
+      const rightUrl =
+      item?.photo_right_url ||
+      (item?.photo_right_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_right_key)}` : "");
+
 
       return `
         <div class="card" data-pair-id="${pairNum}">
