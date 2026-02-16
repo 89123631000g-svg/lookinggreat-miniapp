@@ -7,14 +7,8 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #f6f6f7;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-}
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; background:#f6f6f7; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
 
 :root{
   --nav-h: 80px;
@@ -22,209 +16,177 @@ html, body {
   --radius: 18px;
   --shadow: 0 10px 26px rgba(0,0,0,0.10);
   --line: rgba(0,0,0,0.08);
+  --textDim: rgba(0,0,0,0.55);
 }
 
-.app {
+.app{
   padding: 14px 12px calc(var(--nav-h) + var(--safe-bottom) + 14px);
 }
 
-/* карточка-пост */
-.post {
-  background: #fff;
-  border: 1px solid var(--line);
+.post{
+  background:#fff;
+  border:1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  overflow: hidden;
-  margin: 0 0 14px 0;
+  overflow:hidden;
+  margin:0 0 14px 0;
 }
 
-.postHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 12px;
+.postHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 12px;
 }
 
-.postTitle {
-  font-size: 16px;
-  font-weight: 650;
-  color: #111;
+.postTitle{ font-size:16px; font-weight:650; color:#111; }
+.postSub{ font-size:12px; color:var(--textDim); margin-top:2px; }
+
+.menuBtn{
+  width:36px; height:36px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:#fff;
+  display:flex; align-items:center; justify-content:center;
+}
+.menuBtn svg{ width:18px; height:18px; stroke: rgba(0,0,0,0.55); fill:none; stroke-width:2; }
+
+.pair{
+  width:100%;
+  height: 70vh;      /* чуть меньше экрана */
+  max-height: 580px;
+  min-height: 440px;
+  display:flex;
+  flex-direction:column;
+  background:#000;
 }
 
-.postSub {
-  font-size: 12px;
-  color: rgba(0,0,0,0.55);
-  margin-top: 2px;
+.half{
+  position:relative;
+  width:100%;
+  height:50%;
+  overflow:hidden;
+  background:#101114;
 }
 
-.menuBtn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* “красивые поля”: фон берём из той же картинки и размываем */
+.half::before{
+  content:"";
+  position:absolute;
+  inset:-24px;
+  background-image: var(--bg);
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px);
+  transform: scale(1.12);
+  opacity: 0.75;
 }
 
-.menuBtn svg {
-  width: 18px;
-  height: 18px;
-  stroke: rgba(0,0,0,0.55);
-  fill: none;
-  stroke-width: 2;
+/* поверх фона — сама картинка БЕЗ обрезки */
+.half img{
+  position:relative;
+  z-index:1;
+  width:100%;
+  height:100%;
+  object-fit: contain;            /* НЕ режет */
+  object-position: center;
+  display:block;
+  background: transparent;
 }
 
-/* блок пары (вертикально) */
-.pair {
-  width: 100%;
-  height: 68vh;     /* крупно, но видно следующую карточку */
-  max-height: 560px;
-  min-height: 420px;
-  display: flex;
-  flex-direction: column;
-  background: #000;
-}
+/* тонкая линия между верх/низ */
+.dividerH{ height:1px; background: rgba(255,255,255,0.18); }
 
-.half {
-  position: relative;
-  width: 100%;
-  height: 50%;
-  overflow: hidden;
-  background: #000;
-}
-
-.half img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;            /* не тянет, режет минимально */
-  object-position: 50% 25%;     /* чуть выше центра, меньше режет лица */
-  display: block;
-}
-
-/* разделитель между верх/низ */
-.dividerH {
-  height: 1px;
-  background: rgba(255,255,255,0.25);
-}
-
-/* лайк-кнопка */
-.likeBtn {
-  position: absolute;
-  bottom: 14px;
-  right: 14px;
-  width: 54px;
-  height: 54px;
-  border-radius: 999px;
+/* кнопка лайка — “дорогая” */
+.likeBtn{
+  position:absolute;
+  z-index:2;
+  bottom:14px;
+  right:14px;
+  width:56px;
+  height:56px;
+  border-radius:999px;
   background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(0,0,0,0.06);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 22px rgba(0,0,0,0.22);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.20);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  user-select:none;
+  transition: transform .15s ease, opacity .15s ease;
 }
+.likeBtn:active{ transform: scale(0.92); }
 
-.likeBtn:active { transform: scale(0.92); }
-
+/* НОВАЯ иконка: filled thumbs-up */
 .likeBtn svg{
-  width: 24px;
-  height: 24px;
-  stroke: rgba(0,0,0,0.85);
-  fill: none;
-  stroke-width: 2.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  width:26px;
+  height:26px;
+  fill: rgba(0,0,0,0.85);
 }
 
 /* после голосования */
-.voted .likeBtn {
-  opacity: 0.35;
-  pointer-events: none;
-}
+.voted .likeBtn{ opacity:0.35; pointer-events:none; }
 
-/* лёгкая подсветка выбранного */
+/* подсветка выбранного */
 .chosen::after{
   content:"";
   position:absolute;
+  z-index:2;
   inset:0;
-  border: 3px solid rgba(255,255,255,0.75);
+  border: 3px solid rgba(255,255,255,0.70);
   box-shadow: inset 0 0 0 999px rgba(0,0,0,0.10);
   pointer-events:none;
 }
 
 /* подвал */
-.postFooter {
-  padding: 10px 12px 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.postFooter{
+  padding:10px 12px 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
 }
 
-.stat {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: rgba(0,0,0,0.75);
-  font-size: 14px;
+.stat{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color: rgba(0,0,0,0.78);
+  font-size:14px;
 }
+.stat svg{ width:18px; height:18px; fill: rgba(0,0,0,0.55); }
 
-.stat svg{
-  width: 18px;
-  height: 18px;
-  stroke: rgba(0,0,0,0.65);
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.hint {
-  font-size: 12px;
-  color: rgba(0,0,0,0.50);
-}
+.hint{ font-size:12px; color: rgba(0,0,0,0.50); }
 
 /* нижняя навигация */
-.bottomNav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+.bottomNav{
+  position:fixed; left:0; right:0; bottom:0;
   height: calc(var(--nav-h) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
   background: rgba(255,255,255,0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(0,0,0,0.08);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
+  border-top:1px solid rgba(0,0,0,0.08);
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
 }
 
-.navItem {
-  width: 60px;
-  height: 60px;
-  border: 0;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.navItem{
+  width:60px; height:60px;
+  border:0; background:transparent;
+  display:flex; align-items:center; justify-content:center;
 }
-
-.navItem svg {
-  width: 26px;
-  height: 26px;
+.navItem svg{
+  width:26px; height:26px;
   stroke: rgba(0,0,0,0.72);
-  fill: none;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  fill:none;
+  stroke-width:2;
+  stroke-linecap:round;
+  stroke-linejoin:round;
 }
-
-.navItem.active svg { stroke: rgba(0,0,0,1); }
+.navItem.active svg{ stroke: rgba(0,0,0,1); }
 </style>
 </head>
 
@@ -282,22 +244,21 @@ function dotsSvg(){
   `;
 }
 
-function thumbSvg(){
+/* filled thumbs-up */
+function thumbFilledSvg(){
   return `
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M7 11v10"></path>
-      <path d="M7 11h3l3-7c.4-1 .9-1.5 1.8-1.5H16c.8 0 1.4.6 1.2 1.5l-1.1 4H20c1 0 1.6.9 1.3 1.8l-2.1 7.2c-.2.7-.8 1.2-1.5 1.2H9.5c-.8 0-1.5-.7-1.5-1.5V11z"></path>
-      <path d="M3 11h4v10H3z"></path>
+      <path d="M2 11.5C2 10.67 2.67 10 3.5 10H7v12H3.5C2.67 22 2 21.33 2 20.5v-9z"></path>
+      <path d="M9 10h4.02l2.03-4.72c.43-1.01 1.42-1.66 2.52-1.66h.18c1.29 0 2.23 1.2 1.95 2.45L19.7 10H21c1.27 0 2.2 1.2 1.87 2.43l-1.74 6.5A3 3 0 0 1 18.25 21H9V10z"></path>
     </svg>
   `;
 }
 
-function smallThumbSvg(){
+function thumbSmallSvg(){
   return `
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M7 11v10"></path>
-      <path d="M7 11h3l3-7c.4-1 .9-1.5 1.8-1.5H16c.8 0 1.4.6 1.2 1.5l-1.1 4H20c1 0 1.6.9 1.3 1.8l-2.1 7.2c-.2.7-.8 1.2-1.5 1.2H9.5c-.8 0-1.5-.7-1.5-1.5V11z"></path>
-      <path d="M3 11h4v10H3z"></path>
+      <path d="M2 11.5C2 10.67 2.67 10 3.5 10H7v12H3.5C2.67 22 2 21.33 2 20.5v-9z"></path>
+      <path d="M9 10h4.02l2.03-4.72c.43-1.01 1.42-1.66 2.52-1.66h.18c1.29 0 2.23 1.2 1.95 2.45L19.7 10H21c1.27 0 2.2 1.2 1.87 2.43l-1.74 6.5A3 3 0 0 1 18.25 21H9V10z"></path>
     </svg>
   `;
 }
@@ -308,7 +269,6 @@ async function loadFeed(){
 
   const res = await fetch(`${API_BASE}/feed?tg_id=${encodeURIComponent(tg_id)}&before_id=${encodeURIComponent(lastId)}`);
   const data = await res.json().catch(()=>({ok:false}));
-
   if (!data.ok) { loading = false; return; }
 
   const items = data.items || [];
@@ -337,22 +297,22 @@ async function loadFeed(){
       </div>
 
       <div class="pair">
-        <div class="half" data-choice="left">
+        <div class="half" data-choice="left" style="--bg: url('${leftUrl}')">
           <img loading="lazy" src="${leftUrl}" alt="">
-          <div class="likeBtn" title="Лайк">${thumbSvg()}</div>
+          <div class="likeBtn" title="Лайк">${thumbFilledSvg()}</div>
         </div>
 
         <div class="dividerH"></div>
 
-        <div class="half" data-choice="right">
+        <div class="half" data-choice="right" style="--bg: url('${rightUrl}')">
           <img loading="lazy" src="${rightUrl}" alt="">
-          <div class="likeBtn" title="Лайк">${thumbSvg()}</div>
+          <div class="likeBtn" title="Лайк">${thumbFilledSvg()}</div>
         </div>
       </div>
 
       <div class="postFooter">
         <div class="stat">
-          ${smallThumbSvg()}
+          ${thumbSmallSvg()}
           <span class="votesText">0 голосов</span>
         </div>
         <div class="hint">Тапни по фото</div>
@@ -373,24 +333,21 @@ async function vote(post, choice){
   if (post.classList.contains("voted")) return;
   post.classList.add("voted");
 
-  // подсветим выбранную половину
   const chosenHalf = post.querySelector(`.half[data-choice="${choice}"]`);
   if (chosenHalf) chosenHalf.classList.add("chosen");
 
   const pair_id = Number(post.dataset.pairId);
 
-  // локально счетчик (реальный сделаем после /pair_stats)
   const nextVotes = Number(post.dataset.votes || "0") + 1;
   post.dataset.votes = String(nextVotes);
   post.querySelector(".votesText").textContent = `${nextVotes} голосов`;
 
   await fetch(`${API_BASE}/vote`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ tg_id, pair_id, choice })
   }).catch(()=>{});
 
-  // мягко листаем к следующей карточке
   setTimeout(() => {
     window.scrollBy({ top: post.getBoundingClientRect().height + 14, behavior: "smooth" });
   }, 320);
