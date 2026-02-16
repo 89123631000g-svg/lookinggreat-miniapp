@@ -23,8 +23,8 @@
 
       --navH: 64px;
 
-      /* Карточка занимает ~80% экрана => снизу видно следующую */
-      --cardH: 80vh;
+      /* ВАЖНО: высота блока с фото (карточка станет ниже и следующая пойдёт сразу) */
+      --pairH: 62vh;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -45,7 +45,6 @@
       background: var(--bg);
     }
 
-    /* Верх (светлый, без тёмной плашки) */
     .top{
       padding: calc(10px + var(--safeT)) 14px 10px;
       display:flex;
@@ -59,7 +58,6 @@
     .brand .t{ font-weight:800; font-size:18px; letter-spacing:.2px; }
     .brand .s{ margin-top:4px; font-size:13px; color:var(--muted); }
 
-    /* Лента */
     .feed{
       flex:1 1 auto;
       overflow:auto;
@@ -70,9 +68,8 @@
     }
     .feed::-webkit-scrollbar{ display:none; }
 
-    /* Карточка */
+    /* Карточка теперь НЕ фиксированной высоты — заканчивается сразу после футера */
     .card{
-      height: var(--cardH);
       display:flex;
       flex-direction:column;
 
@@ -82,38 +79,35 @@
       overflow:hidden;
       box-shadow: 0 12px 34px rgba(15,23,42,.10);
 
-      /* маленький зазор — чтобы было видно следующую карточку */
-      margin: 0 0 12px 0;
+      margin: 0 0 12px 0; /* небольшой зазор между карточками */
     }
 
-    /* Шапка пары — компактнее, чтобы фото было выше */
     .cardHead{
       padding: 10px 12px 8px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      flex: 0 0 auto;
       background: var(--card);
       border-bottom: 1px solid var(--stroke2);
+      flex: 0 0 auto;
     }
     .pairTitle{ font-weight:850; font-size:22px; }
     .pairSub{ margin-top:2px; font-size:13px; color:var(--muted); }
 
-    /* Два фото: занимают весь остаток карточки */
+    /* Блок фото фиксируем по высоте, чтобы не было огромной пустоты */
     .pairWrap{
-      flex: 1 1 auto;
-      min-height: 0;
+      height: var(--pairH);
       position:relative;
       display:grid;
       grid-template-columns: 1fr 1fr;
-      background: #fff; /* важно: белый */
+      background:#fff;
     }
 
     .pane{
       position:relative;
       overflow:hidden;
-      background:#fff; /* белый фон "пустоты" вместо тёмного */
+      background:#fff;
     }
 
     .divider{
@@ -126,25 +120,23 @@
       pointer-events:none;
     }
 
-    /* Фото: contain, но прижимаем вверх */
     .img{
       position:absolute;
       inset:0;
       width:100%;
       height:100%;
-      object-fit: contain;          /* не режем */
-      object-position: center top;  /* поднимаем вверх */
+      object-fit: contain;
+      object-position: center top; /* прижимаем вверх */
       background:#fff;
       transform: translateZ(0);
     }
 
-    /* Узкий footer (как Instagram), но светлый */
     .cardFooter{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding: 10px 12px 12px;
+      padding: 8px 12px 10px; /* чуть компактнее */
       background: #fff;
       border-top: 1px solid var(--stroke2);
       flex: 0 0 auto;
@@ -178,7 +170,6 @@
     .shareBtn:active{ transform: scale(.98); }
     .shareIco{ width:16px; height:16px; display:block; opacity:.9; }
 
-    /* Нижнее меню — светлое */
     .nav{
       position:fixed;
       left:0; right:0; bottom:0;
@@ -356,7 +347,6 @@
       const totalVotes = Number(item?.total_votes ?? item?.votes_total ?? item?.votes ?? 0);
       const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
 
-      // поддерживаем и *_url, и *_key (через /r2/)
       const leftUrl =
         item?.photo_left_url ||
         (item?.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}` : "");
