@@ -9,30 +9,18 @@
 
 <style>
 * { box-sizing: border-box; }
-
 html, body {
-  margin: 0;
-  padding: 0;
-  height: 100dvh;
-  overflow: hidden;
+  margin: 0; padding: 0; height: 100dvh; overflow: hidden;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: #ffffff;
-  color: #111;
+  background: #ffffff; color: #111;
 }
-
 .app { height: 100%; display: flex; flex-direction: column; }
 
 .tabs { display:flex; gap:8px; padding:12px; }
 .tab {
-  flex:1;
-  padding:10px;
-  border-radius:12px;
-  border:1px solid #eee;
-  background:#f5f5f5;
-  text-align:center;
-  font-weight:800;
-  cursor:pointer;
-  user-select:none;
+  flex:1; padding:10px; border-radius:12px; border:1px solid #eee;
+  background:#f5f5f5; text-align:center; font-weight:900;
+  cursor:pointer; user-select:none;
 }
 .tab.active { background:#111; color:#fff; border-color:#111; }
 
@@ -41,13 +29,8 @@ html, body {
 
 .controls { padding-top:12px; }
 button {
-  width:100%;
-  padding:14px;
-  border-radius:14px;
-  border:none;
-  font-size:16px;
-  font-weight:900;
-  cursor:pointer;
+  width:100%; padding:14px; border-radius:14px; border:none;
+  font-size:16px; font-weight:900; cursor:pointer;
 }
 .primary { background:#111; color:#fff; }
 .primary:disabled { background:#d9d9d9; color:#666; cursor:default; }
@@ -57,176 +40,85 @@ button {
 
 /* Vote */
 .vote-wrap { flex:1; min-height:0; position:relative; }
-.vote-grid {
-  flex:1;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  min-height:0;
-}
+.vote-grid { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:10px; min-height:0; }
+.vote-tile { position:relative; min-height:0; border-radius:16px; overflow:hidden; }
 .vote-img {
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  border-radius:16px;
-  cursor:pointer;
-
+  width:100%; height:100%; object-fit:cover; cursor:pointer;
   opacity:1;
-  transition: opacity 180ms ease, filter 180ms ease, transform 180ms ease;
+  transition: opacity 180ms ease, filter 180ms ease, transform 180ms ease, outline 180ms ease;
   will-change: opacity, filter, transform;
 }
 .vote-img.fading { opacity:0; }
 .vote-grid.loading .vote-img { filter: blur(2px); opacity:0.6; }
 
-.overlay {
-  position:absolute; inset:0;
-  display:flex; align-items:center; justify-content:center;
-  padding:18px;
-  pointer-events:none;
-}
-.overlay-card {
-  background: rgba(17,17,17,0.88);
-  color:#fff;
-  padding:14px 16px;
-  border-radius:14px;
-  font-weight:900;
-  text-align:center;
-  max-width:340px;
-  width:100%;
-}
-.overlay-sub { margin-top:6px; font-size:13px; font-weight:700; opacity:0.85; }
+/* выделение выбранного */
+.vote-tile.selected .vote-img { outline: 4px solid rgba(0,0,0,0.9); outline-offset: -4px; transform: scale(1.01); }
+.vote-grid.choice-made .vote-tile:not(.selected) .vote-img { filter: brightness(0.78); }
 
 /* Heart */
 .heart {
-  position:absolute;
-  left:50%; top:50%;
+  position:absolute; left:50%; top:50%;
   transform: translate(-50%, -50%) scale(0.8);
-  font-size:58px;
-  opacity:0;
-  pointer-events:none;
+  font-size:58px; opacity:0; pointer-events:none;
   transition: opacity 220ms ease, transform 220ms ease;
   filter: drop-shadow(0 10px 24px rgba(0,0,0,0.25));
 }
-.heart.show {
-  opacity:1;
-  transform: translate(-50%, -50%) scale(1);
+.heart.show { opacity:1; transform: translate(-50%, -50%) scale(1); }
+.heart.hide { opacity:0; transform: translate(-50%, -50%) scale(0.9); }
+
+/* overlay empty */
+.overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:18px; pointer-events:none; }
+.overlay-card {
+  background: rgba(17,17,17,0.88);
+  color:#fff; padding:14px 16px; border-radius:14px;
+  font-weight:900; text-align:center; max-width:340px; width:100%;
 }
-.heart.hide {
-  opacity:0;
-  transform: translate(-50%, -50%) scale(0.9);
-}
+.overlay-sub { margin-top:6px; font-size:13px; font-weight:800; opacity:0.85; }
 
 /* Upload */
-.upload-grid {
-  flex:1;
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  min-height:0;
-}
+.upload-grid { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:10px; min-height:0; }
 .upload-card {
-  border:2px dashed #ccc;
-  border-radius:16px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:900;
-  text-align:center;
-  cursor:pointer;
-  overflow:hidden;
-  padding:12px;
-  line-height:1.15;
-  background:#fafafa;
+  border:2px dashed #ccc; border-radius:16px;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900; text-align:center; cursor:pointer;
+  overflow:hidden; padding:12px; line-height:1.15; background:#fafafa;
 }
 .upload-card img { width:100%; height:100%; object-fit:cover; }
 
 /* My pairs */
 .my-wrap { flex:1; min-height:0; display:flex; flex-direction:column; gap:10px; }
-.my-summary {
-  border:1px solid #eee;
-  border-radius:14px;
-  padding:12px;
-  background:#fafafa;
-}
-.my-summary .title { font-weight:900; margin-bottom:6px; }
-.my-summary .row { display:flex; justify-content:space-between; font-weight:800; font-size:14px; padding:4px 0; }
-
-.my-list { flex:1; min-height:0; overflow:auto; padding-bottom:6px; }
-.pair-card {
-  border:1px solid #eee;
-  border-radius:16px;
-  padding:10px;
-  margin-bottom:10px;
-  background:#fff;
-}
+.box { border:1px solid #eee; border-radius:14px; padding:12px; background:#fafafa; }
+.box .title { font-weight:900; margin-bottom:6px; }
+.box .row { display:flex; justify-content:space-between; font-weight:800; font-size:14px; padding:4px 0; }
+.list { flex:1; min-height:0; overflow:auto; padding-bottom:6px; }
+.card { border:1px solid #eee; border-radius:16px; padding:10px; margin-bottom:10px; background:#fff; }
 .pair-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
-.pair-top .meta { font-size:13px; font-weight:900; color:#111; }
-.pair-top .sub { font-size:12px; color:#666; font-weight:800; margin-top:2px; }
-
-.del-btn {
-  border:none;
-  background:#eee;
-  border-radius:12px;
-  padding:10px 12px;
-  font-weight:900;
-  cursor:pointer;
-}
+.del-btn { border:none; background:#eee; border-radius:12px; padding:10px 12px; font-weight:900; cursor:pointer; }
 
 .pair-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-.pair-imgwrap { position:relative; border-radius:14px; overflow:hidden; }
-.pair-imgwrap img { width:100%; height:160px; object-fit:cover; display:block; }
-.badge {
-  position:absolute;
-  left:10px; top:10px;
-  background: rgba(17,17,17,0.86);
-  color:#fff;
-  border-radius:999px;
-  padding:6px 10px;
-  font-weight:900;
-  font-size:12px;
-}
-.badge.win { background: rgba(0,0,0,0.88); }
-.badge.draw { background: rgba(17,17,17,0.72); }
-.bar {
-  margin-top:10px;
-  height:10px;
-  border-radius:999px;
-  background:#eee;
-  overflow:hidden;
-  display:flex;
-}
+.imgwrap { position:relative; border-radius:14px; overflow:hidden; }
+.imgwrap img { width:100%; height:160px; object-fit:cover; display:block; }
+.badge { position:absolute; left:10px; top:10px; background: rgba(17,17,17,0.86); color:#fff; border-radius:999px; padding:6px 10px; font-weight:900; font-size:12px; }
+.bar { margin-top:10px; height:10px; border-radius:999px; background:#eee; overflow:hidden; display:flex; }
 .bar .left { height:100%; background:#111; width:50%; }
 .bar .right { height:100%; background:#bbb; width:50%; }
-.pair-stats {
-  display:flex;
-  justify-content:space-between;
-  font-weight:900;
-  font-size:13px;
-  margin-top:8px;
-}
+.pair-stats { display:flex; justify-content:space-between; font-weight:900; font-size:13px; margin-top:8px; }
 
-/* Admin */
-.admin-wrap { flex:1; min-height:0; display:flex; flex-direction:column; gap:10px; }
-.admin-box {
-  border:1px solid #eee;
-  border-radius:14px;
-  padding:12px;
-  background:#fafafa;
-}
-.admin-box .title { font-weight:900; margin-bottom:6px; }
-.admin-box .row { display:flex; justify-content:space-between; font-weight:800; font-size:14px; padding:4px 0; }
-.admin-list { flex:1; min-height:0; overflow:auto; padding-bottom:6px; }
-.admin-pair { border:1px solid #eee; border-radius:16px; padding:10px; margin-bottom:10px; background:#fff; }
-.admin-actions { display:flex; gap:8px; margin-top:10px; }
-.admin-actions button { width:auto; flex:1; padding:12px; border-radius:12px; font-size:14px; }
-
+/* Admin extras */
+.small { font-size:12px; font-weight:800; color:#666; }
+.inline-actions { display:flex; gap:8px; margin-top:10px; }
+.inline-actions button { width:auto; flex:1; padding:12px; border-radius:12px; font-size:14px; }
+.chkrow { display:flex; align-items:center; gap:10px; }
+.chkrow input { transform: scale(1.2); }
+.flag { font-weight:900; font-size:12px; padding:4px 8px; border-radius:999px; background:#eee; color:#111; display:inline-block; }
+.flag.bad { background:#111; color:#fff; }
 </style>
 </head>
 
 <body>
 <div class="app">
 
-  <div class="tabs" id="tabs">
+  <div class="tabs">
     <div class="tab active" id="tabVote">Лента</div>
     <div class="tab" id="tabUpload">Загрузка</div>
     <div class="tab" id="tabMy">Мои пары</div>
@@ -238,11 +130,11 @@ button {
     <!-- VOTE -->
     <div class="vote-wrap" id="voteWrap">
       <div id="voteScreen" class="vote-grid">
-        <div style="position:relative;">
+        <div class="vote-tile" id="tileLeft">
           <img id="leftImg" class="vote-img" />
           <div id="heartLeft" class="heart">❤️</div>
         </div>
-        <div style="position:relative;">
+        <div class="vote-tile" id="tileRight">
           <img id="rightImg" class="vote-img" />
           <div id="heartRight" class="heart">❤️</div>
         </div>
@@ -264,19 +156,25 @@ button {
 
     <!-- MY -->
     <div id="myScreen" class="my-wrap hidden">
-      <div class="my-summary" id="mySummary">
+      <div class="box">
         <div class="title">Ваши результаты</div>
+        <div class="small">Ваш tg_id: <span id="myTgId">—</span></div>
         <div class="row"><span>Пар загружено</span><span id="sumPairs">—</span></div>
         <div class="row"><span>Всего голосов</span><span id="sumVotes">—</span></div>
         <div class="row"><span>Средний лучший %</span><span id="sumAvg">—</span></div>
         <div class="row"><span>Лучшая пара</span><span id="sumBest">—</span></div>
       </div>
-      <div class="my-list" id="myList"></div>
+      <div class="list" id="myList"></div>
     </div>
 
     <!-- ADMIN -->
-    <div id="adminScreen" class="admin-wrap hidden">
-      <div class="admin-box">
+    <div id="adminScreen" class="my-wrap hidden">
+      <div class="box">
+        <div class="title">Админка</div>
+        <div class="small">Ваш tg_id: <span id="aTgId">—</span> (должен быть в списке ADMIN_IDS)</div>
+      </div>
+
+      <div class="box">
         <div class="title">Статистика</div>
         <div class="row"><span>Пользователи всего</span><span id="aUsersTotal">—</span></div>
         <div class="row"><span>Новые сегодня</span><span id="aUsersToday">—</span></div>
@@ -286,7 +184,17 @@ button {
         <div class="row"><span>Забанено</span><span id="aBannedTotal">—</span></div>
       </div>
 
-      <div class="admin-list" id="adminList"></div>
+      <div class="box">
+        <div class="title">Битые пары</div>
+        <div class="small">Проверяем последние N пар (по умолчанию 200). Покажем список перед удалением.</div>
+        <div class="row"><span>Найдено битых</span><span id="brokenCount">—</span></div>
+        <div class="inline-actions">
+          <button class="secondary" id="btnScanBroken">Проверить битые пары</button>
+          <button class="secondary" id="btnDeleteBroken" disabled>Удалить выбранные</button>
+        </div>
+      </div>
+
+      <div class="list" id="adminList"></div>
     </div>
 
     <!-- CONTROLS -->
@@ -311,8 +219,8 @@ try { tg.disableVerticalSwipes?.(); } catch(e) {}
 
 const API_BASE = "https://api.lookingreat.ru";
 
-// ✅ ВПИШИ ТЕ ЖЕ tg_id, что и в Worker
-const ADMIN_IDS = ["123", "456"];
+// ✅ ВПИШИ СВОЙ tg_id (тот же, что и в Worker)
+const ADMIN_IDS = ["123"];
 
 let tg_id = tg.initDataUnsafe?.user?.id || "0";
 const isAdmin = ADMIN_IDS.includes(String(tg_id));
@@ -323,11 +231,10 @@ let votingLock = false;
 let emptyPollTimer = null;
 let myPollTimer = null;
 let adminPollTimer = null;
+let noPairsMode = false;
 
 let leftFile = null;
 let rightFile = null;
-
-let noPairsMode = false;
 
 const tabVote = document.getElementById("tabVote");
 const tabUpload = document.getElementById("tabUpload");
@@ -340,23 +247,27 @@ const uploadScreen = document.getElementById("uploadScreen");
 const myScreen = document.getElementById("myScreen");
 const adminScreen = document.getElementById("adminScreen");
 
-const emptyOverlay = document.getElementById("emptyOverlay");
-
+const tileLeft = document.getElementById("tileLeft");
+const tileRight = document.getElementById("tileRight");
 const leftImg = document.getElementById("leftImg");
 const rightImg = document.getElementById("rightImg");
 const heartLeft = document.getElementById("heartLeft");
 const heartRight = document.getElementById("heartRight");
 
+const emptyOverlay = document.getElementById("emptyOverlay");
 const skipBtn = document.getElementById("skipBtn");
 const sendBtn = document.getElementById("sendBtn");
 const clearBtn = document.getElementById("clearBtn");
+const statusEl = document.getElementById("status");
 
 const fileLeft = document.getElementById("fileLeft");
 const fileRight = document.getElementById("fileRight");
 const cardLeft = document.getElementById("cardLeft");
 const cardRight = document.getElementById("cardRight");
 
-const statusEl = document.getElementById("status");
+document.getElementById("myTgId").textContent = String(tg_id);
+document.getElementById("aTgId").textContent = String(tg_id);
+
 function setStatus(t){ statusEl.textContent = t || ""; }
 
 function stopAllTimers() {
@@ -374,6 +285,12 @@ function setNoPairsUI(on) {
     skipBtn.disabled = false;
     skipBtn.textContent = "Пропустить";
   }
+}
+
+function resetChoiceUI() {
+  voteScreen.classList.remove("choice-made");
+  tileLeft.classList.remove("selected");
+  tileRight.classList.remove("selected");
 }
 
 function switchTab(mode) {
@@ -429,7 +346,7 @@ if (isAdmin) {
   tabAdmin.onclick = () => switchTab("admin");
 }
 
-/* ===== Vote flow ===== */
+/* ===== Vote ===== */
 
 function preloadImage(url) {
   return new Promise((resolve, reject) => {
@@ -454,7 +371,6 @@ async function fadeSwapPair(item) {
     await Promise.all([ preloadImage(item.left_url), preloadImage(item.right_url) ]);
   } catch (e) {
     cleanup();
-    // если пустая лента — не дёргаем статус
     if (!noPairsMode) setStatus("Не удалось загрузить фото — пропускаю…");
     setTimeout(() => loadNext(true), 200);
     return false;
@@ -467,10 +383,8 @@ async function fadeSwapPair(item) {
   leftImg.src = item.left_url;
   rightImg.src = item.right_url;
 
-  try {
-    if (leftImg.decode) await leftImg.decode();
-    if (rightImg.decode) await rightImg.decode();
-  } catch(e) {}
+  try { if (leftImg.decode) await leftImg.decode(); } catch(e) {}
+  try { if (rightImg.decode) await rightImg.decode(); } catch(e) {}
 
   if (leftImg.naturalWidth === 0 || rightImg.naturalWidth === 0) {
     cleanup();
@@ -485,7 +399,7 @@ async function fadeSwapPair(item) {
   return true;
 }
 
-// silent=true => не показываем "Загрузка..." (нужно для авто-пула, чтобы не прыгал UI)
+// silent=true => не мигаем "Загрузка..."
 async function loadNext(silent) {
   if (loadingFeed) return;
   loadingFeed = true;
@@ -496,7 +410,6 @@ async function loadNext(silent) {
     const res = await fetch(`${API_BASE}/feed?tg_id=${encodeURIComponent(tg_id)}`);
     const data = await res.json().catch(() => null);
 
-    // banned
     if (!res.ok && data?.error === "banned") {
       setStatus("Доступ ограничен");
       setNoPairsUI(true);
@@ -517,12 +430,15 @@ async function loadNext(silent) {
       return;
     }
 
-    // появилась пара — выключаем режим "нет пар"
     if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
     emptyOverlay.classList.add("hidden");
     setNoPairsUI(false);
 
     currentPair = data.item;
+
+    // сброс выбранности перед показом новой пары
+    resetChoiceUI();
+
     const ok = await fadeSwapPair(currentPair);
     if (ok === false) return;
 
@@ -532,6 +448,8 @@ async function loadNext(silent) {
     if (!silent) setStatus("Ошибка сети. Проверь интернет.");
   } finally {
     loadingFeed = false;
+    // ✅ снимаем блок кликов только после попытки загрузки следующей пары
+    votingLock = false;
   }
 }
 
@@ -548,14 +466,16 @@ function popHeart(side) {
 async function vote(choice) {
   if (!currentPair) return;
   if (votingLock) return;
+
+  // ✅ блокируем до загрузки следующей пары
   votingLock = true;
 
-  // эффект как в соцсетях
-  popHeart(choice);
+  // UI: выбранность + приглушение
+  voteScreen.classList.add("choice-made");
+  if (choice === "left") { tileLeft.classList.add("selected"); tileRight.classList.remove("selected"); }
+  if (choice === "right") { tileRight.classList.add("selected"); tileLeft.classList.remove("selected"); }
 
-  // слегка "приглушаем" второй вариант на момент эффекта
-  if (choice === "left") rightImg.style.filter = "brightness(0.8)";
-  if (choice === "right") leftImg.style.filter = "brightness(0.8)";
+  popHeart(choice);
 
   try {
     const res = await fetch(`${API_BASE}/vote`, {
@@ -565,25 +485,24 @@ async function vote(choice) {
     });
 
     const data = await res.json().catch(() => null);
-
     if (!res.ok) {
       const err = data?.error || "vote_failed";
       if (err === "cannot_vote_own_pair") setStatus("Нельзя голосовать за свою пару");
       else if (err === "already_voted") setStatus("Вы уже голосовали за эту пару");
       else if (err === "banned") setStatus("Доступ ограничен");
       else setStatus("Ошибка голосования");
+
+      // если голос не прошёл — разблокируем
+      votingLock = false;
       return;
     }
 
-    // быстро показываем следующую пару
+    // грузим следующую пару (снимет votingLock в finally)
     setTimeout(() => loadNext(true), 260);
 
-  } finally {
-    setTimeout(() => {
-      votingLock = false;
-      leftImg.style.filter = "";
-      rightImg.style.filter = "";
-    }, 520);
+  } catch(e) {
+    setStatus("Ошибка сети. Проверь интернет.");
+    votingLock = false;
   }
 }
 
@@ -591,7 +510,7 @@ leftImg.onclick = () => vote("left");
 rightImg.onclick = () => vote("right");
 skipBtn.onclick = () => loadNext(false);
 
-/* ===== Upload flow ===== */
+/* ===== Upload ===== */
 
 cardLeft.onclick = () => fileLeft.click();
 cardRight.onclick = () => fileRight.click();
@@ -612,10 +531,8 @@ function previewImage(file, card) {
 }
 
 function clearUpload() {
-  leftFile = null;
-  rightFile = null;
-  fileLeft.value = "";
-  fileRight.value = "";
+  leftFile = null; rightFile = null;
+  fileLeft.value = ""; fileRight.value = "";
   cardLeft.innerHTML = "Нажмите чтобы загрузить<br>Фото 1";
   cardRight.innerHTML = "Нажмите чтобы загрузить<br>Фото 2";
   setStatus("");
@@ -665,53 +582,35 @@ function renderSummary(profile) {
   sumBest.textContent = (profile?.best_pair_id == null) ? "—" : (`#${profile.best_pair_id} · ${profile.best_pair_pct}%`);
 }
 
-function badgeText(stats) {
-  if (!stats.total) return { cls:"draw" };
-  if (stats.winner === "draw") return { cls:"draw" };
-  return { cls:"win" };
-}
-
 function renderPairs(pairs) {
   if (!pairs?.length) {
-    myList.innerHTML = `<div class="pair-card"><div class="pair-top"><div class="meta">Пока нет загруженных пар</div></div></div>`;
+    myList.innerHTML = `<div class="card"><div style="font-weight:900;">Пока нет загруженных пар</div></div>`;
     return;
   }
 
   myList.innerHTML = pairs.map(p => {
     const s = p.stats || {left:0,right:0,total:0,left_pct:0,right_pct:0,winner:null};
-    const b = badgeText(s);
-
-    const leftWinner = (s.winner === "left");
-    const rightWinner = (s.winner === "right");
-
-    const leftLabel = s.total ? `${s.left_pct}%` : "—";
-    const rightLabel = s.total ? `${s.right_pct}%` : "—";
-
     const leftW = Math.max(0, Math.min(100, s.left_pct || 0));
     const rightW = 100 - leftW;
 
     return `
-      <div class="pair-card" data-pair-id="${p.id}">
+      <div class="card">
         <div class="pair-top">
           <div>
-            <div class="meta">Пара #${p.id}</div>
-            <div class="sub">${fmtTs(p.created_at)}</div>
+            <div style="font-weight:900;">Пара #${p.id}</div>
+            <div class="small">${fmtTs(p.created_at)}</div>
           </div>
           <button class="del-btn" data-del="${p.id}">Удалить</button>
         </div>
 
         <div class="pair-grid">
-          <div class="pair-imgwrap">
+          <div class="imgwrap">
             <img src="${p.left_url}" alt="">
-            <div class="badge ${leftWinner ? 'win' : b.cls}">
-              ${leftWinner ? '👑 ' : ''}${leftLabel} · ${s.left}
-            </div>
+            <div class="badge">${s.total ? `${s.left_pct}% · ${s.left}` : `— · ${s.left}`}</div>
           </div>
-          <div class="pair-imgwrap">
+          <div class="imgwrap">
             <img src="${p.right_url}" alt="">
-            <div class="badge ${rightWinner ? 'win' : b.cls}">
-              ${rightWinner ? '👑 ' : ''}${rightLabel} · ${s.right}
-            </div>
+            <div class="badge">${s.total ? `${s.right_pct}% · ${s.right}` : `— · ${s.right}`}</div>
           </div>
         </div>
 
@@ -733,8 +632,7 @@ function renderPairs(pairs) {
     btn.onclick = async () => {
       const id = btn.getAttribute("data-del");
       if (!id) return;
-      const ok = confirm("Удалить эту пару? Голосование по ней остановится.");
-      if (!ok) return;
+      if (!confirm("Удалить эту пару?")) return;
 
       try {
         setStatus("Удаляю...");
@@ -756,16 +654,12 @@ async function loadMyPairs(showLoading) {
     const res = await fetch(`${API_BASE}/my_pairs?tg_id=${encodeURIComponent(tg_id)}`);
     const data = await res.json().catch(()=>null);
 
-    if (!res.ok && data?.error === "banned") {
-      setStatus("Доступ ограничен");
-      return;
-    }
+    if (!res.ok && data?.error === "banned") { setStatus("Доступ ограничен"); return; }
     if (!res.ok || !data?.ok) { setStatus("Не удалось загрузить"); return; }
 
     renderSummary(data.profile);
     renderPairs(data.pairs);
     if (showLoading) setStatus("");
-
   } catch(e) {
     setStatus("Ошибка сети. Проверь интернет.");
   }
@@ -779,7 +673,14 @@ const aUsersMonth = document.getElementById("aUsersMonth");
 const aPairsTotal = document.getElementById("aPairsTotal");
 const aVotesTotal = document.getElementById("aVotesTotal");
 const aBannedTotal = document.getElementById("aBannedTotal");
+
+const brokenCount = document.getElementById("brokenCount");
+const btnScanBroken = document.getElementById("btnScanBroken");
+const btnDeleteBroken = document.getElementById("btnDeleteBroken");
+
 const adminList = document.getElementById("adminList");
+
+let brokenItems = [];
 
 function renderAdminStats(s) {
   aUsersTotal.textContent = s?.users?.total ?? "—";
@@ -790,105 +691,100 @@ function renderAdminStats(s) {
   aBannedTotal.textContent = s?.content?.banned_total ?? "—";
 }
 
-function renderAdminPairs(pairs) {
-  if (!pairs?.length) {
-    adminList.innerHTML = `<div class="admin-pair"><div style="font-weight:900;">Нет пар</div></div>`;
+function renderBroken(items, broken_count) {
+  brokenItems = items || [];
+  brokenCount.textContent = String(broken_count ?? 0);
+
+  const onlyBroken = brokenItems.filter(x => (!x.left_ok || !x.right_ok));
+  btnDeleteBroken.disabled = onlyBroken.length === 0;
+
+  if (!brokenItems.length) {
+    adminList.innerHTML = `<div class="card"><div style="font-weight:900;">Список пуст</div></div>`;
     return;
   }
 
-  adminList.innerHTML = pairs.map(p => {
-    const owner = p.owner_telegram_id;
+  adminList.innerHTML = brokenItems.map(p => {
+    const broken = (!p.left_ok || !p.right_ok);
+    const flagText = broken ? "БИТАЯ" : "ОК";
+    const flagCls = broken ? "flag bad" : "flag";
+
+    const l = p.left_ok ? "ok" : "missing";
+    const r = p.right_ok ? "ok" : "missing";
+
     return `
-      <div class="admin-pair">
-        <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
-          <div>
-            <div style="font-weight:900;">Пара #${p.id}</div>
-            <div style="font-size:12px; font-weight:800; color:#666;">Владелец: ${owner} · Голоса: ${p.stats.total}</div>
+      <div class="card">
+        <div class="chkrow">
+          <input type="checkbox" class="chkBroken" data-id="${p.id}" ${broken ? "" : "disabled"}>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+              <div style="font-weight:900;">Пара #${p.id} · голоса ${p.votes_total}</div>
+              <span class="${flagCls}">${flagText}</span>
+            </div>
+            <div class="small">owner: ${p.owner_telegram_id} · left:${l} · right:${r}</div>
           </div>
         </div>
         <div class="pair-grid" style="margin-top:10px;">
-          <div class="pair-imgwrap"><img src="${p.left_url}" alt=""></div>
-          <div class="pair-imgwrap"><img src="${p.right_url}" alt=""></div>
-        </div>
-        <div class="admin-actions">
-          <button class="secondary" data-delpair="${p.id}">Удалить</button>
-          <button class="secondary" data-ban="${owner}">Бан</button>
-          <button class="secondary" data-unban="${owner}">Разбан</button>
+          <div class="imgwrap"><img src="${p.left_url}" alt=""></div>
+          <div class="imgwrap"><img src="${p.right_url}" alt=""></div>
         </div>
       </div>
     `;
   }).join("");
-
-  adminList.querySelectorAll("[data-delpair]").forEach(btn => {
-    btn.onclick = async () => {
-      const id = btn.getAttribute("data-delpair");
-      if (!id) return;
-      const ok = confirm("Удалить эту пару?");
-      if (!ok) return;
-      setStatus("Удаляю...");
-      const res = await fetch(`${API_BASE}/admin/pair?id=${encodeURIComponent(id)}&tg_id=${encodeURIComponent(tg_id)}`, { method:"DELETE" });
-      const data = await res.json().catch(()=>null);
-      if (!res.ok || !data?.ok) { setStatus("Не удалось удалить"); return; }
-      setStatus("");
-      loadAdmin(true);
-    };
-  });
-
-  adminList.querySelectorAll("[data-ban]").forEach(btn => {
-    btn.onclick = async () => {
-      const user = btn.getAttribute("data-ban");
-      if (!user) return;
-      const ok = confirm(`Забанить пользователя ${user}?`);
-      if (!ok) return;
-      setStatus("Бан...");
-      const res = await fetch(`${API_BASE}/admin/ban`, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ tg_id, user_tg_id: user })
-      });
-      const data = await res.json().catch(()=>null);
-      if (!res.ok || !data?.ok) { setStatus("Не удалось"); return; }
-      setStatus("");
-      loadAdmin(true);
-    };
-  });
-
-  adminList.querySelectorAll("[data-unban]").forEach(btn => {
-    btn.onclick = async () => {
-      const user = btn.getAttribute("data-unban");
-      if (!user) return;
-      setStatus("Разбан...");
-      const res = await fetch(`${API_BASE}/admin/unban`, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ tg_id, user_tg_id: user })
-      });
-      const data = await res.json().catch(()=>null);
-      if (!res.ok || !data?.ok) { setStatus("Не удалось"); return; }
-      setStatus("");
-      loadAdmin(true);
-    };
-  });
 }
+
+btnScanBroken.onclick = async () => {
+  if (!isAdmin) return;
+  try {
+    setStatus("Проверяю битые пары...");
+    const res = await fetch(`${API_BASE}/admin/broken_pairs?tg_id=${encodeURIComponent(tg_id)}&limit=200`);
+    const data = await res.json().catch(()=>null);
+    if (!res.ok || !data?.ok) { setStatus("Не удалось проверить"); return; }
+    renderBroken(data.items, data.broken_count);
+    setStatus("");
+  } catch(e) {
+    setStatus("Ошибка сети");
+  }
+};
+
+btnDeleteBroken.onclick = async () => {
+  if (!isAdmin) return;
+  const ids = Array.from(document.querySelectorAll(".chkBroken"))
+    .filter(x => x.checked)
+    .map(x => Number(x.getAttribute("data-id")))
+    .filter(x => x && Number.isFinite(x));
+
+  if (!ids.length) return;
+  if (!confirm(`Удалить выбранные пары: ${ids.join(", ")} ?`)) return;
+
+  try {
+    setStatus("Удаляю...");
+    const res = await fetch(`${API_BASE}/admin/delete_pairs`, {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ tg_id, pair_ids: ids })
+    });
+    const data = await res.json().catch(()=>null);
+    if (!res.ok || !data?.ok) { setStatus("Не удалось удалить"); return; }
+    setStatus("");
+
+    // обновим список битых
+    btnScanBroken.click();
+  } catch(e) {
+    setStatus("Ошибка сети");
+  }
+};
 
 async function loadAdmin(showLoading) {
   if (!isAdmin) return;
   try {
     if (showLoading) setStatus("Загрузка...");
-
     const sRes = await fetch(`${API_BASE}/admin/stats?tg_id=${encodeURIComponent(tg_id)}`);
     const sData = await sRes.json().catch(()=>null);
     if (!sRes.ok || !sData?.ok) { setStatus("Нет доступа"); return; }
     renderAdminStats(sData);
-
-    const pRes = await fetch(`${API_BASE}/admin/recent_pairs?tg_id=${encodeURIComponent(tg_id)}&limit=30`);
-    const pData = await pRes.json().catch(()=>null);
-    if (!pRes.ok || !pData?.ok) { setStatus("Ошибка загрузки пар"); return; }
-    renderAdminPairs(pData.pairs);
-
     if (showLoading) setStatus("");
   } catch(e) {
-    setStatus("Ошибка сети. Проверь интернет.");
+    setStatus("Ошибка сети");
   }
 }
 
