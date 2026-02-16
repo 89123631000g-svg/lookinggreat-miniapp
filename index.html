@@ -25,6 +25,9 @@
 
       /* ДЕСКТОП/ОБЩЕЕ: высота блока с фото */
       --pairH: clamp(360px, 62vh, 620px);
+
+      /* Воздух сверху/снизу у фото (меняешь тут) */
+      --pairPad: 12px;
     }
 
     /* МОБИЛЬНОЕ: уменьшаем высоту, чтобы футер поднялся к фото */
@@ -108,8 +111,7 @@
       grid-template-columns: 1fr 1fr;
       background:#fff;
 
-      /* ✅ ДОБАВИЛИ РАВНЫЙ ОТСТУП СВЕРХУ/СНИЗУ */
-      padding: 30px 0;
+      padding: var(--pairPad) 0;
       box-sizing: border-box;
     }
 
@@ -135,10 +137,7 @@
       width:100%;
       height:100%;
       object-fit: contain;
-
-      /* ✅ БЫЛО center top — СТАЛО center */
       object-position: center;
-
       background:#fff;
       transform: translateZ(0);
     }
@@ -253,6 +252,113 @@
       0%{ background-position: 200% 0; }
       100%{ background-position: -200% 0; }
     }
+
+    /* ===== MODAL UPLOAD (новое) ===== */
+    .modalOverlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding: 12px 12px calc(12px + var(--safeB));
+      z-index: 80;
+    }
+    .modal{
+      width: min(720px, 100%);
+      background: #fff;
+      border: 1px solid var(--stroke);
+      border-radius: 18px;
+      box-shadow: 0 25px 60px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .modalHead{
+      padding: 12px 12px 10px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom: 1px solid var(--stroke2);
+    }
+    .modalTitle{
+      font-weight: 850;
+      font-size: 16px;
+    }
+    .modalBody{
+      padding: 12px;
+      display:grid;
+      gap: 10px;
+    }
+    .uploadGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .pick{
+      border: 1px dashed rgba(0,0,0,.22);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(15,23,42,.03);
+      cursor: pointer;
+      user-select:none;
+      min-height: 110px;
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+    .pickTitle{ font-weight: 850; font-size: 14px; }
+    .pickHint{ font-size: 12px; color: var(--muted); }
+    .fileName{ font-size: 12px; font-weight: 800; word-break: break-word; }
+    .modalActions{
+      display:flex;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .wideBtn{ flex:1; justify-content:center; }
+    input[type="file"]{ display:none; }
+
+    /* ===== PROFILE (новое) ===== */
+    .block{
+      padding: 12px;
+    }
+    .statGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat{
+      border: 1px solid var(--stroke2);
+      border-radius: 14px;
+      padding: 10px;
+      background: rgba(15,23,42,.02);
+    }
+    .statK{ font-size: 12px; color: var(--muted); }
+    .statV{ margin-top: 2px; font-weight: 900; font-size: 18px; }
+    .miniPair{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      height: 150px;
+      border: 1px solid var(--stroke2);
+      border-radius: 14px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .miniImg{
+      width:100%; height:100%;
+      object-fit: cover;
+      background:#fff;
+      display:block;
+    }
+    .miniMeta{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 10px 2px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
   </style>
 </head>
 
@@ -293,9 +399,42 @@
     <div id="toast" class="toast"></div>
   </div>
 
+  <!-- Upload Modal -->
+  <div class="modalOverlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle">Загрузить пару</div>
+        <button class="shareBtn" id="closeModal" type="button">Закрыть</button>
+      </div>
+      <div class="modalBody">
+        <div class="uploadGrid">
+          <label class="pick" for="fileLeft">
+            <div class="pickTitle">Фото 1</div>
+            <div class="pickHint">Нажми, чтобы выбрать</div>
+            <div class="fileName" id="leftName">Файл не выбран</div>
+          </label>
+          <label class="pick" for="fileRight">
+            <div class="pickTitle">Фото 2</div>
+            <div class="pickHint">Нажми, чтобы выбрать</div>
+            <div class="fileName" id="rightName">Файл не выбран</div>
+          </label>
+        </div>
+
+        <input id="fileLeft" type="file" accept="image/*" />
+        <input id="fileRight" type="file" accept="image/*" />
+
+        <div class="modalActions">
+          <button class="shareBtn wideBtn" id="doUpload" type="button">Загрузить</button>
+        </div>
+
+        <div class="pairSub" id="uploadStatus" style="display:none; margin:0;"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ===== VERSION (меняю при каждом обновлении) =====
-    const APP_VERSION = "v2.3";
+    const APP_VERSION = "v2.2";
 
     // ===== CONFIG =====
     const API_BASE = "https://api.lookingreat.ru";
@@ -414,9 +553,102 @@
       `;
     }
 
+    function profileTemplate(state){
+      const tgText = escapeHtml(tg_id);
+      const stats = state?.stats || null;
+      const pairs = Array.isArray(state?.pairs) ? state.pairs : [];
+
+      const totalPairs = stats?.total_pairs ?? pairs.length ?? 0;
+      const totalVotes = stats?.total_votes ?? pairs.reduce((a,p)=>a + Number(p.total_votes||p.votes_total||0), 0);
+      const avgVotes = totalPairs ? Math.round(totalVotes / totalPairs) : 0;
+
+      const pairsHtml = pairs.length ? pairs.map(p=>{
+        const id = p.id ?? "—";
+        const votes = Number(p.total_votes ?? p.votes_total ?? 0) || 0;
+
+        const leftUrl =
+          p.photo_left_url ||
+          (p.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(p.photo_left_key)}` : "");
+
+        const rightUrl =
+          p.photo_right_url ||
+          (p.photo_right_key ? `${API_BASE}/r2/${encodeURIComponent(p.photo_right_key)}` : "");
+
+        return `
+          <div class="card">
+            <div class="cardHead">
+              <div>
+                <div class="pairTitle">Моя пара #${id}</div>
+                <div class="pairSub">👍 ${votes} голосов</div>
+              </div>
+              <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(15,23,42,.04);"></div>
+            </div>
+            <div class="block">
+              <div class="miniPair">
+                ${leftUrl ? `<img class="miniImg" src="${escapeHtml(leftUrl)}" alt="">` : `<div class="skeleton"></div>`}
+                ${rightUrl ? `<img class="miniImg" src="${escapeHtml(rightUrl)}" alt="">` : `<div class="skeleton"></div>`}
+              </div>
+              <div class="miniMeta">
+                <span>ID: ${escapeHtml(id)}</span>
+                <button class="shareBtn" type="button" data-share="${escapeHtml(id)}">Поделиться</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("") : `
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <div class="pairTitle">Мои пары</div>
+              <div class="pairSub">Пока пусто</div>
+            </div>
+          </div>
+          <div class="block">
+            <div class="pairSub">Нажми “+”, чтобы загрузить первую пару.</div>
+          </div>
+        </div>
+      `;
+
+      return `
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <div class="pairTitle">Профиль</div>
+              <div class="pairSub">Ваш Telegram ID: ${tgText}</div>
+            </div>
+            <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(15,23,42,.04);"></div>
+          </div>
+          <div class="block">
+            <div class="statGrid">
+              <div class="stat">
+                <div class="statK">Пар загружено</div>
+                <div class="statV">${escapeHtml(totalPairs)}</div>
+              </div>
+              <div class="stat">
+                <div class="statK">Всего голосов</div>
+                <div class="statV">${escapeHtml(totalVotes)}</div>
+              </div>
+              <div class="stat">
+                <div class="statK">Среднее на пару</div>
+                <div class="statV">${escapeHtml(avgVotes)}</div>
+              </div>
+              <div class="stat">
+                <div class="statK">Версия</div>
+                <div class="statV">${escapeHtml(APP_VERSION)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        ${pairsHtml}
+      `;
+    }
+
     let loading = false;
+    let currentView = "feed";
 
     async function loadFeed(){
+      currentView = "feed";
       if (loading) return;
       loading = true;
 
@@ -504,6 +736,56 @@
       }
     }
 
+    async function loadProfile(){
+      currentView = "profile";
+      feedEl.scrollTo({ top: 0 });
+
+      feedEl.innerHTML = `
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <div class="pairTitle">Профиль</div>
+              <div class="pairSub">Загрузка…</div>
+            </div>
+          </div>
+          <div class="block">
+            <div class="skeleton" style="height:180px;border-radius:14px;"></div>
+          </div>
+        </div>
+      `;
+
+      try{
+        refreshTgId();
+        const data = await apiGet(`/my_pairs?tg_id=${encodeURIComponent(tg_id)}`);
+
+        // ожидаем один из форматов:
+        // { ok:true, pairs:[...], stats:{...} }
+        // или { ok:true, items:[...] }
+        const state = {
+          pairs: data?.pairs || data?.items || [],
+          stats: data?.stats || null
+        };
+
+        feedEl.innerHTML = profileTemplate(state);
+        bindProfileEvents();
+      } catch(e){
+        // если эндпоинта ещё нет — просто покажем сообщение, не ломая UI
+        feedEl.innerHTML = `
+          <div class="card">
+            <div class="cardHead">
+              <div>
+                <div class="pairTitle">Профиль</div>
+                <div class="pairSub">Мои пары временно недоступны</div>
+              </div>
+            </div>
+            <div class="block">
+              <div class="pairSub">Нужен API: <b>/my_pairs?tg_id=...</b> чтобы показать “Мои пары” и статистику.</div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
     async function vote(pairId, choice){
       haptic("light");
       try{
@@ -554,20 +836,106 @@
       });
 
       document.getElementById("navHome")?.addEventListener("click", ()=> {
-        feedEl.scrollTo({ top: 0, behavior: "smooth" });
+        if (currentView !== "feed") loadFeed();
+        else feedEl.scrollTo({ top: 0, behavior: "smooth" });
       });
 
       document.getElementById("navPlus")?.addEventListener("click", ()=> {
-        toast("Загрузка — в разработке");
-        haptic("light");
+        openUploadModal();
       });
 
       document.getElementById("navProfile")?.addEventListener("click", ()=> {
-        toast("Профиль — в разработке");
-        haptic("light");
+        loadProfile();
       });
     }
 
+    function bindProfileEvents(){
+      document.querySelectorAll("[data-share]").forEach(btn=>{
+        btn.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          const id = btn.getAttribute("data-share");
+          sharePair(id);
+        });
+      });
+    }
+
+    // ===== Upload modal logic =====
+    const modalOverlay = document.getElementById("modalOverlay");
+    const closeModalBtn = document.getElementById("closeModal");
+    const doUploadBtn = document.getElementById("doUpload");
+    const fileLeft = document.getElementById("fileLeft");
+    const fileRight = document.getElementById("fileRight");
+    const leftName = document.getElementById("leftName");
+    const rightName = document.getElementById("rightName");
+    const uploadStatus = document.getElementById("uploadStatus");
+
+    function openUploadModal(){
+      uploadStatus.style.display = "none";
+      uploadStatus.textContent = "";
+      modalOverlay.style.display = "flex";
+    }
+    function closeUploadModal(){
+      modalOverlay.style.display = "none";
+    }
+
+    closeModalBtn.addEventListener("click", closeUploadModal);
+    modalOverlay.addEventListener("click", (e)=>{ if (e.target === modalOverlay) closeUploadModal(); });
+
+    fileLeft.addEventListener("change", ()=>{
+      leftName.textContent = fileLeft.files?.[0]?.name ? fileLeft.files[0].name : "Файл не выбран";
+    });
+    fileRight.addEventListener("change", ()=>{
+      rightName.textContent = fileRight.files?.[0]?.name ? fileRight.files[0].name : "Файл не выбран";
+    });
+
+    doUploadBtn.addEventListener("click", async ()=>{
+      const f1 = fileLeft.files?.[0];
+      const f2 = fileRight.files?.[0];
+      if (!f1 || !f2){
+        uploadStatus.style.display = "block";
+        uploadStatus.textContent = "Выбери оба фото.";
+        return;
+      }
+
+      uploadStatus.style.display = "block";
+      uploadStatus.textContent = "Загрузка…";
+      haptic("light");
+
+      try{
+        refreshTgId();
+        const fd = new FormData();
+        fd.append("tg_id", String(tg_id));
+        fd.append("left", f1);
+        fd.append("right", f2);
+
+        const res = await fetch(API_BASE + "/upload_pair", {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json().catch(()=>({}));
+        if (!res.ok || !data?.ok) throw new Error(data?.error || ("HTTP " + res.status));
+
+        uploadStatus.textContent = "Готово! Пара загружена.";
+        haptic("success");
+
+        fileLeft.value = "";
+        fileRight.value = "";
+        leftName.textContent = "Файл не выбран";
+        rightName.textContent = "Файл не выбран";
+
+        setTimeout(()=>{
+          closeUploadModal();
+          loadFeed();
+        }, 300);
+
+      } catch(e){
+        uploadStatus.textContent = "Ошибка загрузки.";
+        haptic("error");
+      }
+    });
+
+    // старт
     loadFeed();
   </script>
 </body>
