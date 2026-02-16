@@ -20,11 +20,7 @@ html, body {
   color: #111;
 }
 
-.app {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
+.app { height: 100%; display: flex; flex-direction: column; }
 
 .tabs {
   display: flex;
@@ -39,14 +35,12 @@ html, body {
   border: 1px solid #eee;
   background: #f5f5f5;
   text-align: center;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  user-select: none;
 }
 
-.tab.active {
-  background: #111;
-  color: #fff;
-}
+.tab.active { background: #111; color: #fff; border-color:#111; }
 
 .content {
   flex: 1;
@@ -56,6 +50,9 @@ html, body {
   min-height: 0;
 }
 
+.hidden { display: none !important; }
+
+.vote-wrap { flex: 1; min-height: 0; position: relative; }
 .vote-grid {
   flex: 1;
   display: grid;
@@ -70,32 +67,96 @@ html, body {
   object-fit: cover;
   border-radius: 16px;
   cursor: pointer;
+
+  opacity: 1;
+  transition: opacity 180ms ease;
+  will-change: opacity;
 }
 
-.controls {
-  padding-top: 12px;
+.vote-img.fading { opacity: 0; }
+
+.vote-grid.loading .vote-img {
+  filter: blur(2px);
+  opacity: 0.6;
+  transition: opacity 120ms ease, filter 120ms ease;
 }
 
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: transparent;
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.overlay-card {
+  background: rgba(17,17,17,0.88);
+  color: #fff;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-weight: 800;
+  text-align: center;
+  max-width: 340px;
+  width: 100%;
+}
+
+.overlay-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 50;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #111, #2a2a2a);
+  color: #fff;
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 0.2px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  pointer-events: none;
+  max-width: 340px;
+  width: calc(100% - 36px);
+  animation: pop 0.25s ease;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.toast.fadeout { opacity: 0; }
+
+@keyframes pop {
+  from { transform: translate(-50%, -50%) scale(0.92); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.controls { padding-top: 12px; }
 button {
   width: 100%;
   padding: 14px;
   border-radius: 14px;
   border: none;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 800;
   cursor: pointer;
 }
+.primary { background: #111; color: #fff; }
+.secondary { background: #eee; margin-top: 8px; }
 
-.primary {
-  background: #111;
-  color: #fff;
-}
+.status { text-align: center; font-size: 14px; padding-top: 6px; color:#333; }
 
-.secondary {
-  background: #eee;
-  margin-top: 8px;
-}
-
+/* Upload */
 .upload-grid {
   flex: 1;
   display: grid;
@@ -110,160 +171,154 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+  font-weight: 800;
   text-align: center;
   cursor: pointer;
   overflow: hidden;
+  padding: 12px;
+  line-height: 1.15;
+  color:#111;
+  background:#fafafa;
 }
 
-.upload-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.upload-card img { width: 100%; height: 100%; object-fit: cover; }
+
+/* My pairs */
+.my-wrap { flex: 1; min-height: 0; display:flex; flex-direction:column; gap:10px; }
+.my-summary {
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 12px;
+  background: #fafafa;
 }
 
-.hidden { display: none !important; }
+.my-summary .title { font-weight: 900; margin-bottom: 6px; }
+.my-summary .row { display:flex; justify-content:space-between; font-weight:700; font-size:14px; padding:4px 0; }
 
-.status {
-  text-align: center;
-  font-size: 14px;
-  padding-top: 6px;
-}
-  .vote-wrap {
+.my-list {
   flex: 1;
   min-height: 0;
-  position: relative;
+  overflow: auto;
+  padding-bottom: 6px;
 }
 
-.overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 18px;
-  background: transparent;            /* без размытия */
+.pair-card {
+  border: 1px solid #eee;
   border-radius: 16px;
-  pointer-events: none;               /* не мешает кликам */
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #fff;
 }
 
-.overlay-card {
-  background: rgba(17,17,17,0.88);
-  color: #fff;
-  padding: 14px 16px;
-  border-radius: 14px;
-  font-weight: 700;
-  text-align: center;
-  max-width: 320px;
-  width: 100%;
+.pair-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.pair-top .meta { font-size: 13px; font-weight: 800; color:#111; }
+.pair-top .sub { font-size: 12px; color:#666; font-weight:700; margin-top:2px; }
+
+.del-btn {
+  border: none;
+  background: #eee;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
-.overlay-sub {
-  margin-top: 6px;
+.pair-grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px; }
+.pair-imgwrap { position:relative; border-radius:14px; overflow:hidden; }
+.pair-imgwrap img { width:100%; height:160px; object-fit:cover; display:block; }
+
+.badge {
+  position:absolute;
+  left:10px; top:10px;
+  background: rgba(17,17,17,0.86);
+  color:#fff;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.badge.win { background: rgba(0,0,0,0.88); }
+.badge.draw { background: rgba(17,17,17,0.72); }
+
+.bar {
+  margin-top: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #eee;
+  overflow:hidden;
+  display:flex;
+}
+
+.bar .left { height:100%; background:#111; width:50%; }
+.bar .right { height:100%; background:#bbb; width:50%; }
+
+.pair-stats {
+  display:flex;
+  justify-content:space-between;
+  font-weight: 900;
   font-size: 13px;
-  font-weight: 600;
-  opacity: 0.85;
-}
-.toast {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 50;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #111, #2a2a2a);
-  color: #fff;
-  font-weight: 800;
-  font-size: 20px;
-  letter-spacing: 0.3px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  pointer-events: none;
-  max-width: 320px;
-  width: calc(100% - 36px);
-  animation: pop 0.25s ease;
-  opacity: 1;
+  margin-top: 8px;
 }
 
-.toast {
-  transition: opacity 0.2s ease;
-}
-
-.toast.fadeout {
-  opacity: 0;
-}
-@keyframes pop {
-  from {
-    transform: translate(-50%, -50%) scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-}
-/* Fade-анимация смены пары */
-.vote-img {
-  opacity: 1;
-  transition: opacity 180ms ease;
-  will-change: opacity;
-}
-.vote-img.fading {
-  opacity: 0;
-}
-
-/* Лёгкое затемнение, пока идёт загрузка (опционально, но приятно) */
-.vote-grid.loading .vote-img {
-  filter: blur(2px);
-  opacity: 0.6;
-  transition: opacity 120ms ease, filter 120ms ease;
-}
+.pair-stats span { color:#111; }
+.pair-stats small { color:#666; font-weight:800; }
 
 </style>
 </head>
 
 <body>
 <div class="app">
-
   <div class="tabs">
     <div class="tab active" id="tabVote">Голосование</div>
-    <div class="tab" id="tabUpload">Загрузка пары</div>
+    <div class="tab" id="tabUpload">Загрузка</div>
+    <div class="tab" id="tabMy">Мои пары</div>
   </div>
 
   <div class="content">
 
     <!-- VOTE -->
-<div class="vote-wrap" id="voteWrap">
-  <div id="voteScreen" class="vote-grid">
-    <img id="leftImg" class="vote-img" />
-    <img id="rightImg" class="vote-img" />
-  </div>
+    <div class="vote-wrap" id="voteWrap">
+      <div id="voteScreen" class="vote-grid">
+        <img id="leftImg" class="vote-img" />
+        <img id="rightImg" class="vote-img" />
+      </div>
 
-  <div id="emptyOverlay" class="overlay hidden">
-  <div class="overlay-card">
-    Пока нет новых пар
-    <div class="overlay-sub">Если вы загрузили пару — её увидят другие</div>
-  </div>
-</div>
+      <div id="emptyOverlay" class="overlay hidden">
+        <div class="overlay-card">
+          Пока нет новых пар
+          <div class="overlay-sub">Если вы загрузили пару — её увидят другие</div>
+        </div>
+      </div>
 
-<div id="toast" class="toast hidden">Голос учтён</div>
-</div>
-    
+      <div id="toast" class="toast hidden">Голос учтён</div>
+    </div>
+
     <!-- UPLOAD -->
     <div id="uploadScreen" class="upload-grid hidden">
       <div class="upload-card" id="cardLeft">Нажмите чтобы загрузить<br>Фото 1</div>
       <div class="upload-card" id="cardRight">Нажмите чтобы загрузить<br>Фото 2</div>
     </div>
 
+    <!-- MY -->
+    <div id="myScreen" class="my-wrap hidden">
+      <div class="my-summary" id="mySummary">
+        <div class="title">Ваши результаты</div>
+        <div class="row"><span>Пар загружено</span><span id="sumPairs">—</span></div>
+        <div class="row"><span>Всего голосов</span><span id="sumVotes">—</span></div>
+        <div class="row"><span>Средний лучший %</span><span id="sumAvg">—</span></div>
+        <div class="row"><span>Лучшая пара</span><span id="sumBest">—</span></div>
+      </div>
+
+      <div class="my-list" id="myList"></div>
+    </div>
+
+    <!-- CONTROLS -->
     <div class="controls">
-      <button id="nextBtn" class="primary">Следующая</button>
+      <button id="skipBtn" class="primary">Пропустить</button>
       <button id="sendBtn" class="primary hidden">Отправить пару</button>
       <button id="clearBtn" class="secondary hidden">Очистить</button>
       <div class="status" id="status"></div>
-      <div class="status hidden" id="myStats"></div>
     </div>
 
   </div>
@@ -273,78 +328,115 @@ button {
 <input type="file" id="fileRight" accept="image/*" class="hidden">
 
 <script>
-
 const tg = window.Telegram.WebApp;
 try { tg.ready(); } catch(e) {}
 try { tg.expand(); } catch(e) {}
 try { tg.disableVerticalSwipes?.(); } catch(e) {}
 
 const API_BASE = "https://api.lookingreat.ru";
-
 let tg_id = tg.initDataUnsafe?.user?.id || "0";
+
 let currentPair = null;
-let leftFile = null;
-let rightFile = null;
-let emptyPollTimer = null;
 let loadingFeed = false;
 let votingLock = false;
 let toastTimer = null;
-const skippedPairIds = new Set();
-let brokenStreak = 0;
+let emptyPollTimer = null;
 
-const voteScreen = document.getElementById("voteScreen");
-const uploadScreen = document.getElementById("uploadScreen");
-const emptyOverlay = document.getElementById("emptyOverlay");
-const toast = document.getElementById("toast");  
+let leftFile = null;
+let rightFile = null;
 
+let myPollTimer = null;
 
 const tabVote = document.getElementById("tabVote");
 const tabUpload = document.getElementById("tabUpload");
+const tabMy = document.getElementById("tabMy");
+
+const voteWrap = document.getElementById("voteWrap");
+const voteScreen = document.getElementById("voteScreen");
+const uploadScreen = document.getElementById("uploadScreen");
+const myScreen = document.getElementById("myScreen");
+
+const emptyOverlay = document.getElementById("emptyOverlay");
+const toast = document.getElementById("toast");
 
 const leftImg = document.getElementById("leftImg");
 const rightImg = document.getElementById("rightImg");
 
-const nextBtn = document.getElementById("nextBtn");
+const skipBtn = document.getElementById("skipBtn");
 const sendBtn = document.getElementById("sendBtn");
 const clearBtn = document.getElementById("clearBtn");
-
-const cardLeft = document.getElementById("cardLeft");
-const cardRight = document.getElementById("cardRight");
 
 const fileLeft = document.getElementById("fileLeft");
 const fileRight = document.getElementById("fileRight");
 
+const cardLeft = document.getElementById("cardLeft");
+const cardRight = document.getElementById("cardRight");
+
 const statusEl = document.getElementById("status");
-const myStatsEl = document.getElementById("myStats");
-function setMyStats(text) {
-  if (!text) { myStatsEl.classList.add("hidden"); myStatsEl.textContent = ""; return; }
-  myStatsEl.textContent = text;
-  myStatsEl.classList.remove("hidden");
-}
-function setStatus(text) {
-  statusEl.textContent = text || "";
-}
-function showToast(text, ms = 1500) {
+function setStatus(t){ statusEl.textContent = t || ""; }
+
+function showToast(text, ms = 1200) {
   if (toastTimer) clearTimeout(toastTimer);
-
-  toast.innerHTML = "✅ " + text;
-
-  // показываем
+  toast.textContent = "✅ " + text;
   toast.classList.remove("hidden");
   toast.classList.remove("fadeout");
-
-  // прячем через ms: сначала fadeout, потом display:none
   toastTimer = setTimeout(() => {
     toast.classList.add("fadeout");
     setTimeout(() => {
       toast.classList.add("hidden");
       toastTimer = null;
-    }, 200); // должно совпадать с transition 0.2s
+    }, 200);
   }, ms);
 }
+
+function stopAllTimers() {
+  if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
+  if (myPollTimer) { clearInterval(myPollTimer); myPollTimer = null; }
+}
+
+function switchTab(mode) {
+  stopAllTimers();
+  emptyOverlay.classList.add("hidden");
+  setStatus("");
+
+  tabVote.classList.remove("active");
+  tabUpload.classList.remove("active");
+  tabMy.classList.remove("active");
+
+  voteWrap.classList.add("hidden");
+  uploadScreen.classList.add("hidden");
+  myScreen.classList.add("hidden");
+
+  skipBtn.classList.add("hidden");
+  sendBtn.classList.add("hidden");
+  clearBtn.classList.add("hidden");
+
+  if (mode === "vote") {
+    tabVote.classList.add("active");
+    voteWrap.classList.remove("hidden");
+    skipBtn.classList.remove("hidden");
+    loadNext();
+  } else if (mode === "upload") {
+    tabUpload.classList.add("active");
+    uploadScreen.classList.remove("hidden");
+    sendBtn.classList.remove("hidden");
+    clearBtn.classList.remove("hidden");
+  } else {
+    tabMy.classList.add("active");
+    myScreen.classList.remove("hidden");
+    loadMyPairs(true);
+    myPollTimer = setInterval(() => loadMyPairs(false), 5000);
+  }
+}
+
+tabVote.onclick = () => switchTab("vote");
+tabUpload.onclick = () => switchTab("upload");
+tabMy.onclick = () => switchTab("my");
+
+/* ===== Vote flow ===== */
+
 function preloadImage(url) {
   return new Promise((resolve, reject) => {
-    if (!url) return reject(new Error("no_url"));
     const img = new Image();
     img.onload = () => resolve(true);
     img.onerror = reject;
@@ -355,46 +447,38 @@ function preloadImage(url) {
 async function fadeSwapPair(item) {
   if (!item?.left_url || !item?.right_url) return false;
 
-  function cleanupAfterBroken() {
+  function cleanup() {
     leftImg.classList.remove("fading");
     rightImg.classList.remove("fading");
     voteScreen.classList.remove("loading");
   }
 
-  // 1) ПРЕДЗАГРУЗКА (оба изображения)
   voteScreen.classList.add("loading");
   try {
-    await Promise.all([
-      preloadImage(item.left_url),
-      preloadImage(item.right_url),
-    ]);
+    await Promise.all([ preloadImage(item.left_url), preloadImage(item.right_url) ]);
   } catch (e) {
-    cleanupAfterBroken();
+    cleanup();
     setStatus("Не удалось загрузить фото — пропускаю…");
-    setTimeout(loadNext, 150);
+    setTimeout(loadNext, 180);
     return false;
   }
 
-  // 2) FADE OUT
   leftImg.classList.add("fading");
   rightImg.classList.add("fading");
   await new Promise(r => setTimeout(r, 180));
 
-  // 3) СМЕНА SRC
   leftImg.src = item.left_url;
   rightImg.src = item.right_url;
 
-  // 4) FADE IN + decode
   try {
     if (leftImg.decode) await leftImg.decode();
     if (rightImg.decode) await rightImg.decode();
-  } catch (e) {}
+  } catch(e) {}
 
-  // 🔥 Реально битая картинка (бывает complete=true, но naturalWidth=0)
   if (leftImg.naturalWidth === 0 || rightImg.naturalWidth === 0) {
-    cleanupAfterBroken();
+    cleanup();
     setStatus("Фото повреждено — пропускаю…");
-    setTimeout(loadNext, 150);
+    setTimeout(loadNext, 180);
     return false;
   }
 
@@ -404,188 +488,97 @@ async function fadeSwapPair(item) {
   return true;
 }
 
-  function switchTab(mode) {
-  if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
-emptyOverlay.classList.add("hidden");
-  if (mode === "vote") {
-    tabVote.classList.add("active");
-    tabUpload.classList.remove("active");
-    voteScreen.classList.remove("hidden");
-    uploadScreen.classList.add("hidden");
-    nextBtn.classList.remove("hidden");
-    sendBtn.classList.add("hidden");
-    clearBtn.classList.add("hidden");
-    loadNext();
-  } else {
-    tabUpload.classList.add("active");
-    tabVote.classList.remove("active");
-    voteScreen.classList.add("hidden");
-    uploadScreen.classList.remove("hidden");
-    nextBtn.classList.add("hidden");
-    sendBtn.classList.remove("hidden");
-    clearBtn.classList.remove("hidden");
-  }
-}
-
-tabVote.onclick = () => switchTab("vote");
-tabUpload.onclick = () => switchTab("upload");
-
 async function loadNext() {
   if (loadingFeed) return;
   loadingFeed = true;
 
   try {
     setStatus("Загрузка...");
-    const res = await fetch(`${API_BASE}/feed?tg_id=${tg_id}`);
+    const res = await fetch(`${API_BASE}/feed?tg_id=${encodeURIComponent(tg_id)}`);
     const data = await res.json();
 
-    console.log("FEED DATA:", data);
-
-    // ЕСЛИ НЕТ ПАР
     if (!data.item) {
       setStatus("");
       emptyOverlay.classList.remove("hidden");
-
       if (!emptyPollTimer) {
         emptyPollTimer = setInterval(() => {
-          if (!voteScreen.classList.contains("hidden")) loadNext();
+          if (!voteWrap.classList.contains("hidden")) loadNext();
         }, 3000);
       }
-
       return;
     }
 
-    // ЕСЛИ ПАРА ЕСТЬ
-
-    if (emptyPollTimer) {
-      clearInterval(emptyPollTimer);
-      emptyPollTimer = null;
-    }
-
+    if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
     emptyOverlay.classList.add("hidden");
     currentPair = data.item;
 
-    // Плавно показываем новую пару с предзагрузкой
-    const okSwap = await fadeSwapPair(currentPair);
-    if (okSwap === false) return;
-
+    const ok = await fadeSwapPair(currentPair);
+    if (ok === false) return;
 
     setStatus("");
 
-  } catch (e) {
-    setStatus("Ошибка загрузки");
+  } catch(e) {
+    setStatus("Ошибка загрузки. Проверь сеть и перезагрузи.");
   } finally {
     loadingFeed = false;
   }
 }
 
-  async function vote(choice) {
+async function vote(choice) {
   if (!currentPair) return;
   if (votingLock) return;
   votingLock = true;
 
-  showToast("Голос учтён", 1500);
-  setStatus("");
+  try {
+    showToast("Голос учтён", 1100);
+    setStatus("");
 
-  const res = await fetch(`${API_BASE}/vote`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      tg_id,
-      pair_id: currentPair.id,
-      choice
-    })
-  });
+    const res = await fetch(`${API_BASE}/vote`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tg_id, pair_id: currentPair.id, choice })
+    });
 
-  // если вдруг ошибка — покажем её, но не ломаем экран
-  if (!res.ok) {
-    setStatus("Ошибка голосования");
-    return;
+    let data = null;
+    try { data = await res.json(); } catch(e) {}
+
+    if (!res.ok) {
+      const err = data?.error || "vote_failed";
+      if (err === "cannot_vote_own_pair") setStatus("Нельзя голосовать за свою пару");
+      else if (err === "already_voted") setStatus("Вы уже голосовали за эту пару");
+      else setStatus("Ошибка голосования");
+      return;
+    }
+
+    setTimeout(() => { setStatus("Загрузка..."); loadNext(); }, 250);
+  } finally {
+    setTimeout(() => { votingLock = false; }, 400);
   }
-
-  // через 0.5 сек подгружаем следующую пару
-  setTimeout(() => {
-    setStatus("Загрузка...");
-    loadNext();
-  }, 500);
-      // Разблокируем после смены пары
-  setTimeout(() => { votingLock = false; }, 650);
 }
 
 leftImg.onclick = () => vote("left");
 rightImg.onclick = () => vote("right");
-nextBtn.onclick = loadNext;
+skipBtn.onclick = () => loadNext();
+
+/* ===== Upload flow ===== */
 
 cardLeft.onclick = () => fileLeft.click();
 cardRight.onclick = () => fileRight.click();
 
 fileLeft.onchange = () => {
-  leftFile = fileLeft.files[0];
-  previewImage(leftFile, cardLeft);
+  leftFile = fileLeft.files[0] || null;
+  if (leftFile) previewImage(leftFile, cardLeft);
 };
-
 fileRight.onchange = () => {
-  rightFile = fileRight.files[0];
-  previewImage(rightFile, cardRight);
+  rightFile = fileRight.files[0] || null;
+  if (rightFile) previewImage(rightFile, cardRight);
 };
 
 function previewImage(file, card) {
   const reader = new FileReader();
-  reader.onload = e => {
-    card.innerHTML = `<img src="${e.target.result}">`;
-  };
+  reader.onload = e => { card.innerHTML = `<img src="${e.target.result}">`; };
   reader.readAsDataURL(file);
 }
-
-sendBtn.onclick = async () => {
-  if (!leftFile || !rightFile) {
-    setStatus("Загрузите оба фото");
-    return;
-  }
-
-  setStatus("Отправка...");
-
-  const form = new FormData();
-  form.append("tg_id", tg_id);
-  form.append("left", leftFile);
-  form.append("right", rightFile);
-
-  const res = await fetch(`${API_BASE}/upload_pair`, {
-    method: "POST",
-    body: form
-  });
-
-  if (!res.ok) {
-    setStatus("Ошибка загрузки");
-    return;
-  }
-
-    const data = await res.json();
-  if (!data.ok) { setStatus("Ошибка: " + (data.error || "upload_failed")); return; }
-
-  setStatus("Пара успешно загружена");
-
-  // Показываем статистику владельцу по этой паре
-  try {
-    const pairId = data.pair?.id;
-    if (pairId) {
-      const sRes = await fetch(`${API_BASE}/pair_stats?id=${pairId}&tg_id=${tg_id}`);
-      const sData = await sRes.json();
-      if (sRes.ok && sData.ok && sData.stats) {
-        setMyStats(`Статистика: Левое ${sData.stats.left} · Правое ${sData.stats.right}`);
-      } else {
-        setMyStats("");
-      }
-    } else {
-      setMyStats("");
-    }
-  } catch (e) {
-    setMyStats("");
-  }
-
-  clearUpload();
-};
-clearBtn.onclick = clearUpload;
 
 function clearUpload() {
   leftFile = null;
@@ -595,10 +588,168 @@ function clearUpload() {
   cardLeft.innerHTML = "Нажмите чтобы загрузить<br>Фото 1";
   cardRight.innerHTML = "Нажмите чтобы загрузить<br>Фото 2";
   setStatus("");
-  setMyStats("");
 }
 
-loadNext();
+clearBtn.onclick = clearUpload;
+
+sendBtn.onclick = async () => {
+  if (!leftFile || !rightFile) { setStatus("Загрузите оба фото"); return; }
+
+  setStatus("Отправка...");
+  const form = new FormData();
+  form.append("tg_id", tg_id);
+  form.append("left", leftFile);
+  form.append("right", rightFile);
+
+  const res = await fetch(`${API_BASE}/upload_pair`, { method:"POST", body: form });
+  let data = null;
+  try { data = await res.json(); } catch(e) {}
+
+  if (!res.ok || !data?.ok) {
+    setStatus("Ошибка загрузки. Попробуйте ещё раз.");
+    return;
+  }
+
+  setStatus("Пара загружена ✅");
+  clearUpload();
+
+  // мягко отправим в "Мои пары" — там человек увидит результат
+  setTimeout(() => switchTab("my"), 500);
+};
+
+/* ===== My pairs ===== */
+
+const myList = document.getElementById("myList");
+const sumPairs = document.getElementById("sumPairs");
+const sumVotes = document.getElementById("sumVotes");
+const sumAvg = document.getElementById("sumAvg");
+const sumBest = document.getElementById("sumBest");
+
+function fmtTs(ts) {
+  // ts в секундах
+  const d = new Date(Number(ts) * 1000);
+  return d.toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
+}
+
+function renderSummary(profile) {
+  sumPairs.textContent = profile?.pairs_total ?? "—";
+  sumVotes.textContent = profile?.votes_total ?? "—";
+  sumAvg.textContent = (profile?.avg_best_pct == null) ? "—" : (profile.avg_best_pct + "%");
+  sumBest.textContent = (profile?.best_pair_id == null) ? "—" : (`#${profile.best_pair_id} · ${profile.best_pair_pct}%`);
+}
+
+function badgeText(stats) {
+  if (!stats.total) return { text: "Нет голосов", cls:"draw" };
+  if (stats.winner === "draw") return { text: "Ничья", cls:"draw" };
+  return { text: "Победило", cls:"win" };
+}
+
+function renderPairs(pairs) {
+  if (!pairs?.length) {
+    myList.innerHTML = `<div class="pair-card"><div class="pair-top"><div class="meta">Пока нет загруженных пар</div></div></div>`;
+    return;
+  }
+
+  myList.innerHTML = pairs.map(p => {
+    const s = p.stats || {left:0,right:0,total:0,left_pct:0,right_pct:0,winner:null};
+    const b = badgeText(s);
+
+    const leftWinner = (s.winner === "left");
+    const rightWinner = (s.winner === "right");
+
+    const leftLabel = s.total ? `${s.left_pct}%` : "—";
+    const rightLabel = s.total ? `${s.right_pct}%` : "—";
+
+    const leftW = Math.max(0, Math.min(100, s.left_pct || 0));
+    const rightW = 100 - leftW;
+
+    return `
+      <div class="pair-card" data-pair-id="${p.id}">
+        <div class="pair-top">
+          <div>
+            <div class="meta">Пара #${p.id}</div>
+            <div class="sub">${fmtTs(p.created_at)}</div>
+          </div>
+          <button class="del-btn" data-del="${p.id}">Удалить</button>
+        </div>
+
+        <div class="pair-grid">
+          <div class="pair-imgwrap">
+            <img src="${p.left_url}" alt="">
+            <div class="badge ${leftWinner ? 'win' : b.cls}">
+              ${leftWinner ? '👑 ' : ''}${leftLabel} · ${s.left} голосов
+            </div>
+          </div>
+          <div class="pair-imgwrap">
+            <img src="${p.right_url}" alt="">
+            <div class="badge ${rightWinner ? 'win' : b.cls}">
+              ${rightWinner ? '👑 ' : ''}${rightLabel} · ${s.right} голосов
+            </div>
+          </div>
+        </div>
+
+        <div class="bar" aria-hidden="true">
+          <div class="left" style="width:${leftW}%;"></div>
+          <div class="right" style="width:${rightW}%;"></div>
+        </div>
+
+        <div class="pair-stats">
+          <span>Левое <small>${s.left}</small></span>
+          <span>Всего <small>${s.total}</small></span>
+          <span>Правое <small>${s.right}</small></span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // bind delete buttons
+  myList.querySelectorAll("[data-del]").forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.getAttribute("data-del");
+      if (!id) return;
+      const ok = confirm("Удалить эту пару? Голосование по ней остановится.");
+      if (!ok) return;
+
+      try {
+        setStatus("Удаляю...");
+        const res = await fetch(`${API_BASE}/pair?id=${encodeURIComponent(id)}&tg_id=${encodeURIComponent(tg_id)}`, {
+          method: "DELETE"
+        });
+        const data = await res.json().catch(()=>null);
+        if (!res.ok || !data?.ok) {
+          setStatus("Не удалось удалить");
+          return;
+        }
+        showToast("Удалено", 1000);
+        setStatus("");
+        loadMyPairs(true);
+      } catch(e) {
+        setStatus("Ошибка удаления");
+      }
+    };
+  });
+}
+
+async function loadMyPairs(showLoading) {
+  try {
+    if (showLoading) setStatus("Загрузка...");
+    const res = await fetch(`${API_BASE}/my_pairs?tg_id=${encodeURIComponent(tg_id)}`);
+    const data = await res.json();
+
+    if (!res.ok || !data?.ok) {
+      setStatus("Не удалось загрузить ваши пары");
+      return;
+    }
+
+    renderSummary(data.profile);
+    renderPairs(data.pairs);
+    if (showLoading) setStatus("");
+  } catch(e) {
+    setStatus("Ошибка сети. Проверь интернет.");
+  }
+}
+
+switchTab("vote");
 </script>
 </body>
 </html>
