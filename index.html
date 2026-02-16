@@ -2,476 +2,146 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>LookingGreat</title>
-
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-*{box-sizing:border-box}
-html,body{margin:0;padding:0;height:100dvh;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#fff;color:#111}
-.app{height:100%;display:flex;flex-direction:column}
-.tabs{display:flex;gap:8px;padding:12px}
-.tab{flex:1;padding:10px;border-radius:12px;border:1px solid #eee;background:#f5f5f5;text-align:center;font-weight:900;cursor:pointer;user-select:none}
-.tab.active{background:#111;color:#fff;border-color:#111}
+body {
+  margin:0;
+  font-family: system-ui;
+  background:#fff;
+}
 
-.content{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px}
-.hidden{display:none!important}
+.app {
+  padding-bottom:80px;
+}
 
-.feed{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
+.card {
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
 
-.card{border:1px solid #eee;border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,0.05)}
-.cardHead{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#fafafa;border-bottom:1px solid #eee}
-.cardHead .mini{font-size:12px;font-weight:800;color:#666}
-.iconBtn{border:none;background:#f0f0f0;border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:900}
-.iconBtn:active{transform:scale(0.98)}
-.iconBtn:disabled{opacity:0.5;cursor:default}
+.images {
+  flex:1;
+  display:flex;
+}
 
-.pairGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
-.tile{position:relative;border-radius:16px;overflow:hidden;background:#f4f4f4}
-.tile img{width:100%;height:230px;object-fit:cover;display:block;transition:filter 180ms ease, transform 180ms ease, outline 180ms ease}
-.tile.selected img{outline:4px solid rgba(0,0,0,0.9);outline-offset:-4px;transform:scale(1.01)}
-.card.voted .tile:not(.selected) img{filter:brightness(0.82)}
+.images img {
+  width:50%;
+  object-fit:cover;
+}
 
-.heart{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.85);font-size:54px;opacity:0;pointer-events:none;transition:opacity 220ms ease,transform 220ms ease;filter:drop-shadow(0 10px 24px rgba(0,0,0,0.25))}
-.heart.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
-.heart.hide{opacity:0;transform:translate(-50%,-50%) scale(0.9)}
+.likeBtn {
+  position:absolute;
+  bottom:100px;
+  right:20px;
+  background:#ffcc00;
+  border-radius:50%;
+  width:64px;
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  cursor:pointer;
+}
 
-.actions{display:flex;gap:10px;padding:10px 12px;border-top:1px solid #eee;background:#fff}
-.action{flex:1;border:none;border-radius:14px;padding:12px 0;font-size:20px;font-weight:900;cursor:pointer;background:#111;color:#fff}
-.action.secondary{background:#eee;color:#111}
-.action:disabled{opacity:0.45;cursor:default}
+.bottomNav {
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  height:70px;
+  background:#fff;
+  display:flex;
+  justify-content:space-around;
+  align-items:center;
+  border-top:1px solid #eee;
+}
 
-.footerNote{padding:10px 12px;font-size:12px;font-weight:800;color:#666;background:#fafafa;border-top:1px solid #eee}
-
-.status{min-height:18px;text-align:center;font-size:13px;font-weight:800;color:#666;padding-top:8px}
-.loader{padding:10px;text-align:center;font-weight:900;color:#666}
+.bottomNav div {
+  text-align:center;
+  font-size:22px;
+}
 </style>
 </head>
-
 <body>
-<div class="app">
-  <div class="tabs">
-    <div class="tab active" id="tabFeed">Лента</div>
-    <div class="tab" id="tabUpload">Загрузка</div>
-    <div class="tab" id="tabAdmin">Админ</div>
-  </div>
 
-  <div class="content">
+<div class="app" id="feed"></div>
 
-    <!-- FEED -->
-    <div id="feedScreen" class="feed"></div>
-    <div id="feedStatus" class="status"></div>
-
-    <!-- UPLOAD -->
-    <div id="uploadScreen" class="hidden" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;">
-        <div id="cardLeft" style="border:2px dashed #ccc;border-radius:18px;display:flex;align-items:center;justify-content:center;font-weight:900;background:#fafafa;cursor:pointer;overflow:hidden;text-align:center;padding:12px;">Нажмите чтобы загрузить<br>Фото 1</div>
-        <div id="cardRight" style="border:2px dashed #ccc;border-radius:18px;display:flex;align-items:center;justify-content:center;font-weight:900;background:#fafafa;cursor:pointer;overflow:hidden;text-align:center;padding:12px;">Нажмите чтобы загрузить<br>Фото 2</div>
-      </div>
-      <button id="sendBtn" class="action" style="font-size:16px;">Отправить пару</button>
-      <button id="clearBtn" class="action secondary" style="font-size:16px;">Очистить</button>
-      <div id="uploadStatus" class="status"></div>
-    </div>
-
-    <!-- ADMIN -->
-    <div id="adminScreen" class="hidden" style="flex:1;min-height:0;overflow:auto;border:1px solid #eee;border-radius:18px;padding:12px;background:#fafafa;">
-      <div style="font-weight:900;margin-bottom:6px;">Админка</div>
-      <div style="font-size:12px;font-weight:800;color:#666;margin-bottom:12px;">Ваш tg_id: <span id="adminTg">—</span></div>
-
-      <div style="background:#fff;border:1px solid #eee;border-radius:16px;padding:12px;">
-        <div style="font-weight:900;margin-bottom:8px;">Статистика</div>
-        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Пользователи всего</span><span id="sUsers">—</span></div>
-        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Новые сегодня</span><span id="sToday">—</span></div>
-        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Новые за месяц</span><span id="sMonth">—</span></div>
-        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Пар всего</span><span id="sPairs">—</span></div>
-        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Голосов всего</span><span id="sVotes">—</span></div>
-      </div>
-    </div>
-
-  </div>
+<div class="bottomNav">
+  <div onclick="goHome()">🏠</div>
+  <div onclick="goUpload()">➕</div>
+  <div onclick="goProfile()">👤</div>
 </div>
 
-<input type="file" id="fileLeft" accept="image/*" class="hidden">
-<input type="file" id="fileRight" accept="image/*" class="hidden">
-
 <script>
-const tg = window.Telegram?.WebApp;
-try { tg?.ready(); } catch(e) {}
-try { tg?.expand(); } catch(e) {}
-try { tg?.disableVerticalSwipes?.(); } catch(e) {}
-
 const API_BASE = "https://api.lookingreat.ru";
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-// ✅ админ
-const ADMIN_IDS = ["531932411"];
-
-// ✅ username бота без @
-const BOT_USERNAME = "Lookinggreat_bot";
-
-// tg_id: из Telegram, или fallback из URL для тестов
-const urlParams = new URLSearchParams(location.search);
-const debugTgId = urlParams.get("tg_id");
-let tg_id = (tg?.initDataUnsafe?.user?.id) || debugTgId || "0";
-tg_id = String(tg_id);
-
-const isAdmin = ADMIN_IDS.includes(String(tg_id));
-
-const tabFeed = document.getElementById("tabFeed");
-const tabUpload = document.getElementById("tabUpload");
-const tabAdmin = document.getElementById("tabAdmin");
-
-const feedScreen = document.getElementById("feedScreen");
-const feedStatus = document.getElementById("feedStatus");
-
-const uploadScreen = document.getElementById("uploadScreen");
-const adminScreen = document.getElementById("adminScreen");
-
-document.getElementById("adminTg").textContent = tg_id;
-
-function setFeedStatus(t){ feedStatus.textContent = t || ""; }
-function setUploadStatus(t){ document.getElementById("uploadStatus").textContent = t || ""; }
-
-function showTab(name){
-  tabFeed.classList.remove("active");
-  tabUpload.classList.remove("active");
-  tabAdmin.classList.remove("active");
-
-  feedScreen.classList.add("hidden");
-  uploadScreen.classList.add("hidden");
-  adminScreen.classList.add("hidden");
-  feedStatus.classList.add("hidden");
-
-  if(name==="feed"){
-    tabFeed.classList.add("active");
-    feedScreen.classList.remove("hidden");
-    feedStatus.classList.remove("hidden");
-  }
-  if(name==="upload"){
-    tabUpload.classList.add("active");
-    uploadScreen.classList.remove("hidden");
-  }
-  if(name==="admin"){
-    tabAdmin.classList.add("active");
-    adminScreen.classList.remove("hidden");
-  }
-}
-
-tabFeed.onclick = () => showTab("feed");
-tabUpload.onclick = () => showTab("upload");
-tabAdmin.onclick = () => showTab("admin");
-
-// ======= FEED logic (infinite scroll) =======
+let tg_id = tg.initDataUnsafe?.user?.id || "999";
 
 let loading = false;
-let done = false;
-let nextBeforeId = null;
-const renderedIds = new Set();
+let lastId = 999999999;
 
-const initialPairId = urlParams.get("pair_id"); // открытие по шарингу
-
-function makeShareLink(pairId){
-  // deep-link в мини-апп: t.me/<bot>?startapp=pair_57
-  if (BOT_USERNAME) return `https://t.me/${BOT_USERNAME}?startapp=pair_${pairId}`;
-  return `https://lookingreat.ru/?pair_id=${pairId}`;
-}
-
-function openShare(pairId){
-  const link = makeShareLink(pairId);
-  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}`;
-  try {
-    if (tg?.openTelegramLink) { tg.openTelegramLink(shareUrl); return; }
-  } catch(e){}
-  window.open(shareUrl, "_blank");
-}
-
-function popEmoji(el, emoji){
-  el.textContent = emoji;
-  el.classList.remove("hide");
-  el.classList.add("show");
-  setTimeout(() => {
-    el.classList.remove("show");
-    el.classList.add("hide");
-  }, 420);
-}
-
-function renderCard(item, myChoice=null){
-  if (!item?.id || !item.left_url || !item.right_url) return;
-  if (renderedIds.has(item.id)) return;
-
-  renderedIds.add(item.id);
-
-  const card = document.createElement("div");
-  card.className = "card";
-  card.dataset.id = String(item.id);
-
-  const head = document.createElement("div");
-  head.className = "cardHead";
-
-  const mini = document.createElement("div");
-  mini.className = "mini";
-  mini.textContent = "";
-
-  const shareBtn = document.createElement("button");
-  shareBtn.className = "iconBtn";
-  shareBtn.innerHTML = "↗️";
-  shareBtn.onclick = () => openShare(item.id);
-
-  head.appendChild(mini);
-  head.appendChild(shareBtn);
-
-  const grid = document.createElement("div");
-  grid.className = "pairGrid";
-
-  const left = document.createElement("div");
-  left.className = "tile";
-  const leftImg = document.createElement("img");
-  leftImg.src = item.left_url;
-  const leftFx = document.createElement("div");
-  leftFx.className = "heart";
-  leftFx.textContent = "❤️";
-  left.appendChild(leftImg);
-  left.appendChild(leftFx);
-
-  const right = document.createElement("div");
-  right.className = "tile";
-  const rightImg = document.createElement("img");
-  rightImg.src = item.right_url;
-  const rightFx = document.createElement("div");
-  rightFx.className = "heart";
-  rightFx.textContent = "💔";
-  right.appendChild(rightImg);
-  right.appendChild(rightFx);
-
-  grid.appendChild(left);
-  grid.appendChild(right);
-
-  const actions = document.createElement("div");
-  actions.className = "actions";
-
-  const likeBtn = document.createElement("button");
-  likeBtn.className = "action";
-  likeBtn.title = "Лайк (левое)";
-  likeBtn.innerHTML = "❤️";
-
-  const dislikeBtn = document.createElement("button");
-  dislikeBtn.className = "action secondary";
-  dislikeBtn.title = "Дизлайк (правое)";
-  dislikeBtn.innerHTML = "💔";
-
-  actions.appendChild(likeBtn);
-  actions.appendChild(dislikeBtn);
-
-  const foot = document.createElement("div");
-  foot.className = "footerNote";
-  foot.innerHTML = " ";
-
-  card.appendChild(head);
-  card.appendChild(grid);
-  card.appendChild(actions);
-  card.appendChild(foot);
-
-  function applyVoted(choice){
-    card.classList.add("voted");
-    likeBtn.disabled = true;
-    dislikeBtn.disabled = true;
-    if (choice === "left") { left.classList.add("selected"); right.classList.remove("selected"); }
-    else if (choice === "right") { right.classList.add("selected"); left.classList.remove("selected"); }
-  }
-
-  if (myChoice === "left" || myChoice === "right") applyVoted(myChoice);
-
-  async function vote(choice){
-    likeBtn.disabled = true;
-    dislikeBtn.disabled = true;
-
-    card.classList.add("voted");
-    if (choice === "left") {
-      left.classList.add("selected"); right.classList.remove("selected");
-      popEmoji(leftFx, "❤️");
-    } else {
-      right.classList.add("selected"); left.classList.remove("selected");
-      popEmoji(rightFx, "💔");
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/vote`, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ tg_id, pair_id: item.id, choice })
-      });
-      const data = await res.json().catch(()=>null);
-
-      if (!res.ok) {
-        const err = data?.error || "vote_failed";
-        likeBtn.disabled = false;
-        dislikeBtn.disabled = false;
-
-        if (err === "already_voted") setFeedStatus("Вы уже голосовали за эту пару");
-        else if (err === "cannot_vote_own_pair") setFeedStatus("Нельзя голосовать за свою пару");
-        else setFeedStatus("Ошибка голосования");
-        return;
-      }
-
-      setFeedStatus("");
-      maybeLoadMore();
-
-    } catch(e){
-      likeBtn.disabled = false;
-      dislikeBtn.disabled = false;
-      setFeedStatus("Ошибка сети");
-    }
-  }
-
-  likeBtn.onclick = () => vote("left");
-  dislikeBtn.onclick = () => vote("right");
-
-  feedScreen.appendChild(card);
-}
-
-async function loadPairById(pairId){
-  try{
-    setFeedStatus("Загрузка…");
-    const res = await fetch(`${API_BASE}/pair?id=${encodeURIComponent(pairId)}&tg_id=${encodeURIComponent(tg_id)}`);
-    const data = await res.json().catch(()=>null);
-    if (!res.ok || !data?.ok || !data?.item) { setFeedStatus(""); return; }
-    renderCard(data.item, data.my_choice || null);
-    setFeedStatus("");
-  } catch(e){
-    setFeedStatus("Ошибка сети");
-  }
-}
-
-async function loadMore(){
-  if (loading || done) return;
+async function loadFeed() {
+  if (loading) return;
   loading = true;
 
-  try{
-    setFeedStatus("Загрузка…");
-    const limit = 10;
-    const url = new URL(`${API_BASE}/feed`);
-    url.searchParams.set("tg_id", tg_id);
-    url.searchParams.set("limit", String(limit));
-    if (nextBeforeId) url.searchParams.set("before_id", String(nextBeforeId));
+  const res = await fetch(`${API_BASE}/feed?tg_id=${tg_id}&before_id=${lastId}`);
+  const data = await res.json();
 
-    const res = await fetch(url.toString());
-    const data = await res.json().catch(()=>null);
+  if (!data.ok) return;
 
-    if (!res.ok) {
-      if (data?.error === "banned") setFeedStatus("Доступ ограничен");
-      else setFeedStatus("Ошибка загрузки");
-      return;
-    }
+  data.items.forEach(item => {
+    lastId = item.id;
 
-    const items = data?.items || [];
-    if (!items.length) {
-      done = true;
-      setFeedStatus("Пока нет новых пар");
-      return;
-    }
+    const card = document.createElement("div");
+    card.className = "card";
 
-    for (const it of items) renderCard(it, null);
-    nextBeforeId = data?.next_before_id || null;
+    card.innerHTML = `
+      <div class="images">
+        <img src="${API_BASE}/r2/${item.photo_left_key}" />
+        <img src="${API_BASE}/r2/${item.photo_right_key}" />
+      </div>
+      <div class="likeBtn" onclick="vote(${item.id}, this)">👍</div>
+    `;
 
-    setFeedStatus("");
+    document.getElementById("feed").appendChild(card);
+  });
 
-  } finally {
-    loading = false;
+  loading = false;
+}
+
+async function vote(pair_id, el) {
+  el.style.background = "#00cc66";
+
+  await fetch(`${API_BASE}/vote`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ tg_id, pair_id })
+  });
+
+  setTimeout(() => {
+    window.scrollBy({ top: window.innerHeight, behavior:"smooth" });
+  }, 600);
+}
+
+window.addEventListener("scroll", () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
+    loadFeed();
   }
-}
-
-function maybeLoadMore(){
-  const cards = feedScreen.querySelectorAll(".card").length;
-  if (cards < 6) loadMore();
-}
-
-feedScreen.addEventListener("scroll", () => {
-  const nearBottom = feedScreen.scrollTop + feedScreen.clientHeight >= feedScreen.scrollHeight - 450;
-  if (nearBottom) loadMore();
 });
 
-// init feed
-(async () => {
-  showTab("feed");
-  if (initialPairId) await loadPairById(initialPairId);
-  await loadMore();
-})();
+function goHome(){ window.scrollTo(0,0); }
+function goUpload(){ alert("Страница загрузки будет следующая"); }
+function goProfile(){ alert("Страница профиля будет следующая"); }
 
-// ======= Upload =======
-const fileLeft = document.getElementById("fileLeft");
-const fileRight = document.getElementById("fileRight");
-const cardLeft = document.getElementById("cardLeft");
-const cardRight = document.getElementById("cardRight");
-const sendBtn = document.getElementById("sendBtn");
-const clearBtn = document.getElementById("clearBtn");
-
-let leftFile=null, rightFile=null;
-
-cardLeft.onclick = () => fileLeft.click();
-cardRight.onclick = () => fileRight.click();
-
-fileLeft.onchange = () => { leftFile = fileLeft.files[0] || null; if (leftFile) preview(leftFile, cardLeft); };
-fileRight.onchange = () => { rightFile = fileRight.files[0] || null; if (rightFile) preview(rightFile, cardRight); };
-
-function preview(file, el){
-  const r = new FileReader();
-  r.onload = e => el.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:18px;">`;
-  r.readAsDataURL(file);
-}
-
-function clearUpload(){
-  leftFile=null; rightFile=null;
-  fileLeft.value=""; fileRight.value="";
-  cardLeft.innerHTML="Нажмите чтобы загрузить<br>Фото 1";
-  cardRight.innerHTML="Нажмите чтобы загрузить<br>Фото 2";
-  setUploadStatus("");
-}
-clearBtn.onclick = clearUpload;
-
-sendBtn.onclick = async () => {
-  if (!leftFile || !rightFile) { setUploadStatus("Загрузите оба фото"); return; }
-  setUploadStatus("Отправка…");
-
-  const form = new FormData();
-  form.append("tg_id", tg_id);
-  form.append("left", leftFile);
-  form.append("right", rightFile);
-
-  try{
-    const res = await fetch(`${API_BASE}/upload_pair`, { method:"POST", body: form });
-    const data = await res.json().catch(()=>null);
-
-    if (!res.ok || !data?.ok) { setUploadStatus("Ошибка загрузки"); return; }
-
-    setUploadStatus("Пара загружена ✅");
-    clearUpload();
-
-    showTab("feed");
-    done = false;
-    await loadMore();
-
-  } catch(e){
-    setUploadStatus("Ошибка сети");
-  }
-};
-
-// ======= Admin stats =======
-async function loadAdmin(){
-  if (!isAdmin) return;
-  try{
-    const res = await fetch(`${API_BASE}/admin/stats?tg_id=${encodeURIComponent(tg_id)}`);
-    const data = await res.json().catch(()=>null);
-    if (!res.ok || !data?.ok) return;
-
-    document.getElementById("sUsers").textContent = data.users?.total ?? "—";
-    document.getElementById("sToday").textContent = data.users?.new_today ?? "—";
-    document.getElementById("sMonth").textContent = data.users?.new_this_month ?? "—";
-    document.getElementById("sPairs").textContent = data.content?.pairs_total ?? "—";
-    document.getElementById("sVotes").textContent = data.content?.votes_total ?? "—";
-  } catch(e){}
-}
-
-if (isAdmin) loadAdmin();
+loadFeed();
 </script>
+
 </body>
 </html>
