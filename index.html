@@ -348,11 +348,19 @@
     } catch(e) {}
 
     function getTgId() {
-      const id = tg?.initDataUnsafe?.user?.id;
-      return id ? String(id) : "";
-    }
+  const id = tg?.initDataUnsafe?.user?.id;
+  if (id) return String(id);
+
+  // DEV fallback: чтобы /feed работал в обычном браузере
+  // В проде можно убрать, но для отладки удобно.
+  return localStorage.getItem("DEV_TG_ID") || "531932411";
+}
 
     const tg_id = getTgId();
+    if (!tg?.initDataUnsafe?.user?.id) {
+    console.log("DEV MODE (not in Telegram). tg_id =", tg_id);
+    window.setDevTgId = (v) => { localStorage.setItem("DEV_TG_ID", String(v)); location.reload(); };
+}
 
     // ===== UI HELPERS =====
     const feedEl = document.getElementById("feed");
