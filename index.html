@@ -29,7 +29,7 @@ html, body {
 }
 
 .card {
-  position: relative;               /* КЛЮЧ: теперь кнопки привязаны к карточке */
+  position: relative;
   height: calc(100vh - var(--nav-h) - var(--safe-bottom));
   width: 100%;
   overflow: hidden;
@@ -47,13 +47,36 @@ html, body {
   width: 50%;
   height: 100%;
   overflow: hidden;
+  background: #000;
 }
 
-.half img {
+/* Размытый фон (заполняет “пустоту” красиво) */
+.bg {
+  position: absolute;
+  inset: -30px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px);
+  transform: scale(1.12);
+  opacity: 0.55;
+}
+
+/* Основное фото — БЕЗ искажений */
+.photo {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;   /* важно: никаких растяжений */
   display: block;
+}
+
+/* лёгкая виньетка, чтобы переходы выглядели “дороже” */
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(transparent 60%, rgba(0,0,0,0.35));
+  pointer-events: none;
 }
 
 /* Стиль лайк-кнопки (стеклянный) */
@@ -61,8 +84,8 @@ html, body {
   position: absolute;
   bottom: 18px;
   right: 18px;
-  width: 56px;
-  height: 56px;
+  width: 58px;
+  height: 58px;
   border-radius: 999px;
   background: rgba(255,255,255,0.86);
   backdrop-filter: blur(10px);
@@ -74,10 +97,19 @@ html, body {
   cursor: pointer;
   user-select: none;
   transition: transform 0.15s ease, opacity 0.15s ease;
-  font-size: 22px;
 }
 
 .likeBtn:active { transform: scale(0.92); }
+
+.likeBtn svg{
+  width: 26px;
+  height: 26px;
+  stroke: rgba(0,0,0,0.85);
+  fill: none;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 /* после голосования */
 .voted .likeBtn {
@@ -88,9 +120,9 @@ html, body {
 .flash {
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.15);
+  background: rgba(0,0,0,0.12);
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.18s ease;
   pointer-events: none;
 }
 
@@ -184,6 +216,17 @@ function setActive(tabId){
   document.getElementById("tabProfile").classList.toggle("active", tabId === "profile");
 }
 
+function thumbSvg(){
+  // стильный лайк (палец вверх) — outline
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 11v10"></path>
+      <path d="M7 11h3l3-7c.4-1 .9-1.5 1.8-1.5H16c.8 0 1.4.6 1.2 1.5l-1.1 4H20c1 0 1.6.9 1.3 1.8l-2.1 7.2c-.2.7-.8 1.2-1.5 1.2H9.5c-.8 0-1.5-.7-1.5-1.5V11z"></path>
+      <path d="M3 11h4v10H3z"></path>
+    </svg>
+  `;
+}
+
 async function loadFeed(){
   if (loading || ended) return;
   loading = true;
@@ -209,19 +252,24 @@ async function loadFeed(){
     card.innerHTML = `
       <div class="images">
         <div class="half" data-choice="left">
-          <img loading="lazy" src="${leftUrl}" alt="">
+          <div class="bg" style="background-image:url('${leftUrl}')"></div>
+          <img class="photo" loading="lazy" src="${leftUrl}" alt="">
+          <div class="vignette"></div>
           <div class="flash"></div>
-          <div class="likeBtn" title="Нравится">❤️</div>
+          <div class="likeBtn" title="Лайк">${thumbSvg()}</div>
         </div>
+
         <div class="half" data-choice="right">
-          <img loading="lazy" src="${rightUrl}" alt="">
+          <div class="bg" style="background-image:url('${rightUrl}')"></div>
+          <img class="photo" loading="lazy" src="${rightUrl}" alt="">
+          <div class="vignette"></div>
           <div class="flash"></div>
-          <div class="likeBtn" title="Нравится">❤️</div>
+          <div class="likeBtn" title="Лайк">${thumbSvg()}</div>
         </div>
       </div>
     `;
 
-    // обработчики лайка по каждой стороне
+    // лайк по тапу на половину
     card.querySelectorAll(".half").forEach(half => {
       half.addEventListener("click", () => vote(card, half.dataset.choice));
     });
@@ -236,7 +284,6 @@ async function vote(card, choice){
   if (card.classList.contains("voted")) return;
 
   card.classList.add("voted");
-
   const pair_id = Number(card.dataset.pairId);
 
   await fetch(`${API_BASE}/vote`, {
@@ -251,7 +298,6 @@ async function vote(card, choice){
   }, 450);
 }
 
-// infinite scroll
 window.addEventListener("scroll", () => {
   const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 800);
   if (nearBottom) loadFeed();
@@ -271,7 +317,6 @@ function goProfile(){
   alert("Профиль/статистика: добавим экран следующим шагом");
 }
 
-// старт
 loadFeed();
 </script>
 </body>
