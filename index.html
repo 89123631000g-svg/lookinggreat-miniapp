@@ -7,141 +7,272 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-body {
-  margin:0;
-  font-family: system-ui;
-  background:#fff;
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #fff;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  overflow-x: hidden;
+}
+
+:root{
+  --nav-h: 80px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
 .app {
-  padding-bottom:80px;
+  padding-bottom: calc(var(--nav-h) + var(--safe-bottom));
 }
 
 .card {
-  height:100vh;
-  display:flex;
-  flex-direction:column;
+  position: relative;               /* КЛЮЧ: теперь кнопки привязаны к карточке */
+  height: calc(100vh - var(--nav-h) - var(--safe-bottom));
+  width: 100%;
+  overflow: hidden;
+  background: #000;
 }
 
 .images {
-  flex:1;
-  display:flex;
+  width: 100%;
+  height: 100%;
+  display: flex;
 }
 
-.images img {
-  width:50%;
-  object-fit:cover;
+.half {
+  position: relative;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
 }
 
+.half img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Стиль лайк-кнопки (стеклянный) */
 .likeBtn {
-  position:absolute;
-  bottom:100px;
-  right:20px;
-  background:#ffcc00;
-  border-radius:50%;
-  width:64px;
-  height:64px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:28px;
-  cursor:pointer;
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.86);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  font-size: 22px;
 }
 
+.likeBtn:active { transform: scale(0.92); }
+
+/* после голосования */
+.voted .likeBtn {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.15);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.voted .flash { opacity: 1; }
+
+/* Нижняя навигация */
 .bottomNav {
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  height:70px;
-  background:#fff;
-  display:flex;
-  justify-content:space-around;
-  align-items:center;
-  border-top:1px solid #eee;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: rgba(255,255,255,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
 }
 
-.bottomNav div {
-  text-align:center;
-  font-size:22px;
+.navItem {
+  width: 60px;
+  height: 60px;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.navItem svg {
+  width: 26px;
+  height: 26px;
+  stroke: rgba(0,0,0,0.72);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.navItem.active svg {
+  stroke: rgba(0,0,0,1);
 }
 </style>
 </head>
+
 <body>
+  <div class="app" id="feed"></div>
 
-<div class="app" id="feed"></div>
+  <div class="bottomNav">
+    <button class="navItem active" id="tabHome" onclick="goHome()">
+      <svg viewBox="0 0 24 24">
+        <path d="M3 10.5 12 3l9 7.5"></path>
+        <path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10"></path>
+      </svg>
+    </button>
 
-<div class="bottomNav">
-  <div onclick="goHome()">🏠</div>
-  <div onclick="goUpload()">➕</div>
-  <div onclick="goProfile()">👤</div>
-</div>
+    <button class="navItem" id="tabUpload" onclick="goUpload()">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 5v14"></path>
+        <path d="M5 12h14"></path>
+      </svg>
+    </button>
+
+    <button class="navItem" id="tabProfile" onclick="goProfile()">
+      <svg viewBox="0 0 24 24">
+        <path d="M20 21a8 8 0 0 0-16 0"></path>
+        <circle cx="12" cy="8" r="4"></circle>
+      </svg>
+    </button>
+  </div>
 
 <script>
 const API_BASE = "https://api.lookingreat.ru";
-const tg = window.Telegram.WebApp;
-tg.expand();
 
-let tg_id = tg.initDataUnsafe?.user?.id || "999";
+const tg = window.Telegram?.WebApp;
+try { tg?.expand(); tg?.disableVerticalSwipes?.(); } catch(e) {}
+
+const tg_id = (tg?.initDataUnsafe?.user?.id ? String(tg.initDataUnsafe.user.id) : "999");
 
 let loading = false;
 let lastId = 999999999;
+let ended = false;
 
-async function loadFeed() {
-  if (loading) return;
+function setActive(tabId){
+  document.getElementById("tabHome").classList.toggle("active", tabId === "home");
+  document.getElementById("tabUpload").classList.toggle("active", tabId === "upload");
+  document.getElementById("tabProfile").classList.toggle("active", tabId === "profile");
+}
+
+async function loadFeed(){
+  if (loading || ended) return;
   loading = true;
 
-  const res = await fetch(`${API_BASE}/feed?tg_id=${tg_id}&before_id=${lastId}`);
-  const data = await res.json();
+  const res = await fetch(`${API_BASE}/feed?tg_id=${encodeURIComponent(tg_id)}&before_id=${encodeURIComponent(lastId)}`);
+  const data = await res.json().catch(()=>({ok:false}));
 
-  if (!data.ok) return;
+  if (!data.ok) { loading = false; return; }
 
-  data.items.forEach(item => {
+  const items = data.items || [];
+  if (items.length === 0) ended = true;
+
+  for (const item of items){
     lastId = item.id;
 
     const card = document.createElement("div");
     card.className = "card";
+    card.dataset.pairId = item.id;
+
+    const leftUrl = `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}`;
+    const rightUrl = `${API_BASE}/r2/${encodeURIComponent(item.photo_right_key)}`;
 
     card.innerHTML = `
       <div class="images">
-        <img src="${API_BASE}/r2/${item.photo_left_key}" />
-        <img src="${API_BASE}/r2/${item.photo_right_key}" />
+        <div class="half" data-choice="left">
+          <img loading="lazy" src="${leftUrl}" alt="">
+          <div class="flash"></div>
+          <div class="likeBtn" title="Нравится">❤️</div>
+        </div>
+        <div class="half" data-choice="right">
+          <img loading="lazy" src="${rightUrl}" alt="">
+          <div class="flash"></div>
+          <div class="likeBtn" title="Нравится">❤️</div>
+        </div>
       </div>
-      <div class="likeBtn" onclick="vote(${item.id}, this)">👍</div>
     `;
 
+    // обработчики лайка по каждой стороне
+    card.querySelectorAll(".half").forEach(half => {
+      half.addEventListener("click", () => vote(card, half.dataset.choice));
+    });
+
     document.getElementById("feed").appendChild(card);
-  });
+  }
 
   loading = false;
 }
 
-async function vote(pair_id, el) {
-  el.style.background = "#00cc66";
+async function vote(card, choice){
+  if (card.classList.contains("voted")) return;
+
+  card.classList.add("voted");
+
+  const pair_id = Number(card.dataset.pairId);
 
   await fetch(`${API_BASE}/vote`, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ tg_id, pair_id })
-  });
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tg_id, pair_id, choice })
+  }).catch(()=>{});
 
+  // автопереход к следующей карточке
   setTimeout(() => {
-    window.scrollBy({ top: window.innerHeight, behavior:"smooth" });
-  }, 600);
+    window.scrollBy({ top: window.innerHeight, behavior: "smooth" });
+  }, 450);
 }
 
+// infinite scroll
 window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200) {
-    loadFeed();
-  }
+  const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 800);
+  if (nearBottom) loadFeed();
 });
 
-function goHome(){ window.scrollTo(0,0); }
-function goUpload(){ alert("Страница загрузки будет следующая"); }
-function goProfile(){ alert("Страница профиля будет следующая"); }
+// навигация (пока заглушки)
+function goHome(){
+  setActive("home");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function goUpload(){
+  setActive("upload");
+  alert("Загрузка: добавим экран следующим шагом");
+}
+function goProfile(){
+  setActive("profile");
+  alert("Профиль/статистика: добавим экран следующим шагом");
+}
 
+// старт
 loadFeed();
 </script>
-
 </body>
 </html>
