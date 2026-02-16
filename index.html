@@ -23,8 +23,15 @@
 
       --navH: 64px;
 
-      /* Высота блока с фото (карточка ниже, следующая идёт сразу) */
-      --pairH: 62vh;
+      /* ДЕСКТОП/ОБЩЕЕ: высота блока с фото */
+      --pairH: clamp(360px, 62vh, 620px);
+    }
+
+    /* МОБИЛЬНОЕ: уменьшаем высоту, чтобы футер поднялся к фото */
+    @media (max-width: 520px){
+      :root{
+        --pairH: clamp(280px, 46vh, 420px);
+      }
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -68,7 +75,6 @@
     }
     .feed::-webkit-scrollbar{ display:none; }
 
-    /* Карточка по содержимому — заканчивается сразу после футера */
     .card{
       display:flex;
       flex-direction:column;
@@ -95,7 +101,6 @@
     .pairTitle{ font-weight:850; font-size:22px; }
     .pairSub{ margin-top:2px; font-size:13px; color:var(--muted); }
 
-    /* Блок фото фиксируем по высоте */
     .pairWrap{
       height: var(--pairH);
       position:relative;
@@ -126,7 +131,7 @@
       width:100%;
       height:100%;
       object-fit: contain;
-      object-position: center top;
+      object-position: center top; /* держим фото выше */
       background:#fff;
       transform: translateZ(0);
     }
@@ -282,8 +287,8 @@
   </div>
 
   <script>
-    // ===== VERSION (меняй при каждом обновлении) =====
-    const APP_VERSION = "LG-2026-02-16-1439";
+    // ===== VERSION (меняю при каждом обновлении) =====
+    const APP_VERSION = "LG-2026-02-16-1612";
 
     // ===== CONFIG =====
     const API_BASE = "https://api.lookingreat.ru";
@@ -307,11 +312,10 @@
       window.setDevTgId = (v) => { localStorage.setItem("DEV_TG_ID", String(v)); location.reload(); };
     }
 
-    // ===== UI HELPERS =====
     const feedEl = document.getElementById("feed");
     const toastEl = document.getElementById("toast");
 
-    // Показ версии в шапке + в консоли
+    // Версия в шапке + в консоли
     document.getElementById("ver").textContent = APP_VERSION;
     console.log("LookingGreat version:", APP_VERSION);
 
@@ -327,7 +331,6 @@
       try { tg?.HapticFeedback?.impactOccurred?.(type); } catch(e) {}
     }
 
-    // ===== API =====
     async function apiGet(path){
       const res = await fetch(API_BASE + path, { method:"GET" });
       return res.json();
