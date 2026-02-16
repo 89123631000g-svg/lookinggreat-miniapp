@@ -9,10 +9,12 @@
 
   <style>
     :root{
-      --bg:#0b0f1a;
-      --stroke2:rgba(255,255,255,.06);
-      --text:#f4f6ff;
-      --muted:rgba(244,246,255,.66);
+      --bg:#ffffff;
+      --card:#ffffff;
+      --stroke: rgba(0,0,0,.08);
+      --stroke2: rgba(0,0,0,.06);
+      --text:#0f172a;
+      --muted: rgba(15,23,42,.60);
 
       --r:18px;
 
@@ -21,7 +23,7 @@
 
       --navH: 64px;
 
-      /* ВАЖНО: карточка короче экрана, чтобы было видно следующую (~20%) */
+      /* Карточка занимает ~80% экрана => снизу видно следующую */
       --cardH: 80vh;
     }
 
@@ -33,19 +35,17 @@
       overflow:hidden;
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       color:var(--text);
-      background:
-        radial-gradient(1000px 700px at 20% -10%, rgba(120,140,255,.18), transparent 55%),
-        radial-gradient(900px 600px at 90% 15%, rgba(255,255,255,.08), transparent 55%),
-        linear-gradient(180deg, #0b1020, #070a12);
+      background: var(--bg);
     }
 
     .app{
       height:100%;
       display:flex;
       flex-direction:column;
+      background: var(--bg);
     }
 
-    /* Верхняя зона */
+    /* Верх (светлый, без тёмной плашки) */
     .top{
       padding: calc(10px + var(--safeT)) 14px 10px;
       display:flex;
@@ -53,9 +53,10 @@
       justify-content:space-between;
       gap:10px;
       flex: 0 0 auto;
+      background: var(--bg);
     }
     .brand{ line-height:1.1; }
-    .brand .t{ font-weight:760; font-size:18px; letter-spacing:.2px; }
+    .brand .t{ font-weight:800; font-size:18px; letter-spacing:.2px; }
     .brand .s{ margin-top:4px; font-size:13px; color:var(--muted); }
 
     /* Лента */
@@ -64,58 +65,55 @@
       overflow:auto;
       -webkit-overflow-scrolling: touch;
       padding: 0 12px calc(var(--navH) + var(--safeB) + 16px);
-      scroll-snap-type: y proximity;
+      background: var(--bg);
       scrollbar-width:none;
     }
     .feed::-webkit-scrollbar{ display:none; }
 
-    /* Карточка (СТАЛА фиксированной по высоте) */
+    /* Карточка */
     .card{
-      scroll-snap-align: start;
       height: var(--cardH);
       display:flex;
       flex-direction:column;
 
-      background: rgba(255,255,255,.06);
-      border: 1px solid var(--stroke2);
+      background: var(--card);
+      border: 1px solid var(--stroke);
       border-radius: var(--r);
-      box-shadow: 0 18px 55px rgba(0,0,0,.40);
       overflow:hidden;
+      box-shadow: 0 12px 34px rgba(15,23,42,.10);
 
+      /* маленький зазор — чтобы было видно следующую карточку */
       margin: 0 0 12px 0;
-      backdrop-filter: blur(6px);
     }
 
+    /* Шапка пары — компактнее, чтобы фото было выше */
     .cardHead{
-      padding: 12px 12px 10px;
+      padding: 10px 12px 8px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      background: linear-gradient(180deg, rgba(0,0,0,.22), rgba(0,0,0,0));
       flex: 0 0 auto;
+      background: var(--card);
+      border-bottom: 1px solid var(--stroke2);
     }
-    .pairTitle{ font-weight:760; font-size:18px; }
+    .pairTitle{ font-weight:850; font-size:22px; }
     .pairSub{ margin-top:2px; font-size:13px; color:var(--muted); }
 
-    /* Зона с двумя фото (ЗАНИМАЕТ ОСТАТОК ВНУТРИ КАРТОЧКИ) */
+    /* Два фото: занимают весь остаток карточки */
     .pairWrap{
       flex: 1 1 auto;
       min-height: 0;
       position:relative;
       display:grid;
       grid-template-columns: 1fr 1fr;
-      background: rgba(0,0,0,.08);
+      background: #fff; /* важно: белый */
     }
 
     .pane{
       position:relative;
       overflow:hidden;
-      border-top: 1px solid rgba(255,255,255,.04);
-      border-bottom: 1px solid rgba(255,255,255,.04);
-
-      /* базовый спокойный фон (НЕ чёрный) */
-      background: rgba(255,255,255,.04);
+      background:#fff; /* белый фон "пустоты" вместо тёмного */
     }
 
     .divider{
@@ -123,71 +121,52 @@
       top:0; bottom:0;
       left:50%;
       width:1px;
-      background: rgba(255,255,255,.10);
+      background: rgba(0,0,0,.08);
       transform: translateX(-.5px);
       pointer-events:none;
     }
 
-    /* Спокойный фон внутри "пустоты": однотон + лёгкий градиент (БЕЗ чёрной подложки) */
-    .mat{
-      position:absolute;
-      inset:0;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
-        radial-gradient(700px 520px at 30% 15%, rgba(140,160,255,.16), transparent 60%),
-        radial-gradient(700px 520px at 80% 70%, rgba(255,255,255,.10), transparent 62%);
-      opacity: 1;
-    }
-
+    /* Фото: contain, но прижимаем вверх */
     .img{
       position:absolute;
       inset:0;
       width:100%;
       height:100%;
-      object-fit: contain;       /* не режем */
-      object-position: center 35%;
-      filter: saturate(1.03) contrast(1.03);
+      object-fit: contain;          /* не режем */
+      object-position: center top;  /* поднимаем вверх */
+      background:#fff;
       transform: translateZ(0);
     }
 
-    .tapHint{
-      position:absolute;
-      inset:0;
-      background: radial-gradient(300px 220px at 50% 75%, rgba(255,255,255,.10), transparent 60%);
-      opacity:0;
-      transition: opacity .18s ease;
-      pointer-events:none;
-    }
-    .pane:active .tapHint{ opacity:.55; }
-
-    /* Узкий footer как Instagram */
+    /* Узкий footer (как Instagram), но светлый */
     .cardFooter{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
       padding: 10px 12px 12px;
-      background: rgba(0,0,0,.18);
-      border-top: 1px solid rgba(255,255,255,.06);
+      background: #fff;
+      border-top: 1px solid var(--stroke2);
       flex: 0 0 auto;
     }
+
     .votes{
       display:flex;
       align-items:center;
       gap:8px;
       font-size:14px;
-      color:var(--text);
-      font-weight:650;
+      color: var(--text);
+      font-weight:750;
       letter-spacing:.1px;
     }
 
     .shareBtn{
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
+      border: 1px solid var(--stroke);
+      background: rgba(15,23,42,.04);
       color: var(--text);
       border-radius: 999px;
       padding: 10px 12px;
-      font-weight:700;
+      font-weight:800;
       font-size:14px;
       display:inline-flex;
       align-items:center;
@@ -197,9 +176,9 @@
       transition: transform .10s ease, background .18s ease, border-color .18s ease;
     }
     .shareBtn:active{ transform: scale(.98); }
-    .shareIco{ width:16px; height:16px; display:block; opacity:.95; }
+    .shareIco{ width:16px; height:16px; display:block; opacity:.9; }
 
-    /* Нижнее меню */
+    /* Нижнее меню — светлое */
     .nav{
       position:fixed;
       left:0; right:0; bottom:0;
@@ -208,9 +187,10 @@
       display:flex;
       justify-content:space-between;
       align-items:flex-end;
-      background: linear-gradient(180deg, rgba(7,10,18,0), rgba(7,10,18,.80) 30%, rgba(7,10,18,.95));
-      border-top: 1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.92);
+      border-top: 1px solid var(--stroke);
       z-index:50;
+      backdrop-filter: blur(10px);
     }
 
     .navBtn{
@@ -218,8 +198,8 @@
       display:grid;
       place-items:center;
       border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+      background: rgba(15,23,42,.04);
       color: var(--text);
       user-select:none;
       cursor:pointer;
@@ -231,10 +211,10 @@
     .plus{
       width:54px; height:54px;
       border-radius:18px;
-      background: rgba(255,255,255,.92);
-      color:#0b0f1a;
-      border: 1px solid rgba(255,255,255,.15);
-      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      background: #0f172a;
+      color:#fff;
+      border: 1px solid rgba(15,23,42,.15);
+      box-shadow: 0 10px 26px rgba(15,23,42,.22);
     }
     .plus svg{ width:26px; height:26px; opacity:1; }
 
@@ -243,13 +223,13 @@
       left: 50%;
       bottom: calc(var(--navH) + var(--safeB) + 18px);
       transform: translateX(-50%);
-      background: rgba(15,18,30,.92);
-      border: 1px solid rgba(255,255,255,.10);
-      color: var(--text);
+      background: rgba(15,23,42,.92);
+      border: 1px solid rgba(255,255,255,.18);
+      color: #fff;
       padding: 10px 12px;
       border-radius: 999px;
       font-size: 13px;
-      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+      box-shadow: 0 18px 40px rgba(0,0,0,.20);
       opacity:0;
       pointer-events:none;
       transition: opacity .18s ease, transform .18s ease;
@@ -262,8 +242,7 @@
 
     .skeleton{
       height: 100%;
-      background:
-        linear-gradient(110deg, rgba(255,255,255,.06) 20%, rgba(255,255,255,.10) 35%, rgba(255,255,255,.06) 50%);
+      background: linear-gradient(110deg, rgba(15,23,42,.05) 20%, rgba(15,23,42,.10) 35%, rgba(15,23,42,.05) 50%);
       background-size: 200% 100%;
       animation: shimmer 1.1s linear infinite;
     }
@@ -377,7 +356,7 @@
       const totalVotes = Number(item?.total_votes ?? item?.votes_total ?? item?.votes ?? 0);
       const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
 
-      // ✅ ВАЖНО: поддерживаем и *_url, и *_key (через /r2/)
+      // поддерживаем и *_url, и *_key (через /r2/)
       const leftUrl =
         item?.photo_left_url ||
         (item?.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}` : "");
@@ -393,22 +372,18 @@
               <div class="pairTitle">Пара #${pairNum}</div>
               <div class="pairSub">Сравни и выбери лучшее фото</div>
             </div>
-            <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);"></div>
+            <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(15,23,42,.04);"></div>
           </div>
 
           <div class="pairWrap">
             <div class="divider"></div>
 
             <div class="pane" data-choice="left">
-              <div class="mat"></div>
               ${leftUrl ? `<img class="img" src="${escapeHtml(leftUrl)}" alt="left" />` : `<div class="skeleton"></div>`}
-              <div class="tapHint"></div>
             </div>
 
             <div class="pane" data-choice="right">
-              <div class="mat"></div>
               ${rightUrl ? `<img class="img" src="${escapeHtml(rightUrl)}" alt="right" />` : `<div class="skeleton"></div>`}
-              <div class="tapHint"></div>
             </div>
           </div>
 
@@ -441,12 +416,12 @@
               <div class="pairTitle">Загрузка…</div>
               <div class="pairSub">Сравни и выбери лучшее фото</div>
             </div>
-            <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);"></div>
+            <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(15,23,42,.04);"></div>
           </div>
           <div class="pairWrap">
             <div class="divider"></div>
-            <div class="pane"><div class="mat"></div><div class="skeleton"></div></div>
-            <div class="pane"><div class="mat"></div><div class="skeleton"></div></div>
+            <div class="pane"><div class="skeleton"></div></div>
+            <div class="pane"><div class="skeleton"></div></div>
           </div>
           <div class="cardFooter">
             <div class="votes">👍 0 голосов</div>
@@ -476,8 +451,8 @@
               </div>
               <div class="pairWrap">
                 <div class="divider"></div>
-                <div class="pane"><div class="mat"></div></div>
-                <div class="pane"><div class="mat"></div></div>
+                <div class="pane"></div>
+                <div class="pane"></div>
               </div>
               <div class="cardFooter">
                 <div class="votes">👍 0 голосов</div>
@@ -505,8 +480,8 @@
             </div>
             <div class="pairWrap">
               <div class="divider"></div>
-              <div class="pane"><div class="mat"></div></div>
-              <div class="pane"><div class="mat"></div></div>
+              <div class="pane"></div>
+              <div class="pane"></div>
             </div>
             <div class="cardFooter">
               <div class="votes">👍 0 голосов</div>
@@ -554,10 +529,6 @@
           const pairId = card?.getAttribute("data-pair-id");
           const choice = pane.getAttribute("data-choice");
           if (!pairId || !choice) return;
-
-          pane.style.transform = "scale(0.995)";
-          setTimeout(()=>pane.style.transform = "", 120);
-
           await vote(pairId, choice);
         });
       });
