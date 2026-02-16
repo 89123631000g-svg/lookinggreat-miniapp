@@ -12,7 +12,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #f6f6f7; /* легкий фон как у соцсетей */
+  background: #f6f6f7;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
@@ -28,6 +28,7 @@ html, body {
   padding: 14px 12px calc(var(--nav-h) + var(--safe-bottom) + 14px);
 }
 
+/* карточка-пост */
 .post {
   background: #fff;
   border: 1px solid var(--line);
@@ -37,7 +38,6 @@ html, body {
   margin: 0 0 14px 0;
 }
 
-/* Шапка поста */
 .postHeader {
   display: flex;
   align-items: center;
@@ -47,7 +47,7 @@ html, body {
 
 .postTitle {
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 650;
   color: #111;
 }
 
@@ -76,37 +76,40 @@ html, body {
   stroke-width: 2;
 }
 
-/* Блок с фото */
+/* блок пары (вертикально) */
 .pair {
   width: 100%;
-  height: 68vh;            /* ключ: крупно, но не fullscreen */
-  max-height: 560px;       /* чтобы на больших экранах не было “кинотеатра” */
-  min-height: 380px;       /* чтобы на маленьких не стало слишком мелко */
+  height: 68vh;     /* крупно, но видно следующую карточку */
+  max-height: 560px;
+  min-height: 420px;
   display: flex;
+  flex-direction: column;
   background: #000;
 }
 
 .half {
   position: relative;
-  width: 50%;
-  height: 100%;
+  width: 100%;
+  height: 50%;
   overflow: hidden;
+  background: #000;
 }
 
 .half img {
   width: 100%;
   height: 100%;
-  object-fit: cover;       /* НЕ тянет, просто обрезает */
+  object-fit: cover;            /* не тянет, режет минимально */
+  object-position: 50% 25%;     /* чуть выше центра, меньше режет лица */
   display: block;
 }
 
-/* Лёгкий разделитель посередине */
-.divider {
-  width: 1px;
+/* разделитель между верх/низ */
+.dividerH {
+  height: 1px;
   background: rgba(255,255,255,0.25);
 }
 
-/* Кнопка лайка на половине */
+/* лайк-кнопка */
 .likeBtn {
   position: absolute;
   bottom: 14px;
@@ -137,12 +140,23 @@ html, body {
   stroke-linejoin: round;
 }
 
+/* после голосования */
 .voted .likeBtn {
   opacity: 0.35;
   pointer-events: none;
 }
 
-/* Подвал поста */
+/* лёгкая подсветка выбранного */
+.chosen::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border: 3px solid rgba(255,255,255,0.75);
+  box-shadow: inset 0 0 0 999px rgba(0,0,0,0.10);
+  pointer-events:none;
+}
+
+/* подвал */
 .postFooter {
   padding: 10px 12px 12px;
   display: flex;
@@ -173,7 +187,7 @@ html, body {
   color: rgba(0,0,0,0.50);
 }
 
-/* Нижняя навигация */
+/* нижняя навигация */
 .bottomNav {
   position: fixed;
   left: 0;
@@ -308,7 +322,7 @@ async function loadFeed(){
     post.dataset.pairId = item.id;
     post.dataset.votes = "0";
 
-    const leftUrl = `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}`;
+    const leftUrl  = `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}`;
     const rightUrl = `${API_BASE}/r2/${encodeURIComponent(item.photo_right_key)}`;
 
     post.innerHTML = `
@@ -327,7 +341,9 @@ async function loadFeed(){
           <img loading="lazy" src="${leftUrl}" alt="">
           <div class="likeBtn" title="Лайк">${thumbSvg()}</div>
         </div>
-        <div class="divider"></div>
+
+        <div class="dividerH"></div>
+
         <div class="half" data-choice="right">
           <img loading="lazy" src="${rightUrl}" alt="">
           <div class="likeBtn" title="Лайк">${thumbSvg()}</div>
@@ -357,9 +373,13 @@ async function vote(post, choice){
   if (post.classList.contains("voted")) return;
   post.classList.add("voted");
 
+  // подсветим выбранную половину
+  const chosenHalf = post.querySelector(`.half[data-choice="${choice}"]`);
+  if (chosenHalf) chosenHalf.classList.add("chosen");
+
   const pair_id = Number(post.dataset.pairId);
 
-  // локально обновим счетчик (без статистики с сервера — это след. шаг)
+  // локально счетчик (реальный сделаем после /pair_stats)
   const nextVotes = Number(post.dataset.votes || "0") + 1;
   post.dataset.votes = String(nextVotes);
   post.querySelector(".votesText").textContent = `${nextVotes} голосов`;
@@ -370,11 +390,10 @@ async function vote(post, choice){
     body: JSON.stringify({ tg_id, pair_id, choice })
   }).catch(()=>{});
 
-  // автопереход — мягко к следующему посту
+  // мягко листаем к следующей карточке
   setTimeout(() => {
-    post.scrollIntoView({ behavior: "smooth", block: "start" });
     window.scrollBy({ top: post.getBoundingClientRect().height + 14, behavior: "smooth" });
-  }, 350);
+  }, 320);
 }
 
 window.addEventListener("scroll", () => {
