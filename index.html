@@ -12,34 +12,78 @@
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  background: #fff;
+  background: #f6f6f7; /* легкий фон как у соцсетей */
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  overflow-x: hidden;
 }
 
 :root{
   --nav-h: 80px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-top: env(safe-area-inset-top, 0px);
+  --radius: 18px;
+  --shadow: 0 10px 26px rgba(0,0,0,0.10);
+  --line: rgba(0,0,0,0.08);
 }
 
 .app {
-  padding-bottom: calc(var(--nav-h) + var(--safe-bottom));
+  padding: 14px 12px calc(var(--nav-h) + var(--safe-bottom) + 14px);
 }
 
-.card {
-  position: relative;
-  height: calc(100vh - var(--nav-h) - var(--safe-bottom));
-  width: 100%;
+.post {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   overflow: hidden;
-  background: #000;
+  margin: 0 0 14px 0;
 }
 
-.images {
-  width: 100%;
-  height: 100%;
+/* Шапка поста */
+.postHeader {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px;
+}
+
+.postTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+}
+
+.postSub {
+  font-size: 12px;
+  color: rgba(0,0,0,0.55);
+  margin-top: 2px;
+}
+
+.menuBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menuBtn svg {
+  width: 18px;
+  height: 18px;
+  stroke: rgba(0,0,0,0.55);
+  fill: none;
+  stroke-width: 2;
+}
+
+/* Блок с фото */
+.pair {
+  width: 100%;
+  height: 68vh;            /* ключ: крупно, но не fullscreen */
+  max-height: 560px;       /* чтобы на больших экранах не было “кинотеатра” */
+  min-height: 380px;       /* чтобы на маленьких не стало слишком мелко */
+  display: flex;
+  background: #000;
 }
 
 .half {
@@ -47,54 +91,36 @@ html, body {
   width: 50%;
   height: 100%;
   overflow: hidden;
-  background: #000;
 }
 
-/* Размытый фон (заполняет “пустоту” красиво) */
-.bg {
-  position: absolute;
-  inset: -30px;
-  background-size: cover;
-  background-position: center;
-  filter: blur(22px);
-  transform: scale(1.12);
-  opacity: 0.55;
-}
-
-/* Основное фото — БЕЗ искажений */
-.photo {
-  position: absolute;
-  inset: 0;
+.half img {
   width: 100%;
   height: 100%;
-  object-fit: contain;   /* важно: никаких растяжений */
+  object-fit: cover;       /* НЕ тянет, просто обрезает */
   display: block;
 }
 
-/* лёгкая виньетка, чтобы переходы выглядели “дороже” */
-.vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(transparent 60%, rgba(0,0,0,0.35));
-  pointer-events: none;
+/* Лёгкий разделитель посередине */
+.divider {
+  width: 1px;
+  background: rgba(255,255,255,0.25);
 }
 
-/* Стиль лайк-кнопки (стеклянный) */
+/* Кнопка лайка на половине */
 .likeBtn {
   position: absolute;
-  bottom: 18px;
-  right: 18px;
-  width: 58px;
-  height: 58px;
+  bottom: 14px;
+  right: 14px;
+  width: 54px;
+  height: 54px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.86);
+  background: rgba(255,255,255,0.92);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   box-shadow: 0 8px 22px rgba(0,0,0,0.22);
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
   user-select: none;
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
@@ -102,8 +128,8 @@ html, body {
 .likeBtn:active { transform: scale(0.92); }
 
 .likeBtn svg{
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   stroke: rgba(0,0,0,0.85);
   fill: none;
   stroke-width: 2.2;
@@ -111,22 +137,41 @@ html, body {
   stroke-linejoin: round;
 }
 
-/* после голосования */
 .voted .likeBtn {
   opacity: 0.35;
   pointer-events: none;
 }
 
-.flash {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.12);
-  opacity: 0;
-  transition: opacity 0.18s ease;
-  pointer-events: none;
+/* Подвал поста */
+.postFooter {
+  padding: 10px 12px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.voted .flash { opacity: 1; }
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(0,0,0,0.75);
+  font-size: 14px;
+}
+
+.stat svg{
+  width: 18px;
+  height: 18px;
+  stroke: rgba(0,0,0,0.65);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hint {
+  font-size: 12px;
+  color: rgba(0,0,0,0.50);
+}
 
 /* Нижняя навигация */
 .bottomNav {
@@ -153,7 +198,6 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
 }
 
 .navItem svg {
@@ -166,9 +210,7 @@ html, body {
   stroke-linejoin: round;
 }
 
-.navItem.active svg {
-  stroke: rgba(0,0,0,1);
-}
+.navItem.active svg { stroke: rgba(0,0,0,1); }
 </style>
 </head>
 
@@ -216,8 +258,27 @@ function setActive(tabId){
   document.getElementById("tabProfile").classList.toggle("active", tabId === "profile");
 }
 
+function dotsSvg(){
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 12h.01"></path>
+      <path d="M12 12h.01"></path>
+      <path d="M18 12h.01"></path>
+    </svg>
+  `;
+}
+
 function thumbSvg(){
-  // стильный лайк (палец вверх) — outline
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 11v10"></path>
+      <path d="M7 11h3l3-7c.4-1 .9-1.5 1.8-1.5H16c.8 0 1.4.6 1.2 1.5l-1.1 4H20c1 0 1.6.9 1.3 1.8l-2.1 7.2c-.2.7-.8 1.2-1.5 1.2H9.5c-.8 0-1.5-.7-1.5-1.5V11z"></path>
+      <path d="M3 11h4v10H3z"></path>
+    </svg>
+  `;
+}
+
+function smallThumbSvg(){
   return `
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M7 11v10"></path>
@@ -242,49 +303,66 @@ async function loadFeed(){
   for (const item of items){
     lastId = item.id;
 
-    const card = document.createElement("div");
-    card.className = "card";
-    card.dataset.pairId = item.id;
+    const post = document.createElement("div");
+    post.className = "post";
+    post.dataset.pairId = item.id;
+    post.dataset.votes = "0";
 
     const leftUrl = `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}`;
     const rightUrl = `${API_BASE}/r2/${encodeURIComponent(item.photo_right_key)}`;
 
-    card.innerHTML = `
-      <div class="images">
+    post.innerHTML = `
+      <div class="postHeader">
+        <div>
+          <div class="postTitle">Пара #${item.id}</div>
+          <div class="postSub">Сравни и выбери лучшее фото</div>
+        </div>
+        <div class="menuBtn" title="Меню">
+          ${dotsSvg()}
+        </div>
+      </div>
+
+      <div class="pair">
         <div class="half" data-choice="left">
-          <div class="bg" style="background-image:url('${leftUrl}')"></div>
-          <img class="photo" loading="lazy" src="${leftUrl}" alt="">
-          <div class="vignette"></div>
-          <div class="flash"></div>
+          <img loading="lazy" src="${leftUrl}" alt="">
           <div class="likeBtn" title="Лайк">${thumbSvg()}</div>
         </div>
-
+        <div class="divider"></div>
         <div class="half" data-choice="right">
-          <div class="bg" style="background-image:url('${rightUrl}')"></div>
-          <img class="photo" loading="lazy" src="${rightUrl}" alt="">
-          <div class="vignette"></div>
-          <div class="flash"></div>
+          <img loading="lazy" src="${rightUrl}" alt="">
           <div class="likeBtn" title="Лайк">${thumbSvg()}</div>
         </div>
       </div>
+
+      <div class="postFooter">
+        <div class="stat">
+          ${smallThumbSvg()}
+          <span class="votesText">0 голосов</span>
+        </div>
+        <div class="hint">Тапни по фото</div>
+      </div>
     `;
 
-    // лайк по тапу на половину
-    card.querySelectorAll(".half").forEach(half => {
-      half.addEventListener("click", () => vote(card, half.dataset.choice));
+    post.querySelectorAll(".half").forEach(half => {
+      half.addEventListener("click", () => vote(post, half.dataset.choice));
     });
 
-    document.getElementById("feed").appendChild(card);
+    document.getElementById("feed").appendChild(post);
   }
 
   loading = false;
 }
 
-async function vote(card, choice){
-  if (card.classList.contains("voted")) return;
+async function vote(post, choice){
+  if (post.classList.contains("voted")) return;
+  post.classList.add("voted");
 
-  card.classList.add("voted");
-  const pair_id = Number(card.dataset.pairId);
+  const pair_id = Number(post.dataset.pairId);
+
+  // локально обновим счетчик (без статистики с сервера — это след. шаг)
+  const nextVotes = Number(post.dataset.votes || "0") + 1;
+  post.dataset.votes = String(nextVotes);
+  post.querySelector(".votesText").textContent = `${nextVotes} голосов`;
 
   await fetch(`${API_BASE}/vote`, {
     method: "POST",
@@ -292,30 +370,21 @@ async function vote(card, choice){
     body: JSON.stringify({ tg_id, pair_id, choice })
   }).catch(()=>{});
 
-  // автопереход к следующей карточке
+  // автопереход — мягко к следующему посту
   setTimeout(() => {
-    window.scrollBy({ top: window.innerHeight, behavior: "smooth" });
-  }, 450);
+    post.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.scrollBy({ top: post.getBoundingClientRect().height + 14, behavior: "smooth" });
+  }, 350);
 }
 
 window.addEventListener("scroll", () => {
-  const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 800);
+  const nearBottom = (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 900);
   if (nearBottom) loadFeed();
 });
 
-// навигация (пока заглушки)
-function goHome(){
-  setActive("home");
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-function goUpload(){
-  setActive("upload");
-  alert("Загрузка: добавим экран следующим шагом");
-}
-function goProfile(){
-  setActive("profile");
-  alert("Профиль/статистика: добавим экран следующим шагом");
-}
+function goHome(){ setActive("home"); window.scrollTo({ top: 0, behavior: "smooth" }); }
+function goUpload(){ setActive("upload"); alert("Загрузка: добавим экран следующим шагом"); }
+function goProfile(){ setActive("profile"); alert("Профиль/статистика: добавим экран следующим шагом"); }
 
 loadFeed();
 </script>
