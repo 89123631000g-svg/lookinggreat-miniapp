@@ -8,201 +8,85 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
-* { box-sizing: border-box; }
-html, body {
-  margin: 0; padding: 0; height: 100dvh; overflow: hidden;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: #ffffff; color: #111;
-}
-.app { height: 100%; display: flex; flex-direction: column; }
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100dvh;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#fff;color:#111}
+.app{height:100%;display:flex;flex-direction:column}
+.tabs{display:flex;gap:8px;padding:12px}
+.tab{flex:1;padding:10px;border-radius:12px;border:1px solid #eee;background:#f5f5f5;text-align:center;font-weight:900;cursor:pointer;user-select:none}
+.tab.active{background:#111;color:#fff;border-color:#111}
 
-.tabs { display:flex; gap:8px; padding:12px; }
-.tab {
-  flex:1; padding:10px; border-radius:12px; border:1px solid #eee;
-  background:#f5f5f5; text-align:center; font-weight:900;
-  cursor:pointer; user-select:none;
-}
-.tab.active { background:#111; color:#fff; border-color:#111; }
+.content{flex:1;min-height:0;display:flex;flex-direction:column;padding:12px}
+.hidden{display:none!important}
 
-.content { flex:1; display:flex; flex-direction:column; padding:12px; min-height:0; }
-.hidden { display:none !important; }
+.feed{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:12px;padding-bottom:12px}
 
-.controls { padding-top:12px; }
-button {
-  width:100%; padding:14px; border-radius:14px; border:none;
-  font-size:16px; font-weight:900; cursor:pointer;
-}
-.primary { background:#111; color:#fff; }
-.primary:disabled { background:#d9d9d9; color:#666; cursor:default; }
-.secondary { background:#eee; margin-top:8px; font-weight:900; }
+.card{border:1px solid #eee;border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,0.05)}
+.cardHead{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#fafafa;border-bottom:1px solid #eee}
+.cardHead .mini{font-size:12px;font-weight:800;color:#666}
+.iconBtn{border:none;background:#f0f0f0;border-radius:12px;padding:10px 12px;cursor:pointer;font-weight:900}
+.iconBtn:active{transform:scale(0.98)}
+.iconBtn:disabled{opacity:0.5;cursor:default}
 
-.status { text-align:center; font-size:14px; padding-top:6px; color:#333; min-height:18px; }
+.pairGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+.tile{position:relative;border-radius:16px;overflow:hidden;background:#f4f4f4}
+.tile img{width:100%;height:230px;object-fit:cover;display:block;transition:filter 180ms ease, transform 180ms ease, outline 180ms ease}
+.tile.selected img{outline:4px solid rgba(0,0,0,0.9);outline-offset:-4px;transform:scale(1.01)}
+.card.voted .tile:not(.selected) img{filter:brightness(0.82)}
 
-/* Vote */
-.vote-wrap { flex:1; min-height:0; position:relative; }
-.vote-grid { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:10px; min-height:0; }
-.vote-tile { position:relative; min-height:0; border-radius:16px; overflow:hidden; }
-.vote-img {
-  width:100%; height:100%; object-fit:cover; cursor:pointer;
-  opacity:1;
-  transition: opacity 180ms ease, filter 180ms ease, transform 180ms ease, outline 180ms ease;
-  will-change: opacity, filter, transform;
-}
-.vote-img.fading { opacity:0; }
-.vote-grid.loading .vote-img { filter: blur(2px); opacity:0.6; }
+.heart{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.85);font-size:54px;opacity:0;pointer-events:none;transition:opacity 220ms ease,transform 220ms ease;filter:drop-shadow(0 10px 24px rgba(0,0,0,0.25))}
+.heart.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.heart.hide{opacity:0;transform:translate(-50%,-50%) scale(0.9)}
 
-/* выделение выбранного */
-.vote-tile.selected .vote-img { outline: 4px solid rgba(0,0,0,0.9); outline-offset: -4px; transform: scale(1.01); }
-.vote-grid.choice-made .vote-tile:not(.selected) .vote-img { filter: brightness(0.78); }
+.actions{display:flex;gap:10px;padding:10px 12px;border-top:1px solid #eee;background:#fff}
+.action{flex:1;border:none;border-radius:14px;padding:12px 0;font-size:20px;font-weight:900;cursor:pointer;background:#111;color:#fff}
+.action.secondary{background:#eee;color:#111}
+.action:disabled{opacity:0.45;cursor:default}
 
-/* Heart */
-.heart {
-  position:absolute; left:50%; top:50%;
-  transform: translate(-50%, -50%) scale(0.8);
-  font-size:58px; opacity:0; pointer-events:none;
-  transition: opacity 220ms ease, transform 220ms ease;
-  filter: drop-shadow(0 10px 24px rgba(0,0,0,0.25));
-}
-.heart.show { opacity:1; transform: translate(-50%, -50%) scale(1); }
-.heart.hide { opacity:0; transform: translate(-50%, -50%) scale(0.9); }
+.footerNote{padding:10px 12px;font-size:12px;font-weight:800;color:#666;background:#fafafa;border-top:1px solid #eee}
 
-/* overlay empty */
-.overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:18px; pointer-events:none; }
-.overlay-card {
-  background: rgba(17,17,17,0.88);
-  color:#fff; padding:14px 16px; border-radius:14px;
-  font-weight:900; text-align:center; max-width:340px; width:100%;
-}
-.overlay-sub { margin-top:6px; font-size:13px; font-weight:800; opacity:0.85; }
-
-/* Upload */
-.upload-grid { flex:1; display:grid; grid-template-columns:1fr 1fr; gap:10px; min-height:0; }
-.upload-card {
-  border:2px dashed #ccc; border-radius:16px;
-  display:flex; align-items:center; justify-content:center;
-  font-weight:900; text-align:center; cursor:pointer;
-  overflow:hidden; padding:12px; line-height:1.15; background:#fafafa;
-}
-.upload-card img { width:100%; height:100%; object-fit:cover; }
-
-/* My pairs */
-.my-wrap { flex:1; min-height:0; display:flex; flex-direction:column; gap:10px; }
-.box { border:1px solid #eee; border-radius:14px; padding:12px; background:#fafafa; }
-.box .title { font-weight:900; margin-bottom:6px; }
-.box .row { display:flex; justify-content:space-between; font-weight:800; font-size:14px; padding:4px 0; }
-.list { flex:1; min-height:0; overflow:auto; padding-bottom:6px; }
-.card { border:1px solid #eee; border-radius:16px; padding:10px; margin-bottom:10px; background:#fff; }
-.pair-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
-.del-btn { border:none; background:#eee; border-radius:12px; padding:10px 12px; font-weight:900; cursor:pointer; }
-
-.pair-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
-.imgwrap { position:relative; border-radius:14px; overflow:hidden; }
-.imgwrap img { width:100%; height:160px; object-fit:cover; display:block; }
-.badge { position:absolute; left:10px; top:10px; background: rgba(17,17,17,0.86); color:#fff; border-radius:999px; padding:6px 10px; font-weight:900; font-size:12px; }
-.bar { margin-top:10px; height:10px; border-radius:999px; background:#eee; overflow:hidden; display:flex; }
-.bar .left { height:100%; background:#111; width:50%; }
-.bar .right { height:100%; background:#bbb; width:50%; }
-.pair-stats { display:flex; justify-content:space-between; font-weight:900; font-size:13px; margin-top:8px; }
-
-/* Admin extras */
-.small { font-size:12px; font-weight:800; color:#666; }
-.inline-actions { display:flex; gap:8px; margin-top:10px; }
-.inline-actions button { width:auto; flex:1; padding:12px; border-radius:12px; font-size:14px; }
-.chkrow { display:flex; align-items:center; gap:10px; }
-.chkrow input { transform: scale(1.2); }
-.flag { font-weight:900; font-size:12px; padding:4px 8px; border-radius:999px; background:#eee; color:#111; display:inline-block; }
-.flag.bad { background:#111; color:#fff; }
+.status{min-height:18px;text-align:center;font-size:13px;font-weight:800;color:#666;padding-top:8px}
+.loader{padding:10px;text-align:center;font-weight:900;color:#666}
 </style>
 </head>
 
 <body>
 <div class="app">
-
   <div class="tabs">
-    <div class="tab active" id="tabVote">Лента</div>
+    <div class="tab active" id="tabFeed">Лента</div>
     <div class="tab" id="tabUpload">Загрузка</div>
-    <div class="tab" id="tabMy">Мои пары</div>
-    <div class="tab hidden" id="tabAdmin">Админ</div>
+    <div class="tab" id="tabAdmin">Админ</div>
   </div>
 
   <div class="content">
 
-    <!-- VOTE -->
-    <div class="vote-wrap" id="voteWrap">
-      <div id="voteScreen" class="vote-grid">
-        <div class="vote-tile" id="tileLeft">
-          <img id="leftImg" class="vote-img" />
-          <div id="heartLeft" class="heart">❤️</div>
-        </div>
-        <div class="vote-tile" id="tileRight">
-          <img id="rightImg" class="vote-img" />
-          <div id="heartRight" class="heart">❤️</div>
-        </div>
-      </div>
-
-      <div id="emptyOverlay" class="overlay hidden">
-        <div class="overlay-card">
-          Пока нет новых пар
-          <div class="overlay-sub">Загрузи свою — и её увидят другие</div>
-        </div>
-      </div>
-    </div>
+    <!-- FEED -->
+    <div id="feedScreen" class="feed"></div>
+    <div id="feedStatus" class="status"></div>
 
     <!-- UPLOAD -->
-    <div id="uploadScreen" class="upload-grid hidden">
-      <div class="upload-card" id="cardLeft">Нажмите чтобы загрузить<br>Фото 1</div>
-      <div class="upload-card" id="cardRight">Нажмите чтобы загрузить<br>Фото 2</div>
-    </div>
-
-    <!-- MY -->
-    <div id="myScreen" class="my-wrap hidden">
-      <div class="box">
-        <div class="title">Ваши результаты</div>
-        <div class="small">Ваш tg_id: <span id="myTgId">—</span></div>
-        <div class="row"><span>Пар загружено</span><span id="sumPairs">—</span></div>
-        <div class="row"><span>Всего голосов</span><span id="sumVotes">—</span></div>
-        <div class="row"><span>Средний лучший %</span><span id="sumAvg">—</span></div>
-        <div class="row"><span>Лучшая пара</span><span id="sumBest">—</span></div>
+    <div id="uploadScreen" class="hidden" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;min-height:0;">
+        <div id="cardLeft" style="border:2px dashed #ccc;border-radius:18px;display:flex;align-items:center;justify-content:center;font-weight:900;background:#fafafa;cursor:pointer;overflow:hidden;text-align:center;padding:12px;">Нажмите чтобы загрузить<br>Фото 1</div>
+        <div id="cardRight" style="border:2px dashed #ccc;border-radius:18px;display:flex;align-items:center;justify-content:center;font-weight:900;background:#fafafa;cursor:pointer;overflow:hidden;text-align:center;padding:12px;">Нажмите чтобы загрузить<br>Фото 2</div>
       </div>
-      <div class="list" id="myList"></div>
+      <button id="sendBtn" class="action" style="font-size:16px;">Отправить пару</button>
+      <button id="clearBtn" class="action secondary" style="font-size:16px;">Очистить</button>
+      <div id="uploadStatus" class="status"></div>
     </div>
 
     <!-- ADMIN -->
-    <div id="adminScreen" class="my-wrap hidden">
-      <div class="box">
-        <div class="title">Админка</div>
-        <div class="small">Ваш tg_id: <span id="aTgId">—</span> (должен быть в списке ADMIN_IDS)</div>
+    <div id="adminScreen" class="hidden" style="flex:1;min-height:0;overflow:auto;border:1px solid #eee;border-radius:18px;padding:12px;background:#fafafa;">
+      <div style="font-weight:900;margin-bottom:6px;">Админка</div>
+      <div style="font-size:12px;font-weight:800;color:#666;margin-bottom:12px;">Ваш tg_id: <span id="adminTg">—</span></div>
+
+      <div style="background:#fff;border:1px solid #eee;border-radius:16px;padding:12px;">
+        <div style="font-weight:900;margin-bottom:8px;">Статистика</div>
+        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Пользователи всего</span><span id="sUsers">—</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Новые сегодня</span><span id="sToday">—</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Новые за месяц</span><span id="sMonth">—</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Пар всего</span><span id="sPairs">—</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:800;padding:4px 0;"><span>Голосов всего</span><span id="sVotes">—</span></div>
       </div>
-
-      <div class="box">
-        <div class="title">Статистика</div>
-        <div class="row"><span>Пользователи всего</span><span id="aUsersTotal">—</span></div>
-        <div class="row"><span>Новые сегодня</span><span id="aUsersToday">—</span></div>
-        <div class="row"><span>Новые за месяц</span><span id="aUsersMonth">—</span></div>
-        <div class="row"><span>Пар всего</span><span id="aPairsTotal">—</span></div>
-        <div class="row"><span>Голосов всего</span><span id="aVotesTotal">—</span></div>
-        <div class="row"><span>Забанено</span><span id="aBannedTotal">—</span></div>
-      </div>
-
-      <div class="box">
-        <div class="title">Битые пары</div>
-        <div class="small">Проверяем последние N пар (по умолчанию 200). Покажем список перед удалением.</div>
-        <div class="row"><span>Найдено битых</span><span id="brokenCount">—</span></div>
-        <div class="inline-actions">
-          <button class="secondary" id="btnScanBroken">Проверить битые пары</button>
-          <button class="secondary" id="btnDeleteBroken" disabled>Удалить выбранные</button>
-        </div>
-      </div>
-
-      <div class="list" id="adminList"></div>
-    </div>
-
-    <!-- CONTROLS -->
-    <div class="controls">
-      <button id="skipBtn" class="primary">Пропустить</button>
-      <button id="sendBtn" class="primary hidden">Отправить пару</button>
-      <button id="clearBtn" class="secondary hidden">Очистить</button>
-      <div class="status" id="status"></div>
     </div>
 
   </div>
@@ -212,249 +96,97 @@ button {
 <input type="file" id="fileRight" accept="image/*" class="hidden">
 
 <script>
-const tg = window.Telegram.WebApp;
-try { tg.ready(); } catch(e) {}
-try { tg.expand(); } catch(e) {}
-try { tg.disableVerticalSwipes?.(); } catch(e) {}
+const tg = window.Telegram?.WebApp;
+try { tg?.ready(); } catch(e) {}
+try { tg?.expand(); } catch(e) {}
+try { tg?.disableVerticalSwipes?.(); } catch(e) {}
 
 const API_BASE = "https://api.lookingreat.ru";
 
-// ✅ ВПИШИ СВОЙ tg_id (тот же, что и в Worker)
+// ✅ админ
 const ADMIN_IDS = ["531932411"];
 
-let tg_id = tg.initDataUnsafe?.user?.id || "0";
+// ✅ username бота без @
+const BOT_USERNAME = "Lookinggreat_bot";
+
+// tg_id: из Telegram, или fallback из URL для тестов
+const urlParams = new URLSearchParams(location.search);
+const debugTgId = urlParams.get("tg_id");
+let tg_id = (tg?.initDataUnsafe?.user?.id) || debugTgId || "0";
+tg_id = String(tg_id);
+
 const isAdmin = ADMIN_IDS.includes(String(tg_id));
 
-let currentPair = null;
-let loadingFeed = false;
-let votingLock = false;
-let emptyPollTimer = null;
-let myPollTimer = null;
-let adminPollTimer = null;
-let noPairsMode = false;
-
-let leftFile = null;
-let rightFile = null;
-
-const tabVote = document.getElementById("tabVote");
+const tabFeed = document.getElementById("tabFeed");
 const tabUpload = document.getElementById("tabUpload");
-const tabMy = document.getElementById("tabMy");
 const tabAdmin = document.getElementById("tabAdmin");
 
-const voteWrap = document.getElementById("voteWrap");
-const voteScreen = document.getElementById("voteScreen");
+const feedScreen = document.getElementById("feedScreen");
+const feedStatus = document.getElementById("feedStatus");
+
 const uploadScreen = document.getElementById("uploadScreen");
-const myScreen = document.getElementById("myScreen");
 const adminScreen = document.getElementById("adminScreen");
 
-const tileLeft = document.getElementById("tileLeft");
-const tileRight = document.getElementById("tileRight");
-const leftImg = document.getElementById("leftImg");
-const rightImg = document.getElementById("rightImg");
-const heartLeft = document.getElementById("heartLeft");
-const heartRight = document.getElementById("heartRight");
+document.getElementById("adminTg").textContent = tg_id;
 
-const emptyOverlay = document.getElementById("emptyOverlay");
-const skipBtn = document.getElementById("skipBtn");
-const sendBtn = document.getElementById("sendBtn");
-const clearBtn = document.getElementById("clearBtn");
-const statusEl = document.getElementById("status");
+function setFeedStatus(t){ feedStatus.textContent = t || ""; }
+function setUploadStatus(t){ document.getElementById("uploadStatus").textContent = t || ""; }
 
-const fileLeft = document.getElementById("fileLeft");
-const fileRight = document.getElementById("fileRight");
-const cardLeft = document.getElementById("cardLeft");
-const cardRight = document.getElementById("cardRight");
-
-document.getElementById("myTgId").textContent = String(tg_id);
-document.getElementById("aTgId").textContent = String(tg_id);
-
-function setStatus(t){ statusEl.textContent = t || ""; }
-
-function stopAllTimers() {
-  if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
-  if (myPollTimer) { clearInterval(myPollTimer); myPollTimer = null; }
-  if (adminPollTimer) { clearInterval(adminPollTimer); adminPollTimer = null; }
-}
-
-function setNoPairsUI(on) {
-  noPairsMode = !!on;
-  if (on) {
-    skipBtn.disabled = true;
-    skipBtn.textContent = "Ждём новые пары…";
-  } else {
-    skipBtn.disabled = false;
-    skipBtn.textContent = "Пропустить";
-  }
-}
-
-function resetChoiceUI() {
-  voteScreen.classList.remove("choice-made");
-  tileLeft.classList.remove("selected");
-  tileRight.classList.remove("selected");
-}
-
-function switchTab(mode) {
-  stopAllTimers();
-  setStatus("");
-
-  tabVote.classList.remove("active");
+function showTab(name){
+  tabFeed.classList.remove("active");
   tabUpload.classList.remove("active");
-  tabMy.classList.remove("active");
   tabAdmin.classList.remove("active");
 
-  voteWrap.classList.add("hidden");
+  feedScreen.classList.add("hidden");
   uploadScreen.classList.add("hidden");
-  myScreen.classList.add("hidden");
   adminScreen.classList.add("hidden");
+  feedStatus.classList.add("hidden");
 
-  skipBtn.classList.add("hidden");
-  sendBtn.classList.add("hidden");
-  clearBtn.classList.add("hidden");
-
-  emptyOverlay.classList.add("hidden");
-
-  if (mode === "vote") {
-    tabVote.classList.add("active");
-    voteWrap.classList.remove("hidden");
-    skipBtn.classList.remove("hidden");
-    setNoPairsUI(false);
-    loadNext(false);
-  } else if (mode === "upload") {
+  if(name==="feed"){
+    tabFeed.classList.add("active");
+    feedScreen.classList.remove("hidden");
+    feedStatus.classList.remove("hidden");
+  }
+  if(name==="upload"){
     tabUpload.classList.add("active");
     uploadScreen.classList.remove("hidden");
-    sendBtn.classList.remove("hidden");
-    clearBtn.classList.remove("hidden");
-  } else if (mode === "my") {
-    tabMy.classList.add("active");
-    myScreen.classList.remove("hidden");
-    loadMyPairs(true);
-    myPollTimer = setInterval(() => loadMyPairs(false), 5000);
-  } else if (mode === "admin") {
+  }
+  if(name==="admin"){
     tabAdmin.classList.add("active");
     adminScreen.classList.remove("hidden");
-    loadAdmin(true);
-    adminPollTimer = setInterval(() => loadAdmin(false), 7000);
   }
 }
 
-tabVote.onclick = () => switchTab("vote");
-tabUpload.onclick = () => switchTab("upload");
-tabMy.onclick = () => switchTab("my");
+tabFeed.onclick = () => showTab("feed");
+tabUpload.onclick = () => showTab("upload");
+tabAdmin.onclick = () => showTab("admin");
 
-if (isAdmin) {
-  tabAdmin.classList.remove("hidden");
-  tabAdmin.onclick = () => switchTab("admin");
+// ======= FEED logic (infinite scroll) =======
+
+let loading = false;
+let done = false;
+let nextBeforeId = null;
+const renderedIds = new Set();
+
+const initialPairId = urlParams.get("pair_id"); // открытие по шарингу
+
+function makeShareLink(pairId){
+  // deep-link в мини-апп: t.me/<bot>?startapp=pair_57
+  if (BOT_USERNAME) return `https://t.me/${BOT_USERNAME}?startapp=pair_${pairId}`;
+  return `https://lookingreat.ru/?pair_id=${pairId}`;
 }
 
-/* ===== Vote ===== */
-
-function preloadImage(url) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => resolve(true);
-    img.onerror = reject;
-    img.src = url;
-  });
-}
-
-async function fadeSwapPair(item) {
-  if (!item?.left_url || !item?.right_url) return false;
-
-  function cleanup() {
-    leftImg.classList.remove("fading");
-    rightImg.classList.remove("fading");
-    voteScreen.classList.remove("loading");
-  }
-
-  voteScreen.classList.add("loading");
+function openShare(pairId){
+  const link = makeShareLink(pairId);
+  const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}`;
   try {
-    await Promise.all([ preloadImage(item.left_url), preloadImage(item.right_url) ]);
-  } catch (e) {
-    cleanup();
-    if (!noPairsMode) setStatus("Не удалось загрузить фото — пропускаю…");
-    setTimeout(() => loadNext(true), 200);
-    return false;
-  }
-
-  leftImg.classList.add("fading");
-  rightImg.classList.add("fading");
-  await new Promise(r => setTimeout(r, 180));
-
-  leftImg.src = item.left_url;
-  rightImg.src = item.right_url;
-
-  try { if (leftImg.decode) await leftImg.decode(); } catch(e) {}
-  try { if (rightImg.decode) await rightImg.decode(); } catch(e) {}
-
-  if (leftImg.naturalWidth === 0 || rightImg.naturalWidth === 0) {
-    cleanup();
-    if (!noPairsMode) setStatus("Фото повреждено — пропускаю…");
-    setTimeout(() => loadNext(true), 200);
-    return false;
-  }
-
-  leftImg.classList.remove("fading");
-  rightImg.classList.remove("fading");
-  voteScreen.classList.remove("loading");
-  return true;
+    if (tg?.openTelegramLink) { tg.openTelegramLink(shareUrl); return; }
+  } catch(e){}
+  window.open(shareUrl, "_blank");
 }
 
-// silent=true => не мигаем "Загрузка..."
-async function loadNext(silent) {
-  if (loadingFeed) return;
-  loadingFeed = true;
-
-  try {
-    if (!silent && !noPairsMode) setStatus("Загрузка...");
-
-    const res = await fetch(`${API_BASE}/feed?tg_id=${encodeURIComponent(tg_id)}`);
-    const data = await res.json().catch(() => null);
-
-    if (!res.ok && data?.error === "banned") {
-      setStatus("Доступ ограничен");
-      setNoPairsUI(true);
-      emptyOverlay.classList.remove("hidden");
-      return;
-    }
-
-    if (!data?.item) {
-      setStatus("");
-      emptyOverlay.classList.remove("hidden");
-      setNoPairsUI(true);
-
-      if (!emptyPollTimer) {
-        emptyPollTimer = setInterval(() => {
-          if (!voteWrap.classList.contains("hidden")) loadNext(true);
-        }, 3500);
-      }
-      return;
-    }
-
-    if (emptyPollTimer) { clearInterval(emptyPollTimer); emptyPollTimer = null; }
-    emptyOverlay.classList.add("hidden");
-    setNoPairsUI(false);
-
-    currentPair = data.item;
-
-    // сброс выбранности перед показом новой пары
-    resetChoiceUI();
-
-    const ok = await fadeSwapPair(currentPair);
-    if (ok === false) return;
-
-    setStatus("");
-
-  } catch(e) {
-    if (!silent) setStatus("Ошибка сети. Проверь интернет.");
-  } finally {
-    loadingFeed = false;
-    // ✅ снимаем блок кликов только после попытки загрузки следующей пары
-    votingLock = false;
-  }
-}
-
-function popHeart(side) {
-  const el = (side === "left") ? heartLeft : heartRight;
+function popEmoji(el, emoji){
+  el.textContent = emoji;
   el.classList.remove("hide");
   el.classList.add("show");
   setTimeout(() => {
@@ -463,332 +195,283 @@ function popHeart(side) {
   }, 420);
 }
 
-async function vote(choice) {
-  if (!currentPair) return;
-  if (votingLock) return;
+function renderCard(item, myChoice=null){
+  if (!item?.id || !item.left_url || !item.right_url) return;
+  if (renderedIds.has(item.id)) return;
 
-  // ✅ блокируем до загрузки следующей пары
-  votingLock = true;
+  renderedIds.add(item.id);
 
-  // UI: выбранность + приглушение
-  voteScreen.classList.add("choice-made");
-  if (choice === "left") { tileLeft.classList.add("selected"); tileRight.classList.remove("selected"); }
-  if (choice === "right") { tileRight.classList.add("selected"); tileLeft.classList.remove("selected"); }
+  const card = document.createElement("div");
+  card.className = "card";
+  card.dataset.id = String(item.id);
 
-  popHeart(choice);
+  const head = document.createElement("div");
+  head.className = "cardHead";
 
-  try {
-    const res = await fetch(`${API_BASE}/vote`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tg_id, pair_id: currentPair.id, choice })
-    });
+  const mini = document.createElement("div");
+  mini.className = "mini";
+  mini.textContent = "";
 
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      const err = data?.error || "vote_failed";
-      if (err === "cannot_vote_own_pair") setStatus("Нельзя голосовать за свою пару");
-      else if (err === "already_voted") setStatus("Вы уже голосовали за эту пару");
-      else if (err === "banned") setStatus("Доступ ограничен");
-      else setStatus("Ошибка голосования");
+  const shareBtn = document.createElement("button");
+  shareBtn.className = "iconBtn";
+  shareBtn.innerHTML = "↗️";
+  shareBtn.onclick = () => openShare(item.id);
 
-      // если голос не прошёл — разблокируем
-      votingLock = false;
-      return;
+  head.appendChild(mini);
+  head.appendChild(shareBtn);
+
+  const grid = document.createElement("div");
+  grid.className = "pairGrid";
+
+  const left = document.createElement("div");
+  left.className = "tile";
+  const leftImg = document.createElement("img");
+  leftImg.src = item.left_url;
+  const leftFx = document.createElement("div");
+  leftFx.className = "heart";
+  leftFx.textContent = "❤️";
+  left.appendChild(leftImg);
+  left.appendChild(leftFx);
+
+  const right = document.createElement("div");
+  right.className = "tile";
+  const rightImg = document.createElement("img");
+  rightImg.src = item.right_url;
+  const rightFx = document.createElement("div");
+  rightFx.className = "heart";
+  rightFx.textContent = "💔";
+  right.appendChild(rightImg);
+  right.appendChild(rightFx);
+
+  grid.appendChild(left);
+  grid.appendChild(right);
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+
+  const likeBtn = document.createElement("button");
+  likeBtn.className = "action";
+  likeBtn.title = "Лайк (левое)";
+  likeBtn.innerHTML = "❤️";
+
+  const dislikeBtn = document.createElement("button");
+  dislikeBtn.className = "action secondary";
+  dislikeBtn.title = "Дизлайк (правое)";
+  dislikeBtn.innerHTML = "💔";
+
+  actions.appendChild(likeBtn);
+  actions.appendChild(dislikeBtn);
+
+  const foot = document.createElement("div");
+  foot.className = "footerNote";
+  foot.innerHTML = " ";
+
+  card.appendChild(head);
+  card.appendChild(grid);
+  card.appendChild(actions);
+  card.appendChild(foot);
+
+  function applyVoted(choice){
+    card.classList.add("voted");
+    likeBtn.disabled = true;
+    dislikeBtn.disabled = true;
+    if (choice === "left") { left.classList.add("selected"); right.classList.remove("selected"); }
+    else if (choice === "right") { right.classList.add("selected"); left.classList.remove("selected"); }
+  }
+
+  if (myChoice === "left" || myChoice === "right") applyVoted(myChoice);
+
+  async function vote(choice){
+    likeBtn.disabled = true;
+    dislikeBtn.disabled = true;
+
+    card.classList.add("voted");
+    if (choice === "left") {
+      left.classList.add("selected"); right.classList.remove("selected");
+      popEmoji(leftFx, "❤️");
+    } else {
+      right.classList.add("selected"); left.classList.remove("selected");
+      popEmoji(rightFx, "💔");
     }
 
-    // грузим следующую пару (снимет votingLock в finally)
-    setTimeout(() => loadNext(true), 260);
+    try {
+      const res = await fetch(`${API_BASE}/vote`, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ tg_id, pair_id: item.id, choice })
+      });
+      const data = await res.json().catch(()=>null);
 
-  } catch(e) {
-    setStatus("Ошибка сети. Проверь интернет.");
-    votingLock = false;
+      if (!res.ok) {
+        const err = data?.error || "vote_failed";
+        likeBtn.disabled = false;
+        dislikeBtn.disabled = false;
+
+        if (err === "already_voted") setFeedStatus("Вы уже голосовали за эту пару");
+        else if (err === "cannot_vote_own_pair") setFeedStatus("Нельзя голосовать за свою пару");
+        else setFeedStatus("Ошибка голосования");
+        return;
+      }
+
+      setFeedStatus("");
+      maybeLoadMore();
+
+    } catch(e){
+      likeBtn.disabled = false;
+      dislikeBtn.disabled = false;
+      setFeedStatus("Ошибка сети");
+    }
+  }
+
+  likeBtn.onclick = () => vote("left");
+  dislikeBtn.onclick = () => vote("right");
+
+  feedScreen.appendChild(card);
+}
+
+async function loadPairById(pairId){
+  try{
+    setFeedStatus("Загрузка…");
+    const res = await fetch(`${API_BASE}/pair?id=${encodeURIComponent(pairId)}&tg_id=${encodeURIComponent(tg_id)}`);
+    const data = await res.json().catch(()=>null);
+    if (!res.ok || !data?.ok || !data?.item) { setFeedStatus(""); return; }
+    renderCard(data.item, data.my_choice || null);
+    setFeedStatus("");
+  } catch(e){
+    setFeedStatus("Ошибка сети");
   }
 }
 
-leftImg.onclick = () => vote("left");
-rightImg.onclick = () => vote("right");
-skipBtn.onclick = () => loadNext(false);
+async function loadMore(){
+  if (loading || done) return;
+  loading = true;
 
-/* ===== Upload ===== */
+  try{
+    setFeedStatus("Загрузка…");
+    const limit = 10;
+    const url = new URL(`${API_BASE}/feed`);
+    url.searchParams.set("tg_id", tg_id);
+    url.searchParams.set("limit", String(limit));
+    if (nextBeforeId) url.searchParams.set("before_id", String(nextBeforeId));
+
+    const res = await fetch(url.toString());
+    const data = await res.json().catch(()=>null);
+
+    if (!res.ok) {
+      if (data?.error === "banned") setFeedStatus("Доступ ограничен");
+      else setFeedStatus("Ошибка загрузки");
+      return;
+    }
+
+    const items = data?.items || [];
+    if (!items.length) {
+      done = true;
+      setFeedStatus("Пока нет новых пар");
+      return;
+    }
+
+    for (const it of items) renderCard(it, null);
+    nextBeforeId = data?.next_before_id || null;
+
+    setFeedStatus("");
+
+  } finally {
+    loading = false;
+  }
+}
+
+function maybeLoadMore(){
+  const cards = feedScreen.querySelectorAll(".card").length;
+  if (cards < 6) loadMore();
+}
+
+feedScreen.addEventListener("scroll", () => {
+  const nearBottom = feedScreen.scrollTop + feedScreen.clientHeight >= feedScreen.scrollHeight - 450;
+  if (nearBottom) loadMore();
+});
+
+// init feed
+(async () => {
+  showTab("feed");
+  if (initialPairId) await loadPairById(initialPairId);
+  await loadMore();
+})();
+
+// ======= Upload =======
+const fileLeft = document.getElementById("fileLeft");
+const fileRight = document.getElementById("fileRight");
+const cardLeft = document.getElementById("cardLeft");
+const cardRight = document.getElementById("cardRight");
+const sendBtn = document.getElementById("sendBtn");
+const clearBtn = document.getElementById("clearBtn");
+
+let leftFile=null, rightFile=null;
 
 cardLeft.onclick = () => fileLeft.click();
 cardRight.onclick = () => fileRight.click();
 
-fileLeft.onchange = () => {
-  leftFile = fileLeft.files[0] || null;
-  if (leftFile) previewImage(leftFile, cardLeft);
-};
-fileRight.onchange = () => {
-  rightFile = fileRight.files[0] || null;
-  if (rightFile) previewImage(rightFile, cardRight);
-};
+fileLeft.onchange = () => { leftFile = fileLeft.files[0] || null; if (leftFile) preview(leftFile, cardLeft); };
+fileRight.onchange = () => { rightFile = fileRight.files[0] || null; if (rightFile) preview(rightFile, cardRight); };
 
-function previewImage(file, card) {
-  const reader = new FileReader();
-  reader.onload = e => { card.innerHTML = `<img src="${e.target.result}">`; };
-  reader.readAsDataURL(file);
+function preview(file, el){
+  const r = new FileReader();
+  r.onload = e => el.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:18px;">`;
+  r.readAsDataURL(file);
 }
 
-function clearUpload() {
-  leftFile = null; rightFile = null;
-  fileLeft.value = ""; fileRight.value = "";
-  cardLeft.innerHTML = "Нажмите чтобы загрузить<br>Фото 1";
-  cardRight.innerHTML = "Нажмите чтобы загрузить<br>Фото 2";
-  setStatus("");
+function clearUpload(){
+  leftFile=null; rightFile=null;
+  fileLeft.value=""; fileRight.value="";
+  cardLeft.innerHTML="Нажмите чтобы загрузить<br>Фото 1";
+  cardRight.innerHTML="Нажмите чтобы загрузить<br>Фото 2";
+  setUploadStatus("");
 }
 clearBtn.onclick = clearUpload;
 
 sendBtn.onclick = async () => {
-  if (!leftFile || !rightFile) { setStatus("Загрузите оба фото"); return; }
+  if (!leftFile || !rightFile) { setUploadStatus("Загрузите оба фото"); return; }
+  setUploadStatus("Отправка…");
 
-  setStatus("Отправка...");
   const form = new FormData();
   form.append("tg_id", tg_id);
   form.append("left", leftFile);
   form.append("right", rightFile);
 
-  const res = await fetch(`${API_BASE}/upload_pair`, { method:"POST", body: form });
-  const data = await res.json().catch(()=>null);
-
-  if (!res.ok || !data?.ok) {
-    if (data?.error === "banned") setStatus("Доступ ограничен");
-    else setStatus("Ошибка загрузки. Попробуйте ещё раз.");
-    return;
-  }
-
-  setStatus("Пара загружена ✅");
-  clearUpload();
-  setTimeout(() => switchTab("my"), 450);
-};
-
-/* ===== My pairs ===== */
-
-const myList = document.getElementById("myList");
-const sumPairs = document.getElementById("sumPairs");
-const sumVotes = document.getElementById("sumVotes");
-const sumAvg = document.getElementById("sumAvg");
-const sumBest = document.getElementById("sumBest");
-
-function fmtTs(ts) {
-  const d = new Date(Number(ts) * 1000);
-  return d.toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
-}
-
-function renderSummary(profile) {
-  sumPairs.textContent = profile?.pairs_total ?? "—";
-  sumVotes.textContent = profile?.votes_total ?? "—";
-  sumAvg.textContent = (profile?.avg_best_pct == null) ? "—" : (profile.avg_best_pct + "%");
-  sumBest.textContent = (profile?.best_pair_id == null) ? "—" : (`#${profile.best_pair_id} · ${profile.best_pair_pct}%`);
-}
-
-function renderPairs(pairs) {
-  if (!pairs?.length) {
-    myList.innerHTML = `<div class="card"><div style="font-weight:900;">Пока нет загруженных пар</div></div>`;
-    return;
-  }
-
-  myList.innerHTML = pairs.map(p => {
-    const s = p.stats || {left:0,right:0,total:0,left_pct:0,right_pct:0,winner:null};
-    const leftW = Math.max(0, Math.min(100, s.left_pct || 0));
-    const rightW = 100 - leftW;
-
-    return `
-      <div class="card">
-        <div class="pair-top">
-          <div>
-            <div style="font-weight:900;">Пара #${p.id}</div>
-            <div class="small">${fmtTs(p.created_at)}</div>
-          </div>
-          <button class="del-btn" data-del="${p.id}">Удалить</button>
-        </div>
-
-        <div class="pair-grid">
-          <div class="imgwrap">
-            <img src="${p.left_url}" alt="">
-            <div class="badge">${s.total ? `${s.left_pct}% · ${s.left}` : `— · ${s.left}`}</div>
-          </div>
-          <div class="imgwrap">
-            <img src="${p.right_url}" alt="">
-            <div class="badge">${s.total ? `${s.right_pct}% · ${s.right}` : `— · ${s.right}`}</div>
-          </div>
-        </div>
-
-        <div class="bar">
-          <div class="left" style="width:${leftW}%;"></div>
-          <div class="right" style="width:${rightW}%;"></div>
-        </div>
-
-        <div class="pair-stats">
-          <span>Левое ${s.left}</span>
-          <span>Всего ${s.total}</span>
-          <span>Правое ${s.right}</span>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  myList.querySelectorAll("[data-del]").forEach(btn => {
-    btn.onclick = async () => {
-      const id = btn.getAttribute("data-del");
-      if (!id) return;
-      if (!confirm("Удалить эту пару?")) return;
-
-      try {
-        setStatus("Удаляю...");
-        const res = await fetch(`${API_BASE}/pair?id=${encodeURIComponent(id)}&tg_id=${encodeURIComponent(tg_id)}`, { method:"DELETE" });
-        const data = await res.json().catch(()=>null);
-        if (!res.ok || !data?.ok) { setStatus("Не удалось удалить"); return; }
-        setStatus("");
-        loadMyPairs(true);
-      } catch(e) {
-        setStatus("Ошибка удаления");
-      }
-    };
-  });
-}
-
-async function loadMyPairs(showLoading) {
-  try {
-    if (showLoading) setStatus("Загрузка...");
-    const res = await fetch(`${API_BASE}/my_pairs?tg_id=${encodeURIComponent(tg_id)}`);
+  try{
+    const res = await fetch(`${API_BASE}/upload_pair`, { method:"POST", body: form });
     const data = await res.json().catch(()=>null);
 
-    if (!res.ok && data?.error === "banned") { setStatus("Доступ ограничен"); return; }
-    if (!res.ok || !data?.ok) { setStatus("Не удалось загрузить"); return; }
+    if (!res.ok || !data?.ok) { setUploadStatus("Ошибка загрузки"); return; }
 
-    renderSummary(data.profile);
-    renderPairs(data.pairs);
-    if (showLoading) setStatus("");
-  } catch(e) {
-    setStatus("Ошибка сети. Проверь интернет.");
-  }
-}
+    setUploadStatus("Пара загружена ✅");
+    clearUpload();
 
-/* ===== Admin ===== */
+    showTab("feed");
+    done = false;
+    await loadMore();
 
-const aUsersTotal = document.getElementById("aUsersTotal");
-const aUsersToday = document.getElementById("aUsersToday");
-const aUsersMonth = document.getElementById("aUsersMonth");
-const aPairsTotal = document.getElementById("aPairsTotal");
-const aVotesTotal = document.getElementById("aVotesTotal");
-const aBannedTotal = document.getElementById("aBannedTotal");
-
-const brokenCount = document.getElementById("brokenCount");
-const btnScanBroken = document.getElementById("btnScanBroken");
-const btnDeleteBroken = document.getElementById("btnDeleteBroken");
-
-const adminList = document.getElementById("adminList");
-
-let brokenItems = [];
-
-function renderAdminStats(s) {
-  aUsersTotal.textContent = s?.users?.total ?? "—";
-  aUsersToday.textContent = s?.users?.new_today ?? "—";
-  aUsersMonth.textContent = s?.users?.new_this_month ?? "—";
-  aPairsTotal.textContent = s?.content?.pairs_total ?? "—";
-  aVotesTotal.textContent = s?.content?.votes_total ?? "—";
-  aBannedTotal.textContent = s?.content?.banned_total ?? "—";
-}
-
-function renderBroken(items, broken_count) {
-  brokenItems = items || [];
-  brokenCount.textContent = String(broken_count ?? 0);
-
-  const onlyBroken = brokenItems.filter(x => (!x.left_ok || !x.right_ok));
-  btnDeleteBroken.disabled = onlyBroken.length === 0;
-
-  if (!brokenItems.length) {
-    adminList.innerHTML = `<div class="card"><div style="font-weight:900;">Список пуст</div></div>`;
-    return;
-  }
-
-  adminList.innerHTML = brokenItems.map(p => {
-    const broken = (!p.left_ok || !p.right_ok);
-    const flagText = broken ? "БИТАЯ" : "ОК";
-    const flagCls = broken ? "flag bad" : "flag";
-
-    const l = p.left_ok ? "ok" : "missing";
-    const r = p.right_ok ? "ok" : "missing";
-
-    return `
-      <div class="card">
-        <div class="chkrow">
-          <input type="checkbox" class="chkBroken" data-id="${p.id}" ${broken ? "" : "disabled"}>
-          <div style="flex:1;">
-            <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
-              <div style="font-weight:900;">Пара #${p.id} · голоса ${p.votes_total}</div>
-              <span class="${flagCls}">${flagText}</span>
-            </div>
-            <div class="small">owner: ${p.owner_telegram_id} · left:${l} · right:${r}</div>
-          </div>
-        </div>
-        <div class="pair-grid" style="margin-top:10px;">
-          <div class="imgwrap"><img src="${p.left_url}" alt=""></div>
-          <div class="imgwrap"><img src="${p.right_url}" alt=""></div>
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-btnScanBroken.onclick = async () => {
-  if (!isAdmin) return;
-  try {
-    setStatus("Проверяю битые пары...");
-    const res = await fetch(`${API_BASE}/admin/broken_pairs?tg_id=${encodeURIComponent(tg_id)}&limit=200`);
-    const data = await res.json().catch(()=>null);
-    if (!res.ok || !data?.ok) { setStatus("Не удалось проверить"); return; }
-    renderBroken(data.items, data.broken_count);
-    setStatus("");
-  } catch(e) {
-    setStatus("Ошибка сети");
+  } catch(e){
+    setUploadStatus("Ошибка сети");
   }
 };
 
-btnDeleteBroken.onclick = async () => {
+// ======= Admin stats =======
+async function loadAdmin(){
   if (!isAdmin) return;
-  const ids = Array.from(document.querySelectorAll(".chkBroken"))
-    .filter(x => x.checked)
-    .map(x => Number(x.getAttribute("data-id")))
-    .filter(x => x && Number.isFinite(x));
-
-  if (!ids.length) return;
-  if (!confirm(`Удалить выбранные пары: ${ids.join(", ")} ?`)) return;
-
-  try {
-    setStatus("Удаляю...");
-    const res = await fetch(`${API_BASE}/admin/delete_pairs`, {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ tg_id, pair_ids: ids })
-    });
+  try{
+    const res = await fetch(`${API_BASE}/admin/stats?tg_id=${encodeURIComponent(tg_id)}`);
     const data = await res.json().catch(()=>null);
-    if (!res.ok || !data?.ok) { setStatus("Не удалось удалить"); return; }
-    setStatus("");
+    if (!res.ok || !data?.ok) return;
 
-    // обновим список битых
-    btnScanBroken.click();
-  } catch(e) {
-    setStatus("Ошибка сети");
-  }
-};
-
-async function loadAdmin(showLoading) {
-  if (!isAdmin) return;
-  try {
-    if (showLoading) setStatus("Загрузка...");
-    const sRes = await fetch(`${API_BASE}/admin/stats?tg_id=${encodeURIComponent(tg_id)}`);
-    const sData = await sRes.json().catch(()=>null);
-    if (!sRes.ok || !sData?.ok) { setStatus("Нет доступа"); return; }
-    renderAdminStats(sData);
-    if (showLoading) setStatus("");
-  } catch(e) {
-    setStatus("Ошибка сети");
-  }
+    document.getElementById("sUsers").textContent = data.users?.total ?? "—";
+    document.getElementById("sToday").textContent = data.users?.new_today ?? "—";
+    document.getElementById("sMonth").textContent = data.users?.new_this_month ?? "—";
+    document.getElementById("sPairs").textContent = data.content?.pairs_total ?? "—";
+    document.getElementById("sVotes").textContent = data.content?.votes_total ?? "—";
+  } catch(e){}
 }
 
-switchTab("vote");
+if (isAdmin) loadAdmin();
 </script>
 </body>
 </html>
