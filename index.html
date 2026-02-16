@@ -8,618 +8,567 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    * { box-sizing: border-box; }
-
     :root{
-      --bg: #ffffff;
-      --text: #111111;
-      --muted: #6b7280;
-      --card: #ffffff;
-      --stroke: rgba(17,17,17,.08);
-      --shadow: 0 10px 30px rgba(17,17,17,.08);
+      --bg:#ffffff;
+      --card:#ffffff;
+      --stroke: rgba(0,0,0,.08);
+      --stroke2: rgba(0,0,0,.06);
+      --text:#0f172a;
+      --muted: rgba(15,23,42,.60);
 
-      /* Высота блока фото (как у тебя было) */
+      --r:18px;
+
+      --safeT: env(safe-area-inset-top, 0px);
+      --safeB: env(safe-area-inset-bottom, 0px);
+
+      --navH: 64px;
+
+      /* ДЕСКТОП/ОБЩЕЕ: высота блока с фото */
       --pairH: clamp(360px, 62vh, 620px);
-      --gap: 12px;
-
-      --radius: 18px;
-
-      /* SAFE AREA */
-      --sat: env(safe-area-inset-top);
-      --sab: env(safe-area-inset-bottom);
-      --sal: env(safe-area-inset-left);
-      --sar: env(safe-area-inset-right);
     }
 
-    @media (max-width:520px){
-      :root{ --pairH: clamp(280px, 46vh, 420px); }
+    /* МОБИЛЬНОЕ: уменьшаем высоту, чтобы футер поднялся к фото */
+    @media (max-width: 520px){
+      :root{
+        --pairH: clamp(280px, 46vh, 420px);
+      }
     }
 
-    html, body {
-      margin: 0; padding: 0;
-      height: 100%;
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+    html,body{
+      height:100%;
+      margin:0;
+      overflow:hidden;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
       background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      overflow: hidden; /* важно для Telegram Desktop/Web */
     }
 
-    .app {
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      padding:
-        calc(10px + var(--sat))
-        calc(12px + var(--sar))
-        calc(10px + var(--sab))
-        calc(12px + var(--sal));
-      gap: var(--gap);
-    }
-
-    /* Шапка */
-    .topbar{
+    .app{
+      height:100%;
       display:flex;
-      align-items:flex-start;
+      flex-direction:column;
+      background: var(--bg);
+    }
+
+    .top{
+      padding: calc(10px + var(--safeT)) 14px 10px;
+      display:flex;
+      align-items:flex-end;
       justify-content:space-between;
-      gap: 12px;
-      padding: 2px 2px 0 2px;
+      gap:10px;
       flex: 0 0 auto;
+      background: var(--bg);
     }
-    .titleWrap{ display:flex; flex-direction:column; gap:2px; }
-    .title{
-      font-size: 18px;
-      font-weight: 800;
-      line-height: 1.1;
-      letter-spacing: .2px;
-    }
-    .subtitle{
-      font-size: 12px;
-      color: var(--muted);
-      display:flex;
-      align-items:center;
-      gap: 8px;
-    }
-    .ver{
-      font-size: 12px;
-      color: var(--muted);
-      padding: 2px 8px;
-      border: 1px solid var(--stroke);
-      border-radius: 999px;
-      background: rgba(17,17,17,.02);
-      white-space: nowrap;
-      margin-top: 1px;
-      flex: 0 0 auto;
-    }
+    .brand{ line-height:1.1; }
+    .brand .t{ font-weight:800; font-size:18px; letter-spacing:.2px; }
+    .brand .s{ margin-top:4px; font-size:13px; color:var(--muted); }
 
-    /* Основной скролл внутри, без скролла страницы */
-    .main{
-      flex: 1 1 auto;
-      overflow: auto;
+    .feed{
+      flex:1 1 auto;
+      overflow:auto;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: 10px;
+      padding: 0 12px calc(var(--navH) + var(--safeB) + 16px);
+      background: var(--bg);
+      scrollbar-width:none;
     }
-    .main::-webkit-scrollbar{ width: 0; height: 0; }
+    .feed::-webkit-scrollbar{ display:none; }
 
-    /* Карточка */
     .card{
+      display:flex;
+      flex-direction:column;
+
       background: var(--card);
       border: 1px solid var(--stroke);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
+      border-radius: var(--r);
+      overflow:hidden;
+      box-shadow: 0 12px 34px rgba(15,23,42,.10);
+
+      margin: 0 0 12px 0;
     }
 
     .cardHead{
-      padding: 12px 14px 10px 14px;
+      padding: 10px 12px 8px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 10px;
-      border-bottom: 1px solid rgba(17,17,17,.06);
+      gap:10px;
+      background: var(--card);
+      border-bottom: 1px solid var(--stroke2);
+      flex: 0 0 auto;
     }
-    .pairLabel{
-      font-weight: 800;
-      font-size: 14px;
-    }
-    .hint{
-      font-size: 12px;
-      color: var(--muted);
-      white-space: nowrap;
-    }
+    .pairTitle{ font-weight:850; font-size:22px; }
+    .pairSub{ margin-top:2px; font-size:13px; color:var(--muted); }
 
-    /* Блок фото */
     .pairWrap{
-      padding: 12px 0;              /* ✅ добавили одинаковый воздух сверху/снизу */
-    }
-    .pairGrid{
       height: var(--pairH);
-      display: grid;
+      position:relative;
+      display:grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      padding: 0 12px;
-    }
-    .imgBox{
-      position: relative;
-      height: 100%;
-      border-radius: 14px;
-      border: 1px solid rgba(17,17,17,.08);
-      background: #fafafa;
-      overflow: hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .img{
-      width: 100%;
-      height: 100%;
-      object-fit: contain;          /* не режем */
-      object-position: center;      /* ✅ центр, а не center top */
-      display:block;
-      background: #fff;
+      background:#fff;
+
+      /* ✅ ДОБАВИЛИ РАВНЫЙ ОТСТУП СВЕРХУ/СНИЗУ */
+      padding: 12px 0;
+      box-sizing: border-box;
     }
 
-    /* Низ карточки */
-    .cardFoot{
-      padding: 12px 14px;
+    .pane{
+      position:relative;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    .divider{
+      position:absolute;
+      top:0; bottom:0;
+      left:50%;
+      width:1px;
+      background: rgba(0,0,0,.08);
+      transform: translateX(-.5px);
+      pointer-events:none;
+    }
+
+    .img{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit: contain;
+
+      /* ✅ БЫЛО center top — СТАЛО center */
+      object-position: center;
+
+      background:#fff;
+      transform: translateZ(0);
+    }
+
+    .cardFooter{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap: 10px;
-      border-top: 1px solid rgba(17,17,17,.06);
-      background: rgba(17,17,17,.015);
-    }
-    .votes{
-      font-weight: 700;
-      font-size: 14px;
-    }
-    .btn{
-      border: 1px solid var(--stroke);
+      gap:10px;
+      padding: 8px 12px 10px;
       background: #fff;
+      border-top: 1px solid var(--stroke2);
+      flex: 0 0 auto;
+    }
+
+    .votes{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:14px;
       color: var(--text);
-      border-radius: 12px;
+      font-weight:750;
+      letter-spacing:.1px;
+    }
+
+    .shareBtn{
+      border: 1px solid var(--stroke);
+      background: rgba(15,23,42,.04);
+      color: var(--text);
+      border-radius: 999px;
       padding: 10px 12px;
-      font-weight: 800;
-      font-size: 14px;
-      cursor: pointer;
-      user-select: none;
+      font-weight:800;
+      font-size:14px;
       display:inline-flex;
       align-items:center;
-      gap: 8px;
-    }
-    .btn:active{ transform: translateY(1px); }
-
-    /* Подсказка снизу “следующая карточка видна” */
-    .peekSpacer{
-      height: 14px;
-    }
-    .nextPeek{
-      margin-top: 12px;
-      opacity: .75;
-      border-radius: var(--radius);
-      border: 1px dashed rgba(17,17,17,.14);
-      background: rgba(17,17,17,.02);
-      height: 90px;
-    }
-
-    /* Нижнее меню */
-    .bottomNav{
-      flex: 0 0 auto;
-      display:flex;
-      gap: 10px;
-      padding: 2px 0 0 0;
-    }
-    .navBtn{
-      flex:1;
-      border: 1px solid var(--stroke);
-      background: #fff;
-      border-radius: 14px;
-      padding: 12px 10px;
-      font-weight: 900;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap: 8px;
-    }
-    .navBtn.primary{
-      background: #111;
-      color: #fff;
-      border-color: rgba(17,17,17,.2);
-    }
-
-    /* Экран/состояния */
-    .state{
-      padding: 14px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.35;
-    }
-    .err{
-      color: #b42318;
-      font-weight: 700;
-    }
-
-    /* Модалка загрузки пары */
-    .modalOverlay{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.35);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      padding:
-        12px
-        calc(12px + var(--sar))
-        calc(12px + var(--sab))
-        calc(12px + var(--sal));
-      z-index: 50;
-    }
-    .modal{
-      width: min(720px, 100%);
-      border-radius: 18px;
-      background: #fff;
-      border: 1px solid var(--stroke);
-      box-shadow: 0 25px 60px rgba(0,0,0,.25);
-      overflow:hidden;
-    }
-    .modalHead{
-      padding: 14px 14px 10px 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      border-bottom: 1px solid rgba(17,17,17,.06);
-      gap: 10px;
-    }
-    .modalTitle{
-      font-weight: 900;
-      font-size: 16px;
-    }
-    .modalBody{
-      padding: 12px 14px 14px 14px;
-      display:grid;
-      gap: 10px;
-    }
-    .uploadGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .pick{
-      border: 1px dashed rgba(17,17,17,.25);
-      border-radius: 14px;
-      padding: 14px;
-      background: rgba(17,17,17,.02);
-      display:flex;
-      flex-direction:column;
-      gap: 10px;
+      gap:8px;
       cursor:pointer;
       user-select:none;
-      min-height: 120px;
+      transition: transform .10s ease, background .18s ease, border-color .18s ease;
     }
-    .pickTitle{
-      font-weight: 900;
-      font-size: 14px;
-    }
-    .pickHint{
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.25;
-    }
-    .fileName{
-      font-size: 12px;
-      font-weight: 800;
-      color: #111;
-      word-break: break-word;
-    }
-    .modalActions{
-      display:flex;
-      gap: 10px;
-      margin-top: 6px;
-    }
-    .btnWide{ flex: 1; justify-content:center; }
+    .shareBtn:active{ transform: scale(.98); }
+    .shareIco{ width:16px; height:16px; display:block; opacity:.9; }
 
-    input[type="file"]{ display:none; }
+    .nav{
+      position:fixed;
+      left:0; right:0; bottom:0;
+      height: calc(var(--navH) + var(--safeB));
+      padding: 8px 18px calc(8px + var(--safeB));
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      background: rgba(255,255,255,.92);
+      border-top: 1px solid var(--stroke);
+      z-index:50;
+      backdrop-filter: blur(10px);
+    }
+
+    .navBtn{
+      width:44px; height:44px;
+      display:grid;
+      place-items:center;
+      border-radius:14px;
+      border:1px solid var(--stroke);
+      background: rgba(15,23,42,.04);
+      color: var(--text);
+      user-select:none;
+      cursor:pointer;
+      transition: transform .10s ease, background .18s ease;
+    }
+    .navBtn:active{ transform: scale(.98); }
+    .navBtn svg{ width:22px; height:22px; opacity:.95; }
+
+    .plus{
+      width:54px; height:54px;
+      border-radius:18px;
+      background: #0f172a;
+      color:#fff;
+      border: 1px solid rgba(15,23,42,.15);
+      box-shadow: 0 10px 26px rgba(15,23,42,.22);
+    }
+    .plus svg{ width:26px; height:26px; opacity:1; }
+
+    .toast{
+      position: fixed;
+      left: 50%;
+      bottom: calc(var(--navH) + var(--safeB) + 18px);
+      transform: translateX(-50%);
+      background: rgba(15,23,42,.92);
+      border: 1px solid rgba(255,255,255,.18);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.20);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease, transform .18s ease;
+      z-index: 60;
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateX(-50%) translateY(-2px);
+    }
+
+    .skeleton{
+      height: 100%;
+      background: linear-gradient(110deg, rgba(15,23,42,.05) 20%, rgba(15,23,42,.10) 35%, rgba(15,23,42,.05) 50%);
+      background-size: 200% 100%;
+      animation: shimmer 1.1s linear infinite;
+    }
+    @keyframes shimmer{
+      0%{ background-position: 200% 0; }
+      100%{ background-position: -200% 0; }
+    }
   </style>
 </head>
 
 <body>
   <div class="app">
-    <div class="topbar">
-      <div class="titleWrap">
-        <div class="title">LookingGreat</div>
-        <div class="subtitle">
-          <span id="who">Лента</span>
-        </div>
+    <div class="top">
+      <div class="brand">
+        <div class="t">LookingGreat</div>
+        <div class="s">Сравни и выбери лучшее фото · <span id="ver"></span></div>
       </div>
-      <div class="ver" id="verBadge">v—</div>
+      <div style="opacity:.0; width:1px; height:1px;"></div>
     </div>
 
-    <div class="main" id="main">
-      <div class="card" id="card">
-        <div class="state" id="state">Загрузка…</div>
+    <div id="feed" class="feed"></div>
+
+    <div class="nav">
+      <div class="navBtn" id="navHome" title="Дом">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M4 10.5L12 4l8 6.5V20a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 20v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M9.5 21v-7h5v7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
       </div>
 
-      <div class="peekSpacer"></div>
-      <div class="nextPeek"></div>
+      <div class="navBtn plus" id="navPlus" title="Загрузить">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div class="navBtn" id="navProfile" title="Профиль">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 12.2a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12.2Z" stroke="currentColor" stroke-width="2"/>
+          <path d="M20 20.2c-1.8-3.4-5-5.2-8-5.2s-6.2 1.8-8 5.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
     </div>
 
-    <div class="bottomNav">
-      <button class="navBtn" id="navHome">Дом</button>
-      <button class="navBtn primary" id="navAdd">+</button>
-      <button class="navBtn" id="navProfile">Профиль</button>
-    </div>
+    <div id="toast" class="toast"></div>
   </div>
 
-  <!-- Modal -->
-  <div class="modalOverlay" id="modalOverlay">
-    <div class="modal">
-      <div class="modalHead">
-        <div class="modalTitle">Загрузить пару</div>
-        <button class="btn" id="btnCloseModal">Закрыть</button>
-      </div>
+  <script>
+    // ===== VERSION (меняю при каждом обновлении) =====
+    const APP_VERSION = "v2.1";
 
-      <div class="modalBody">
-        <div class="uploadGrid">
-          <label class="pick" id="pickLeft" for="fileLeft">
-            <div class="pickTitle">Фото 1</div>
-            <div class="pickHint">Нажми, чтобы загрузить</div>
-            <div class="fileName" id="leftName">Файл не выбран</div>
-          </label>
-          <label class="pick" id="pickRight" for="fileRight">
-            <div class="pickTitle">Фото 2</div>
-            <div class="pickHint">Нажми, чтобы загрузить</div>
-            <div class="fileName" id="rightName">Файл не выбран</div>
-          </label>
-        </div>
+    // ===== CONFIG =====
+    const API_BASE = "https://api.lookingreat.ru";
 
-        <input id="fileLeft" type="file" accept="image/*" />
-        <input id="fileRight" type="file" accept="image/*" />
+    // ===== TELEGRAM INIT =====
+    const tg = window.Telegram?.WebApp;
+    try { tg?.ready(); tg?.expand(); tg?.disableVerticalSwipes?.(); } catch(e) {}
 
-        <div class="modalActions">
-          <button class="btn btnWide" id="btnUpload">Загрузить</button>
-        </div>
-
-        <div class="state" id="uploadState" style="padding:0; display:none;"></div>
-      </div>
-    </div>
-  </div>
-
-<script>
-(() => {
-  // ✅ ВАЖНО: API_BASE всегда явный
-  const API_BASE = "https://api.lookingreat.ru";
-
-  // ✅ Версия приложения — обновляем каждый апдейт
-  const APP_VERSION = "v2.1";
-
-  const $ = (id) => document.getElementById(id);
-
-  const elVer = $("verBadge");
-  const elState = $("state");
-  const elCard = $("card");
-  const elMain = $("main");
-
-  const modalOverlay = $("modalOverlay");
-  const btnCloseModal = $("btnCloseModal");
-  const btnUpload = $("btnUpload");
-  const uploadState = $("uploadState");
-
-  const fileLeft = $("fileLeft");
-  const fileRight = $("fileRight");
-  const leftName = $("leftName");
-  const rightName = $("rightName");
-
-  const navHome = $("navHome");
-  const navAdd = $("navAdd");
-  const navProfile = $("navProfile");
-
-  elVer.textContent = APP_VERSION;
-
-  // Telegram init
-  const tg = window.Telegram?.WebApp;
-  try {
-    tg?.ready();
-    tg?.expand();
-    tg?.disableVerticalSwipes?.();
-  } catch (e) {}
-
-  const DEV_FALLBACK_TG_ID = "531932411"; // твой админ tg_id
-  const tg_id = (() => {
-    const id = tg?.initDataUnsafe?.user?.id;
-    if (id) return String(id);
-    return DEV_FALLBACK_TG_ID;
-  })();
-
-  // Helpers
-  function showState(msg, isErr=false){
-    elState.className = "state" + (isErr ? " err" : "");
-    elState.textContent = msg;
-  }
-
-  function jsonFetch(url, opts){
-    return fetch(url, opts).then(async (r) => {
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data?.error || ("HTTP " + r.status));
-      return data;
-    });
-  }
-
-  function safeText(s){ return (s == null ? "" : String(s)); }
-
-  function renderPair(item){
-    const pairId = item?.id;
-    const votes = item?.votes_total ?? 0;
-
-    const leftUrl = item?.photo_left_url || item?.photo_left || item?.left || "";
-    const rightUrl = item?.photo_right_url || item?.photo_right || item?.right || "";
-
-    elCard.innerHTML = `
-      <div class="cardHead">
-        <div class="pairLabel">Пара #${pairId ?? "—"}</div>
-        <div class="hint">Нажми на фото</div>
-      </div>
-
-      <div class="pairWrap">
-        <div class="pairGrid">
-          <div class="imgBox" id="tapLeft">
-            ${leftUrl ? `<img class="img" src="${leftUrl}" alt="Фото 1" loading="eager" />` : `<div class="state">Нет фото</div>`}
-          </div>
-          <div class="imgBox" id="tapRight">
-            ${rightUrl ? `<img class="img" src="${rightUrl}" alt="Фото 2" loading="eager" />` : `<div class="state">Нет фото</div>`}
-          </div>
-        </div>
-      </div>
-
-      <div class="cardFoot">
-        <div class="votes">👍 ${votes} голосов</div>
-        <button class="btn" id="btnShare">Поделиться</button>
-      </div>
-    `;
-
-    const tapLeft = document.getElementById("tapLeft");
-    const tapRight = document.getElementById("tapRight");
-    const btnShare = document.getElementById("btnShare");
-
-    tapLeft?.addEventListener("click", () => vote(pairId, "left"));
-    tapRight?.addEventListener("click", () => vote(pairId, "right"));
-
-    btnShare?.addEventListener("click", async () => {
-      const shareText = `LookingGreat — голосование за пару #${pairId}`;
-      try {
-        if (tg?.shareMessage) {
-          tg.shareMessage(shareText);
-        } else if (navigator.share) {
-          await navigator.share({ text: shareText });
-        } else {
-          await navigator.clipboard.writeText(shareText);
-          tg?.showPopup?.({ title: "Скопировано", message: "Текст для шаринга скопирован.", buttons: [{type:"ok"}] });
-        }
-      } catch(e) {}
-    });
-  }
-
-  async function loadFeed(){
-    showState("Загрузка…");
-    try {
-      const data = await jsonFetch(`${API_BASE}/feed?tg_id=${encodeURIComponent(tg_id)}`, { method: "GET" });
-      if (!data?.ok) throw new Error(data?.error || "feed_error");
-
-      const item = data?.item;
-      if (!item) {
-        showState("Пока нет пар для показа.");
-        return;
-      }
-      renderPair(item);
-    } catch (e) {
-      showState("Ошибка: " + safeText(e.message || e), true);
+    function getTgId() {
+      const id = tg?.initDataUnsafe?.user?.id;
+      if (id) return String(id);
+      return localStorage.getItem("DEV_TG_ID") || "531932411"; // DEV fallback
     }
-  }
 
-  async function vote(pair_id, choice){
-    try {
-      // оптимистично: можно показать “принято”
-      tg?.HapticFeedback?.impactOccurred?.("light");
+    let tg_id = "";
+    function refreshTgId(){ tg_id = getTgId(); return tg_id; }
+    refreshTgId();
 
-      const data = await jsonFetch(`${API_BASE}/vote`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tg_id: String(tg_id), pair_id: Number(pair_id), choice: String(choice) })
+    if (!tg?.initDataUnsafe?.user?.id) {
+      console.log("DEV MODE (not in Telegram). tg_id =", tg_id);
+      window.setDevTgId = (v) => { localStorage.setItem("DEV_TG_ID", String(v)); location.reload(); };
+    }
+
+    const feedEl = document.getElementById("feed");
+    const toastEl = document.getElementById("toast");
+
+    // Версия в шапке + в консоли
+    document.getElementById("ver").textContent = APP_VERSION;
+    console.log("LookingGreat version:", APP_VERSION);
+
+    let toastTimer = null;
+    function toast(msg){
+      if (!toastEl) return;
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(()=>toastEl.classList.remove("show"), 1600);
+    }
+    function haptic(type="light"){
+      try { tg?.HapticFeedback?.impactOccurred?.(type); } catch(e) {}
+    }
+
+    async function apiGet(path){
+      const res = await fetch(API_BASE + path, { method:"GET" });
+      return res.json();
+    }
+    async function apiPost(path, body){
+      const res = await fetch(API_BASE + path, {
+        method:"POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify(body)
+      });
+      return res.json();
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+    }
+
+    function sharePair(pairId){
+      const shareText = `Сравни пару #${pairId} в LookingGreat`;
+      const link = `https://t.me/share/url?url=${encodeURIComponent("https://lookingreat.ru")}&text=${encodeURIComponent(shareText)}`;
+      try { tg?.openTelegramLink?.(link); } catch(e) { window.open(link, "_blank"); }
+    }
+
+    function cardTemplate(item){
+      const pairNum = item?.id ?? "—";
+      const totalVotes = Number(item?.total_votes ?? item?.votes_total ?? item?.votes ?? 0);
+      const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
+
+      const leftUrl =
+        item?.photo_left_url ||
+        (item?.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}` : "");
+
+      const rightUrl =
+        item?.photo_right_url ||
+        (item?.photo_right_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_right_key)}` : "");
+
+      return `
+        <div class="card" data-pair-id="${pairNum}">
+          <div class="cardHead">
+            <div>
+              <div class="pairTitle">Пара #${pairNum}</div>
+              <div class="pairSub">Сравни и выбери лучшее фото</div>
+            </div>
+            <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(15,23,42,.04);"></div>
+          </div>
+
+          <div class="pairWrap">
+            <div class="divider"></div>
+
+            <div class="pane" data-choice="left">
+              ${leftUrl ? `<img class="img" src="${escapeHtml(leftUrl)}" alt="left" />` : `<div class="skeleton"></div>`}
+            </div>
+
+            <div class="pane" data-choice="right">
+              ${rightUrl ? `<img class="img" src="${escapeHtml(rightUrl)}" alt="right" />` : `<div class="skeleton"></div>`}
+            </div>
+          </div>
+
+          <div class="cardFooter">
+            <div class="votes">${votesText}</div>
+            <button class="shareBtn" type="button" aria-label="Поделиться">
+              <svg class="shareIco" viewBox="0 0 24 24" fill="none">
+                <path d="M16 8.5l-8 4m8 3.5l-8-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M18.5 9.8a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M18.5 21a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M5.5 15.4a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              Поделиться
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    let loading = false;
+
+    async function loadFeed(){
+      if (loading) return;
+      loading = true;
+
+      feedEl.innerHTML = `
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <div class="pairTitle">Загрузка…</div>
+              <div class="pairSub">Сравни и выбери лучшее фото</div>
+            </div>
+            <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(15,23,42,.04);"></div>
+          </div>
+          <div class="pairWrap">
+            <div class="divider"></div>
+            <div class="pane"><div class="skeleton"></div></div>
+            <div class="pane"><div class="skeleton"></div></div>
+          </div>
+          <div class="cardFooter">
+            <div class="votes">👍 0 голосов</div>
+            <button class="shareBtn" type="button">Поделиться</button>
+          </div>
+        </div>
+      `;
+
+      try{
+        refreshTgId();
+        const data = await apiGet(`/feed?tg_id=${encodeURIComponent(tg_id)}`);
+
+        let items = [];
+        if (data?.ok && Array.isArray(data?.items)) items = data.items;
+        else if (data?.ok && data?.item) items = [data.item];
+        else if (Array.isArray(data)) items = data;
+        else if (data?.item) items = [data.item];
+
+        if (!items.length){
+          feedEl.innerHTML = `
+            <div class="card">
+              <div class="cardHead">
+                <div>
+                  <div class="pairTitle">Пока нет пар</div>
+                  <div class="pairSub">Нажми “+” чтобы загрузить</div>
+                </div>
+              </div>
+              <div class="pairWrap">
+                <div class="divider"></div>
+                <div class="pane"></div>
+                <div class="pane"></div>
+              </div>
+              <div class="cardFooter">
+                <div class="votes">👍 0 голосов</div>
+                <button class="shareBtn" type="button">Поделиться</button>
+              </div>
+            </div>
+          `;
+          loading = false;
+          bindEvents();
+          return;
+        }
+
+        feedEl.innerHTML = items.map(cardTemplate).join("");
+        loading = false;
+        bindEvents();
+      } catch(e){
+        loading = false;
+        feedEl.innerHTML = `
+          <div class="card">
+            <div class="cardHead">
+              <div>
+                <div class="pairTitle">Ошибка загрузки</div>
+                <div class="pairSub">Проверь сеть и перезагрузи</div>
+              </div>
+            </div>
+            <div class="pairWrap">
+              <div class="divider"></div>
+              <div class="pane"></div>
+              <div class="pane"></div>
+            </div>
+            <div class="cardFooter">
+              <div class="votes">👍 0 голосов</div>
+              <button class="shareBtn" type="button" id="retryBtn">Повторить</button>
+            </div>
+          </div>
+        `;
+        document.getElementById("retryBtn")?.addEventListener("click", loadFeed);
+      }
+    }
+
+    async function vote(pairId, choice){
+      haptic("light");
+      try{
+        const body = { tg_id, pair_id: Number(pairId), choice };
+        const res = await apiPost(`/vote`, body);
+
+        if (!res?.ok){
+          if (res?.error === "cannot_vote_own_pair"){
+            toast("Нельзя голосовать за свою пару");
+            haptic("error");
+            return false;
+          }
+          toast("Не удалось проголосовать");
+          haptic("error");
+          return false;
+        }
+
+        toast("Голос учтён");
+        haptic("success");
+        await loadFeed();
+        return true;
+
+      } catch(e){
+        toast("Ошибка сети");
+        haptic("error");
+        return false;
+      }
+    }
+
+    function bindEvents(){
+      document.querySelectorAll(".card .pane").forEach(pane=>{
+        pane.addEventListener("click", async ()=>{
+          const card = pane.closest(".card");
+          const pairId = card?.getAttribute("data-pair-id");
+          const choice = pane.getAttribute("data-choice");
+          if (!pairId || !choice) return;
+          await vote(pairId, choice);
+        });
       });
 
-      if (!data?.ok) throw new Error(data?.error || "vote_error");
-      await loadFeed();
-    } catch (e) {
-      const msg = safeText(e.message || e);
-      if (msg.includes("cannot_vote_own_pair")) {
-        tg?.showPopup?.({ title: "Нельзя", message: "Нельзя голосовать за свою пару.", buttons: [{type:"ok"}] });
-        return;
-      }
-      tg?.showPopup?.({ title: "Ошибка", message: msg, buttons: [{type:"ok"}] });
-    }
-  }
+      document.querySelectorAll(".card .shareBtn").forEach(btn=>{
+        btn.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          const card = btn.closest(".card");
+          const pairId = card?.getAttribute("data-pair-id") || "";
+          sharePair(pairId);
+        });
+      });
 
-  // Modal upload
-  function openModal(){
-    uploadState.style.display = "none";
-    uploadState.textContent = "";
-    modalOverlay.style.display = "flex";
-  }
-  function closeModal(){
-    modalOverlay.style.display = "none";
-  }
+      document.getElementById("navHome")?.addEventListener("click", ()=> {
+        feedEl.scrollTo({ top: 0, behavior: "smooth" });
+      });
 
-  fileLeft.addEventListener("change", () => {
-    leftName.textContent = fileLeft.files?.[0]?.name ? fileLeft.files[0].name : "Файл не выбран";
-  });
-  fileRight.addEventListener("change", () => {
-    rightName.textContent = fileRight.files?.[0]?.name ? fileRight.files[0].name : "Файл не выбран";
-  });
+      document.getElementById("navPlus")?.addEventListener("click", ()=> {
+        toast("Загрузка — в разработке");
+        haptic("light");
+      });
 
-  btnCloseModal.addEventListener("click", closeModal);
-  modalOverlay.addEventListener("click", (e) => { if (e.target === modalOverlay) closeModal(); });
-
-  btnUpload.addEventListener("click", async () => {
-    const f1 = fileLeft.files?.[0];
-    const f2 = fileRight.files?.[0];
-    if (!f1 || !f2){
-      uploadState.style.display = "block";
-      uploadState.className = "state err";
-      uploadState.textContent = "Выбери оба файла: Фото 1 и Фото 2.";
-      return;
+      document.getElementById("navProfile")?.addEventListener("click", ()=> {
+        toast("Профиль — в разработке");
+        haptic("light");
+      });
     }
 
-    uploadState.style.display = "block";
-    uploadState.className = "state";
-    uploadState.textContent = "Загрузка…";
-
-    try {
-      const fd = new FormData();
-      fd.append("tg_id", String(tg_id));
-      fd.append("left", f1);
-      fd.append("right", f2);
-
-      const r = await fetch(`${API_BASE}/upload_pair`, { method: "POST", body: fd });
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok || !data?.ok) throw new Error(data?.error || ("HTTP " + r.status));
-
-      uploadState.className = "state";
-      uploadState.textContent = "Готово! Пара загружена.";
-
-      // сброс
-      fileLeft.value = "";
-      fileRight.value = "";
-      leftName.textContent = "Файл не выбран";
-      rightName.textContent = "Файл не выбран";
-
-      setTimeout(() => {
-        closeModal();
-        loadFeed();
-      }, 400);
-    } catch (e) {
-      uploadState.className = "state err";
-      uploadState.textContent = "Ошибка: " + safeText(e.message || e);
-    }
-  });
-
-  // Bottom nav
-  navHome.addEventListener("click", () => {
-    elMain.scrollTo({ top: 0, behavior: "smooth" });
     loadFeed();
-  });
-
-  navAdd.addEventListener("click", openModal);
-
-  navProfile.addEventListener("click", () => {
-    tg?.showPopup?.({
-      title: "Профиль",
-      message: `Ваш Telegram ID: ${tg_id}`,
-      buttons: [{ type: "ok" }]
-    });
-  });
-
-  // старт
-  loadFeed();
-})();
-</script>
+  </script>
 </body>
 </html>
