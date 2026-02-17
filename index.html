@@ -644,7 +644,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.8.2";
+    const APP_VERSION = "v2.8.3";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -716,6 +716,14 @@
       const link = `https://t.me/share/url?url=${encodeURIComponent("https://lookingreat.ru")}&text=${encodeURIComponent(shareText)}`;
       try { tg?.openTelegramLink?.(link); } catch(e) { window.open(link, "_blank"); }
     }
+	function photoUrlFromKey(key){
+ 	 if (!key) return "";
+ 	 return `${API_BASE}/r2/${encodeURIComponent(String(key))}`;
+	}
+
+	function silentRefreshTop(){
+ 	 refreshFeedTopSilently();
+	}
 
     function choiceKey(pairId){ return `LG_VOTE_${tg_id}_${pairId}`; }
     function getLocalChoice(pairId){
