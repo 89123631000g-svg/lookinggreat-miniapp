@@ -1555,12 +1555,19 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
 
     loadFeed({ preserveScroll:false, showLoading:true });
 
-// Infinite scroll: load next page when close to bottom
-feedEl.addEventListener("scroll", () => {
-  try{
-    const nearBottom = (feedEl.scrollTop + feedEl.clientHeight) >= (feedEl.scrollHeight - 260);
-    if (nearBottom) loadFeedMore();
-  } catch(e){}
+// Infinite scroll
+feedEl.addEventListener("scroll", function () {
+  try {
+    const nearBottom =
+      feedEl.scrollTop + feedEl.clientHeight >=
+      feedEl.scrollHeight - 260;
+
+    if (nearBottom) {
+      loadFeedMore();
+    }
+  } catch (e) {
+    console.log("Scroll handler error:", e);
+  }
 });
 
 
