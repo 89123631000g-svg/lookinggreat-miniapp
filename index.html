@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.9.0";
+    const APP_VERSION = "v2.9.2";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -866,10 +866,11 @@
 
 const FEED_PAGE_SIZE = 10;
 
-async function fetchFeedPage(beforeId=null, limit=FEED_PAGE_SIZE){
+async function fetchFeedPage(beforeId=null, limit=FEED_PAGE_SIZE, bust=false){
   refreshTgId();
   const qs = new URLSearchParams({ tg_id: tg_id, limit: String(limit) });
   if (beforeId) qs.set("before_id", String(beforeId));
+  if (bust) qs.set("_t", String(Date.now()));
   const data = await apiGet(`/feed?${qs.toString()}`);
 
   let items = [];
@@ -1017,11 +1018,11 @@ async function loadFeedMore(){
     if (!nextBeforeId) reachedEnd = true;
 
     appendFeed(items);
-} catch(e){
-  console.log("AUTO /feed failed:", e);
-} finally {
-  loadingMore = false;
-}
+  } catch(e){
+    console.log("AUTO /feed failed:", e);ly ; next scroll will retry
+  } finally {
+    loadingMore = false;
+  }
 }
 
 async function refreshFeedTopSilently(){
@@ -1038,7 +1039,7 @@ async function refreshFeedTopSilently(){
   if (feedEl.scrollTop > 120) return;
 
   try{
-    const { items } = await fetchFeedPage(null, FEED_PAGE_SIZE);
+    const { items } = await fetchFeedPage(null, FEED_PAGE_SIZE, true);
     const sig = buildTopSig(items);
 
     if (sig === lastTopSig) return;
