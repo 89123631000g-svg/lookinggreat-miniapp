@@ -478,6 +478,13 @@
       overscroll-behavior: contain;
     }
 
+
+    /* PATCH v2.5.6: profile body scroll + prevent grid squeezing items */
+    .modalBody { flex: 1; min-height: 0; }
+    #profileBody { display: block !important; overflow: auto; }
+    #profileBody > * { margin-bottom: 10px; }
+    #profileBody .myPair { margin-bottom: 10px; }
+
 </style>
 </head>
 
@@ -570,7 +577,7 @@
   </div>
 
   <script>
-    const APP_VERSION = "v2.5.5";
+    const APP_VERSION = "v2.5.6";
     const API_BASE = "https://api.lookingreat.ru";
     const DUEL_LABEL = "Батл"; // замену названия делаем только тут
 
