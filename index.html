@@ -644,7 +644,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.8.1";
+    const APP_VERSION = "v2.8.2";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -1337,67 +1337,8 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
     adminBody.innerHTML = `<div class="pairSub">Ошибка загрузки</div>`;
   }
 }
-        adminBody.innerHTML = reports.map(r=>{
-          const p = r.pair || {};
-          const st = p.status || "visible";
-          const caption = (p.caption || "").trim();
-          const title = caption ? caption : `Пара #${p.id || r.pair_id}`;
-          const when = r.created_at ? new Date(r.created_at*1000).toLocaleString("ru-RU") : "";
-          return `
-            <div class="card" data-admin-pair="${escapeHtml(p.id || r.pair_id)}">
-              <div class="cardHead">
-                <div>
-                  <div class="pairTitle">${escapeHtml(title)}</div>
-                  <div class="pairSub">Причина: ${escapeHtml(r.reason || "")}${r.comment ? " · " + escapeHtml(r.comment) : ""}</div>
-                  <div class="pairSub">Статус: ${escapeHtml(st)} · ${escapeHtml(when)}</div>
-                </div>
-                <div></div>
-              </div>
-              <div class="cardFooter">
-                <div class="votes">Пара: #${escapeHtml(p.id || r.pair_id)} · Репорт: #${escapeHtml(r.report_id)}</div>
-                <button class="shareBtn" type="button" data-setstatus="hidden">Скрыть</button>
-              </div>
-              <div class="cardFooter" style="padding-top:0;">
-                <div class="votes"></div>
-                <button class="shareBtn" type="button" data-setstatus="visible">Показать</button>
-              </div>
-              <div class="cardFooter" style="padding-top:0;">
-                <div class="votes"></div>
-                <button class="shareBtn" type="button" data-setstatus="deleted">Удалить</button>
-              </div>
-            </div>
-          `;
-        }).join("");
 
-        adminBody.querySelectorAll("button[data-setstatus]").forEach(btn=>{
-          btn.addEventListener("click", async (e)=>{
-            e.stopPropagation();
-            const card = btn.closest(".card");
-            const pairId = card?.getAttribute("data-admin-pair");
-            const status = btn.getAttribute("data-setstatus");
-            if (!pairId || !status) return;
-            try{
-              btn.disabled = true;
-              const res = await apiPost("/admin/pair_status", { tg_id, pair_id: Number(pairId), status });
-              if (!res?.ok) throw new Error(res?.error || "update_failed");
-              toast("Готово");
-              // refresh both admin list and feed silently
-              loadAdminReports();
-              silentRefreshTop();
-            } catch(err){
-              toast("Ошибка");
-            } finally {
-              btn.disabled = false;
-            }
-          });
-        });
-
-      } catch(e){
-        adminBody.innerHTML = `<div class="pairSub">Ошибка загрузки</div>`;
-      }
-    }
-
-function fmtPct(v){
+	function fmtPct(v){
       const n = Number(v) || 0;
       return `${n}%`;
     }
