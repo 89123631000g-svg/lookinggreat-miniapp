@@ -481,7 +481,7 @@
   </div>
 
   <script>
-    const APP_VERSION = "v2.5";
+    const APP_VERSION = "v2.5.3";
     const API_BASE = "https://api.lookingreat.ru";
     const DUEL_LABEL = "Батл"; // замену названия делаем только тут
 
@@ -829,7 +829,6 @@
         setLocalChoice(pairId, choice);
         toast("Голос учтён");
         haptic("success");
-        await loadFeed({ preserveScroll:true });
         return true;
 
       } catch(e){
@@ -954,3 +953,4 @@
   </script>
 </body>
 </html>
+
