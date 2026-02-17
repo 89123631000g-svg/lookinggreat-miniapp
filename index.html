@@ -577,7 +577,7 @@
   </div>
 
   <script>
-    const APP_VERSION = "v2.6.1";
+    const APP_VERSION = "v2.6.2";
     const API_BASE = "https://api.lookingreat.ru";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
 
@@ -1164,16 +1164,7 @@
           closeUploadModal();
           loadFeed({ preserveScroll:false, showLoading:true });
 
-    // Автообновление ленты каждые 10 секунд без дергания UI
-    setInterval(()=>{
-      try{
-        const profileOpen = profileOverlay?.classList.contains("open");
-        const uploadOpen = uploadOverlay?.classList.contains("open");
-        if (profileOpen || uploadOpen) return;
-        loadFeed({ preserveScroll:true, showLoading:false });
-      } catch(e){}
-    }, 10000);
-        }, 900);
+            }, 900);
 
       } catch(e){
         uploadStatus.textContent = "Ошибка загрузки.";
@@ -1183,11 +1174,12 @@
 
     loadFeed({ preserveScroll:false, showLoading:true });
 
-    // Автообновление ленты каждые 10 секунд без дергания UI
+    // Автообновление ленты каждые 10 секунд (тихо, без дергания UI)
+    // Пауза, если открыт профиль или модалка загрузки
     setInterval(()=>{
       try{
-        const profileOpen = profileOverlay?.classList.contains("open");
-        const uploadOpen = uploadOverlay?.classList.contains("open");
+        const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
+        const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
         if (profileOpen || uploadOpen) return;
         loadFeed({ preserveScroll:true, showLoading:false });
       } catch(e){}
