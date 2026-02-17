@@ -644,7 +644,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.8.0";
+    const APP_VERSION = "v2.8.1";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -1245,15 +1245,98 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
     adminOverlay?.addEventListener("click", (e)=>{ if (e.target === adminOverlay) closeAdmin(); });
 
     async function loadAdminReports(){
-      try{
-        refreshTgId();
-        const data = await apiGet(`/admin/reports?tg_id=${encodeURIComponent(tg_id)}&limit=50`);
-        if (!data?.ok) throw new Error(data?.error || "bad_response");
-        const reports = Array.isArray(data.reports) ? data.reports : [];
-        if (!reports.length){
-          adminBody.innerHTML = `<div class="pairSub">Жалоб пока нет</div>`;
-          return;
+  try{
+    refreshTgId();
+    const data = await apiGet(`/admin/reports?tg_id=${encodeURIComponent(tg_id)}&limit=50`);
+    if (!data?.ok) throw new Error(data?.error || "bad_response");
+
+    // Worker returns { ok:true, items:[ ... ] }
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    if (!items.length){
+      adminBody.innerHTML = `<div class="pairSub">Жалоб пока нет</div>`;
+      return;
+    }
+
+    const statusLabel = (st)=>{
+      if (st === "hidden") return "скрыта";
+      if (st === "deleted") return "удалена";
+      return "видна";
+    };
+
+    adminBody.innerHTML = items.map(r=>{
+      const st = (r.status || "visible").toLowerCase();
+      const caption = (r.caption || "").trim();
+      const title = caption ? caption : `Пара #${r.pair_id}`;
+      const when = r.created_at ? new Date(Number(r.created_at)*1000).toLocaleString("ru-RU") : "";
+      const leftUrl = photoUrlFromKey(r.photo_left_key);
+      const rightUrl = photoUrlFromKey(r.photo_right_key);
+
+      const actions = [];
+      if (st === "visible"){
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="hidden">Скрыть</button>`);
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="deleted">Удалить</button>`);
+      } else if (st === "hidden"){
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="visible">Показать</button>`);
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="deleted">Удалить</button>`);
+      } else if (st === "deleted"){
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="visible">Показать</button>`);
+      }
+
+      return `
+        <div class="card" data-admin-pair="${escapeHtml(r.pair_id)}">
+          <div class="cardHead">
+            <div>
+              <div class="pairTitle">${escapeHtml(title)}</div>
+              <div class="pairSub">Причина: ${escapeHtml(r.reason || "")}${r.comment ? " · " + escapeHtml(r.comment) : ""}</div>
+              <div class="pairSub">Статус: ${escapeHtml(statusLabel(st))}${when ? " · " + escapeHtml(when) : ""}</div>
+            </div>
+            <div></div>
+          </div>
+
+          <div class="pairThumbs">
+            <div class="pairThumb"><img src="${leftUrl}" alt=""></div>
+            <div class="pairThumb"><img src="${rightUrl}" alt=""></div>
+          </div>
+
+          <div class="cardFooter">
+            <div class="votes">Пара: #${escapeHtml(r.pair_id)} · Жалоба: #${escapeHtml(r.id)}</div>
+            <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+              ${actions.join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    adminBody.querySelectorAll("button[data-setstatus]").forEach(btn=>{
+      btn.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        const card = btn.closest(".card");
+        const pairId = card?.getAttribute("data-admin-pair");
+        const status = btn.getAttribute("data-setstatus");
+        if (!pairId || !status) return;
+
+        try{
+          btn.disabled = true;
+          const res = await apiPost("/admin/pair_status", { tg_id, pair_id: Number(pairId), status });
+          if (!res?.ok) throw new Error(res?.error || "update_failed");
+          toast("Готово");
+          // refresh both admin list and feed silently
+          loadAdminReports();
+          silentRefreshTop();
+        } catch(err){
+          toast("Ошибка");
+        } finally {
+          btn.disabled = false;
         }
+      });
+    });
+
+  } catch(e){
+    adminBody.innerHTML = `<div class="pairSub">Ошибка загрузки</div>`;
+  }
+}
         adminBody.innerHTML = reports.map(r=>{
           const p = r.pair || {};
           const st = p.status || "visible";
