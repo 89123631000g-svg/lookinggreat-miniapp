@@ -463,7 +463,22 @@
     }
     .miniMute{ font-size: 12px; color: var(--muted); font-weight: 800; }
 
-  </style>
+  
+    /* PATCH v2.5.5: allow scrolling inside modals (profile) on desktop/miniapp */
+    .modalOverlay { overflow: hidden; }
+    .modal {
+      max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .modalBody {
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+</style>
 </head>
 
 <body>
@@ -555,7 +570,7 @@
   </div>
 
   <script>
-    const APP_VERSION = "v2.5.4";
+    const APP_VERSION = "v2.5.5";
     const API_BASE = "https://api.lookingreat.ru";
     const DUEL_LABEL = "Батл"; // замену названия делаем только тут
 
