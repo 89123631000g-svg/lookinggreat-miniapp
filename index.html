@@ -1,1164 +1,888 @@
+<!-- index_v2.6.0.txt -->
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>LookingGreat</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>LookingGreat</title>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <style>
-    :root{
-      --bg:#ffffff;
-      --card:#ffffff;
-      --stroke: rgba(0,0,0,.08);
-      --stroke2: rgba(0,0,0,.06);
-      --text:#0f172a;
-      --muted: rgba(15,23,42,.60);
+<style>
+  * { box-sizing: border-box; }
 
-      --r:18px;
+  :root{
+    --bg:#ffffff;
+    --text:#111111;
+    --muted:rgba(0,0,0,.58);
+    --border:rgba(0,0,0,.10);
+    --card:#ffffff;
+    --shadow: 0 10px 30px rgba(0,0,0,.10);
+    --radius:16px;
+  }
 
-      --safeT: env(safe-area-inset-top, 0px);
-      --safeB: env(safe-area-inset-bottom, 0px);
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100dvh;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
 
-      --navH: 64px;
+  .app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
 
-      /* ДЕСКТОП/ОБЩЕЕ: высота блока с фото */
-      --pairH: clamp(360px, 62vh, 620px);
+  /* Header */
+  .topbar{
+    padding: 12px 14px calc(10px + env(safe-area-inset-top));
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .topbarRow{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .brand{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+  }
+  .title{
+    font-size: 18px;
+    font-weight: 650;
+    line-height: 1.15;
+    margin: 0;
+  }
+  .sub{
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .tabs{
+    display:flex;
+    gap:8px;
+    padding: 10px 0 0;
+  }
+  .tab{
+    flex:1;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 10px;
+    background:#fff;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(0,0,0,.7);
+    cursor:pointer;
+  }
+  .tab.active{
+    border-color: rgba(0,0,0,.18);
+    color: rgba(0,0,0,.92);
+    box-shadow: 0 6px 16px rgba(0,0,0,.06);
+  }
 
-      /* Воздух сверху/снизу у фото (меняешь тут) */
-      --pairPad: 12px;
-    }
+  /* Main */
+  .main{
+    flex:1;
+    overflow:hidden;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+  }
 
-    /* МОБИЛЬНОЕ: уменьшаем высоту, чтобы футер поднялся к фото */
-    @media (max-width: 520px){
-      :root{
-        --pairH: clamp(280px, 46vh, 420px);
-      }
-    }
+  .view{
+    height:100%;
+    display:none;
+  }
+  .view.active{
+    display:flex;
+    flex-direction:column;
+    height:100%;
+  }
 
-    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  /* Scroll areas */
+  .scroll{
+    flex:1;
+    overflow:auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 6px;
+  }
 
-    html,body{
-      height:100%;
-      margin:0;
-      overflow:hidden;
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      color:var(--text);
-      background: var(--bg);
-    }
+  .card{
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: 0 10px 26px rgba(0,0,0,.06);
+    overflow:hidden;
+    margin: 0 0 12px 0;
+  }
 
-    .app{
-      height:100%;
-      display:flex;
-      flex-direction:column;
-      background: var(--bg);
-    }
+  .cardHead{
+    padding: 12px 12px 10px;
+  }
+  .cardTitle{
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+  .cardHint{
+    font-size: 12.5px;
+    color: var(--muted);
+    margin: 0;
+  }
 
-    .top{
-      padding: calc(10px + var(--safeT)) 14px 10px;
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:10px;
-      flex: 0 0 auto;
-      background: var(--bg);
-    }
-    .brand{ line-height:1.1; }
-    .brand .t{ font-weight:800; font-size:18px; letter-spacing:.2px; }
-    .brand .s{ margin-top:4px; font-size:13px; color:var(--muted); }
+  .photos{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 0 12px 12px;
+  }
+  .photoBtn{
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow:hidden;
+    background:#f7f7f7;
+    cursor:pointer;
+    position:relative;
+    min-height: 190px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .photoBtn img{
+    width:100%;
+    height:100%;
+    object-fit: cover;
+    display:block;
+  }
 
-    .feed{
-      flex:1 1 auto;
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 0 12px calc(var(--navH) + var(--safeB) + 16px);
-      background: var(--bg);
-      scrollbar-width:none;
-    }
-    .feed::-webkit-scrollbar{ display:none; }
+  /* Selected state after vote */
+  .photoBtn.selected{
+    outline: 3px solid rgba(0,0,0,.26);
+    outline-offset: -3px;
+  }
+  .photoBtn.disabled{
+    cursor: default;
+  }
 
-    .card{
-      display:flex;
-      flex-direction:column;
+  .cardFooter{
+    display:none;
+    border-top: 1px solid var(--border);
+    padding: 10px 12px;
+    font-size: 12.5px;
+    color: rgba(0,0,0,.72);
+  }
+  .cardFooter.visible{
+    display:block;
+  }
 
-      background: var(--card);
-      border: 1px solid var(--stroke);
-      border-radius: var(--r);
-      overflow:hidden;
-      box-shadow: 0 12px 34px rgba(15,23,42,.10);
+  .mutedBox{
+    border: 1px dashed rgba(0,0,0,.18);
+    border-radius: 14px;
+    padding: 12px;
+    color: rgba(0,0,0,.65);
+    background: rgba(15,23,42,.03);
+    font-size: 13px;
+  }
 
-      margin: 0 0 12px 0;
-    }
+  /* Profile header */
+  .profileTop{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom: 10px;
+  }
+  .profileTitle{
+    font-size: 16px;
+    font-weight: 750;
+    margin:0;
+  }
+  .btn{
+    border: 1px solid rgba(0,0,0,.14);
+    background:#fff;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 650;
+    cursor:pointer;
+    box-shadow: 0 10px 26px rgba(0,0,0,.06);
+  }
+  .btn:active{ transform: translateY(1px); }
 
-    .cardHead{
-      padding: 10px 12px 8px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      background: var(--card);
-      border-bottom: 1px solid var(--stroke2);
-      flex: 0 0 auto;
-    }
-    .pairTitle{ font-weight:850; font-size:22px; }
-    .pairSub{ margin-top:2px; font-size:13px; color:var(--muted); }
+  /* ===== Upload modal (ETALON — НЕ МЕНЯТЬ СТИЛЬ) ===== */
+  .sheetBack{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.35);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    z-index: 999;
+  }
+  .sheetBack.open{ display:flex; }
 
-    .caption{
-      padding: 10px 12px 0;
-      background: #fff;
-      color: var(--text);
-      font-weight: 800;
-      font-size: 14px;
-      letter-spacing: .1px;
-    }
-    .caption:empty{ display:none; }
+  .sheet{
+    width: min(760px, 100%);
+    background:#fff;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    overflow:hidden;
+  }
+  .sheetHead{
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .sheetTitle{
+    font-size: 15px;
+    font-weight: 750;
+    margin:0;
+  }
+  .sheetClose{
+    border: 1px solid rgba(0,0,0,.14);
+    background:#fff;
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 650;
+    cursor:pointer;
+  }
+  .sheetBody{
+    padding: 12px 14px 14px;
+  }
 
-    .pairWrap{
-      height: var(--pairH);
-      position:relative;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      background:#fff;
+  /* ETALON: 2 блока выбора фото */
+  .pickGrid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px; /* фикс */
+    margin-bottom: 10px;
+  }
+  .pickBox{
+    border-radius: 14px; /* фикс */
+    border: 1px dashed rgba(0,0,0,.22); /* фикс */
+    padding: 12px; /* фикс */
+    min-height: 110px; /* фикс */
+    background: rgba(15,23,42,.03); /* фикс */
+    display:flex;
+    flex-direction:column;
+    gap: 8px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .pickLabel{
+    font-size: 12.5px;
+    font-weight: 700;
+    margin:0;
+  }
+  .pickHint{
+    font-size: 12px;
+    color: rgba(0,0,0,.58);
+    margin:0;
+  }
+  .pickPreview{
+    width:100%;
+    height: 120px;
+    border-radius: 12px;
+    overflow:hidden;
+    background:#fff;
+    border: 1px solid rgba(0,0,0,.10);
+    display:none;
+  }
+  .pickPreview img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .pickBox.hasImg .pickPreview{ display:block; }
 
-      padding: var(--pairPad) 0;
-      box-sizing: border-box;
-    }
+  /* ETALON: caption */
+  .caption{
+    width:100%;
+    border: 1px solid rgba(0,0,0,.14);
+    border-radius: 14px; /* фикс */
+    padding: 12px;
+    font-size: 14px; /* фикс */
+    outline:none;
+  }
 
-    .pane{
-      position:relative;
-      overflow:hidden;
-      background:#fff;
-      cursor:pointer;
-      user-select:none;
-    }
+  /* ETALON: кнопка shareBtn стиль (как primary) */
+  .shareBtn{
+    margin-top: 10px;
+    width:100%;
+    border: 0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 14px;
+    font-weight: 750;
+    cursor:pointer;
+    background: #111;
+    color: #fff;
+  }
+  .shareBtn:disabled{
+    opacity: .55;
+    cursor: not-allowed;
+  }
 
-    .divider{
-      position:absolute;
-      top:0; bottom:0;
-      left:50%;
-      width:1px;
-      background: rgba(0,0,0,.08);
-      transform: translateX(-.5px);
-      pointer-events:none;
-      z-index: 2;
-    }
-
-    .img{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit: contain;
-      object-position: center;
-      background:#fff;
-      transform: translateZ(0);
-    }
-
-    /* Heart overlay (пустое/залитое) */
-    .heart{
-      position:absolute;
-      right: 10px;
-      bottom: 10px;
-      width: 34px;
-      height: 34px;
-      display:grid;
-      place-items:center;
-      border-radius: 999px;
-      background: rgba(255,255,255,.86);
-      border: 1px solid rgba(0,0,0,.10);
-      box-shadow: 0 10px 22px rgba(15,23,42,.16);
-      z-index: 3;
-      pointer-events:none; /* чтобы клик шел по фото */
-      transition: transform .10s ease, background .18s ease, border-color .18s ease;
-    }
-    .heart svg{ width: 18px; height: 18px; display:block; }
-    .heart.isOn{
-      background: rgba(15,23,42,.92);
-      border-color: rgba(15,23,42,.14);
-    }
-    .heart.isOn svg path{
-      fill: #ffffff;
-      stroke: #ffffff;
-    }
-
-    /* Right stats rail (показываем после голосования) */
-    .statsRail{
-      position:absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      display:none;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 4;
-      pointer-events: none;
-    }
-    .statsRail.show{ display:flex; }
-    .statIco{
-      width: 34px;
-      height: 34px;
-      display:grid;
-      place-items:center;
-      border-radius: 999px;
-      background: rgba(255,255,255,.86);
-      border: 1px solid rgba(0,0,0,.10);
-      box-shadow: 0 10px 22px rgba(15,23,42,.16);
-      color: var(--text);
-      position: relative;
-    }
-    .statIco svg{ width: 18px; height: 18px; display:block; }
-    .statIco .num{
-      position:absolute;
-      bottom: 2px;
-      right: 6px;
-      font-size: 11px;
-      font-weight: 900;
-      color: rgba(15,23,42,.75);
-    }
-
-    .cardFooter{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding: 8px 12px 10px;
-      background: #fff;
-      border-top: 1px solid var(--stroke2);
-      flex: 0 0 auto;
-    }
-
-    .votes{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      font-size:14px;
-      color: var(--text);
-      font-weight:750;
-      letter-spacing:.1px;
-    }
-
-    .shareBtn{
-      border: 1px solid var(--stroke);
-      background: rgba(15,23,42,.04);
-      color: var(--text);
-      border-radius: 999px;
-      padding: 10px 12px;
-      font-weight:800;
-      font-size:14px;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      cursor:pointer;
-      user-select:none;
-      transition: transform .10s ease, background .18s ease, border-color .18s ease;
-    }
-    .shareBtn:active{ transform: scale(.98); }
-    .shareIco{ width:16px; height:16px; display:block; opacity:.9; }
-
-    .nav{
-      position:fixed;
-      left:0; right:0; bottom:0;
-      height: calc(var(--navH) + var(--safeB));
-      padding: 8px 18px calc(8px + var(--safeB));
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-      background: rgba(255,255,255,.92);
-      border-top: 1px solid var(--stroke);
-      z-index:50;
-      backdrop-filter: blur(10px);
-    }
-
-    .navBtn{
-      width:44px; height:44px;
-      display:grid;
-      place-items:center;
-      border-radius:14px;
-      border:1px solid var(--stroke);
-      background: rgba(15,23,42,.04);
-      color: var(--text);
-      user-select:none;
-      cursor:pointer;
-      transition: transform .10s ease, background .18s ease;
-    }
-    .navBtn:active{ transform: scale(.98); }
-    .navBtn svg{ width:22px; height:22px; opacity:.95; }
-
-    .plus{
-      width:54px; height:54px;
-      border-radius:18px;
-      background: #0f172a;
-      color:#fff;
-      border: 1px solid rgba(15,23,42,.15);
-      box-shadow: 0 10px 26px rgba(15,23,42,.22);
-    }
-    .plus svg{ width:26px; height:26px; opacity:1; }
-
-    .toast{
-      position: fixed;
-      left: 50%;
-      bottom: calc(var(--navH) + var(--safeB) + 18px);
-      transform: translateX(-50%);
-      background: rgba(15,23,42,.92);
-      border: 1px solid rgba(255,255,255,.18);
-      color: #fff;
-      padding: 10px 12px;
-      border-radius: 999px;
-      font-size: 13px;
-      box-shadow: 0 18px 40px rgba(0,0,0,.20);
-      opacity:0;
-      pointer-events:none;
-      transition: opacity .18s ease, transform .18s ease;
-      z-index: 60;
-    }
-    .toast.show{
-      opacity:1;
-      transform: translateX(-50%) translateY(-2px);
-    }
-
-    .skeleton{
-      height: 100%;
-      background: linear-gradient(110deg, rgba(15,23,42,.05) 20%, rgba(15,23,42,.10) 35%, rgba(15,23,42,.05) 50%);
-      background-size: 200% 100%;
-      animation: shimmer 1.1s linear infinite;
-    }
-    @keyframes shimmer{
-      0%{ background-position: 200% 0; }
-      100%{ background-position: -200% 0; }
-    }
-
-    /* ===== MODAL UPLOAD (эталон, не менять стиль) ===== */
-    .modalOverlay{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.35);
-      display:none;
-      align-items:flex-end;
-      justify-content:center;
-      padding: 12px 12px calc(12px + var(--safeB));
-      z-index: 80;
-    }
-    .modal{
-      width: min(720px, 100%);
-      background: #fff;
-      border: 1px solid var(--stroke);
-      border-radius: 18px;
-      box-shadow: 0 25px 60px rgba(0,0,0,.25);
-      overflow:hidden;
-    }
-    .modalHead{
-      padding: 12px 12px 10px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      border-bottom: 1px solid var(--stroke2);
-    }
-    .modalTitle{
-      font-weight: 850;
-      font-size: 16px;
-    }
-    .modalBody{
-      padding: 12px;
-      display:grid;
-      gap: 10px;
-    }
-    .uploadGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .pick{
-      border: 1px dashed rgba(0,0,0,.22);
-      border-radius: 14px;
-      padding: 12px;
-      background: rgba(15,23,42,.03);
-      cursor: pointer;
-      user-select:none;
-      min-height: 110px;
-      display:flex;
-      flex-direction:column;
-      gap: 8px;
-    }
-    .pickTitle{ font-weight: 850; font-size: 14px; }
-    .pickHint{ font-size: 12px; color: var(--muted); }
-    .fileName{ font-size: 12px; font-weight: 800; word-break: break-word; }
-
-    .field{
-      border: 1px solid var(--stroke2);
-      border-radius: 14px;
-      padding: 10px 12px;
-      background: #fff;
-      font-size: 14px;
-      outline: none;
-      width: 100%;
-    }
-    .field::placeholder{ color: rgba(15,23,42,.45); }
-
-    .modalActions{
-      display:flex;
-      gap: 10px;
-      margin-top: 4px;
-    }
-    .wideBtn{ flex:1; justify-content:center; }
-    input[type="file"]{ display:none; }
-  
-    /* ===== PROFILE (v1) ===== */
-    .statGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .statCard{
-      border: 1px solid var(--stroke2);
-      border-radius: 14px;
-      padding: 10px 12px;
-      background:#fff;
-    }
-    .statLabel{ font-size: 12px; color: var(--muted); font-weight: 750; }
-    .statValue{ margin-top: 4px; font-size: 18px; font-weight: 900; letter-spacing: .2px; }
-    .myListTitle{
-      margin-top: 6px;
-      font-weight: 900;
-      font-size: 14px;
-      color: var(--text);
-    }
-    .myPair{
-      border: 1px solid var(--stroke2);
-      border-radius: 14px;
-      overflow:hidden;
-      background:#fff;
-    }
-    .myPairHead{
-      padding: 10px 12px 8px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      border-bottom: 1px solid var(--stroke2);
-    }
-    .myPairTitle{ font-weight: 900; font-size: 14px; }
-    .myPairStats{ font-size: 12px; color: var(--muted); font-weight: 800; }
-    .myPairGrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1px;
-      background: rgba(0,0,0,.06);
-    }
-    .myPairGrid img{
-      width:100%;
-      height: 150px;
-      object-fit: cover;
-      background:#fff;
-      display:block;
-    }
-    .myPairFoot{
-      padding: 10px 12px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      border-top: 1px solid var(--stroke2);
-    }
-    .miniMute{ font-size: 12px; color: var(--muted); font-weight: 800; }
-
-  
-    /* PATCH v2.5.5: allow scrolling inside modals (profile) on desktop/miniapp */
-    .modalOverlay { overflow: hidden; }
-    .modal {
-      max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    .modalBody {
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
-      overscroll-behavior: contain;
-    }
-
-
-    /* PATCH v2.5.6: profile body scroll + prevent grid squeezing items */
-    .modalBody { flex: 1; min-height: 0; }
-    #profileBody { display: block !important; overflow: auto; }
-    #profileBody > * { margin-bottom: 10px; }
-    #profileBody .myPair { margin-bottom: 10px; }
+  /* Small helpers */
+  .rowBetween{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .tiny{ font-size:12px; color: rgba(0,0,0,.58); }
 
 </style>
 </head>
 
 <body>
-  <div class="app">
-    <div class="top">
+<div class="app">
+
+  <div class="topbar">
+    <div class="topbarRow">
       <div class="brand">
-        <div class="t">LookingGreat</div>
-        <div class="s">Сравни и выбери лучшее фото · <span id="ver"></span></div>
-      </div>
-      <div style="opacity:.0; width:1px; height:1px;"></div>
-    </div>
-
-    <div id="feed" class="feed"></div>
-
-    <div class="nav">
-      <div class="navBtn" id="navHome" title="Дом">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M4 10.5L12 4l8 6.5V20a1.6 1.6 0 0 1-1.6 1.6H5.6A1.6 1.6 0 0 1 4 20v-9.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M9.5 21v-7h5v7" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-      </div>
-
-      <div class="navBtn plus" id="navPlus" title="Загрузить">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
-        </svg>
-      </div>
-
-      <div class="navBtn" id="navProfile" title="Профиль">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M12 12.2a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12.2Z" stroke="currentColor" stroke-width="2"/>
-          <path d="M20 20.2c-1.8-3.4-5-5.2-8-5.2s-6.2 1.8-8 5.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
+        <p class="title">LookingGreat</p>
+        <p class="sub" id="subLine">v2.6.0 • API: api.lookingreat.ru</p>
       </div>
     </div>
 
-    <div id="toast" class="toast"></div>
-  </div>
-
-  <!-- Upload Modal -->
-  <div class="modalOverlay" id="modalOverlay">
-    <div class="modal">
-      <div class="modalHead">
-        <div class="modalTitle">Загрузить пару</div>
-        <button class="shareBtn" id="closeModal" type="button">Закрыть</button>
-      </div>
-      <div class="modalBody">
-        <div class="uploadGrid">
-          <label class="pick" for="fileLeft">
-            <div class="pickTitle">Фото 1</div>
-            <div class="pickHint">Нажми, чтобы выбрать</div>
-            <div class="fileName" id="leftName">Файл не выбран</div>
-          </label>
-          <label class="pick" for="fileRight">
-            <div class="pickTitle">Фото 2</div>
-            <div class="pickHint">Нажми, чтобы выбрать</div>
-            <div class="fileName" id="rightName">Файл не выбран</div>
-          </label>
-        </div>
-
-        <input id="fileLeft" type="file" accept="image/*" />
-        <input id="fileRight" type="file" accept="image/*" />
-
-        <input id="pairCaption" class="field" type="text"
-               placeholder="Подпись к паре (например: Какой образ лучше?)"
-               maxlength="80" />
-
-        <div class="modalActions">
-          <button class="shareBtn wideBtn" id="doUpload" type="button">Загрузить</button>
-        </div>
-
-        <div class="pairSub" id="uploadStatus" style="display:none; margin:0;"></div>
-      </div>
+    <div class="tabs">
+      <button class="tab active" id="tabFeed">Лента</button>
+      <button class="tab" id="tabProfile">Мой профиль</button>
     </div>
   </div>
 
-  
-  <!-- Profile Modal -->
-  <div class="modalOverlay" id="profileOverlay">
-    <div class="modal">
-      <div class="modalHead">
-        <div class="modalTitle">Мой профиль</div>
-        <button class="shareBtn" id="closeProfile" type="button">Закрыть</button>
-      </div>
-      <div class="modalBody" id="profileBody">
-        <div class="pairSub">Загрузка…</div>
+  <div class="main">
+
+    <!-- FEED -->
+    <div class="view active" id="viewFeed">
+      <div class="scroll" id="feedList">
+        <div class="mutedBox">Загрузка ленты…</div>
       </div>
     </div>
+
+    <!-- PROFILE -->
+    <div class="view" id="viewProfile">
+      <div class="profileTop">
+        <p class="profileTitle">Мой профиль</p>
+        <button class="btn" id="btnUploadOpen">Загрузить фото</button>
+      </div>
+
+      <div class="scroll" id="profileList">
+        <div class="mutedBox">Загрузка…</div>
+      </div>
+    </div>
+
   </div>
 
-  <script>
-    const APP_VERSION = "v2.5.6";
-    const API_BASE = "https://api.lookingreat.ru";
-    const DUEL_LABEL = "Батл"; // замену названия делаем только тут
+</div>
 
-    const tg = window.Telegram?.WebApp;
-    try { tg?.ready(); tg?.expand(); tg?.disableVerticalSwipes?.(); } catch(e) {}
-
-    function getTgId() {
-      const id = tg?.initDataUnsafe?.user?.id;
-      if (id) return String(id);
-      return localStorage.getItem("DEV_TG_ID") || "531932411";
-    }
-
-    let tg_id = "";
-    function refreshTgId(){ tg_id = getTgId(); return tg_id; }
-    refreshTgId();
-
-    if (!tg?.initDataUnsafe?.user?.id) {
-      console.log("DEV MODE (not in Telegram). tg_id =", tg_id);
-      window.setDevTgId = (v) => { localStorage.setItem("DEV_TG_ID", String(v)); location.reload(); };
-    }
-
-    const feedEl = document.getElementById("feed");
-    const toastEl = document.getElementById("toast");
-    document.getElementById("ver").textContent = APP_VERSION;
-
-    let toastTimer = null;
-    function toast(msg){
-      toastEl.textContent = msg;
-      toastEl.classList.add("show");
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(()=>toastEl.classList.remove("show"), 1600);
-    }
-    function haptic(type="light"){
-      try { tg?.HapticFeedback?.impactOccurred?.(type); } catch(e) {}
-    }
-
-    async function apiGet(path){
-      const res = await fetch(API_BASE + path, { method:"GET" });
-      return res.json();
-    }
-    async function apiPost(path, body){
-      const res = await fetch(API_BASE + path, {
-        method:"POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify(body)
-      });
-      return res.json();
-    }
-
-    function escapeHtml(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;").replaceAll("'","&#039;");
-    }
-
-    function sharePair(pairId){
-      const shareText = `Сравни ${DUEL_LABEL.toLowerCase()} #${pairId} в LookingGreat`;
-      const link = `https://t.me/share/url?url=${encodeURIComponent("https://lookingreat.ru")}&text=${encodeURIComponent(shareText)}`;
-      try { tg?.openTelegramLink?.(link); } catch(e) { window.open(link, "_blank"); }
-    }
-
-    function choiceKey(pairId){ return `LG_VOTE_${tg_id}_${pairId}`; }
-    function getLocalChoice(pairId){
-      try { return localStorage.getItem(choiceKey(pairId)) || ""; } catch(e) { return ""; }
-    }
-    function setLocalChoice(pairId, choice){
-      try { localStorage.setItem(choiceKey(pairId), choice); } catch(e) {}
-    }
-
-    function heartSvg(){
-      return `
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M12 21s-7.2-4.7-9.6-9C.8 8.6 2.7 5.6 5.8 5c2-.4 4 .3 5.2 1.7C12.2 5.3 14.2 4.6 16.2 5c3.1.6 5 3.6 3.4 7C19.2 16.3 12 21 12 21Z"
-                stroke="rgba(15,23,42,.92)" stroke-width="1.9" stroke-linejoin="round"/>
-        </svg>
-      `;
-    }
-    function statThumbSvg(){
-      return `
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M9.5 10.2V20a2 2 0 0 1-2 2H5.2A2.2 2.2 0 0 1 3 19.8v-7.3a2.2 2.2 0 0 1 2.2-2.2h1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M9.5 10.2l4.5-6.5c.6-.9 2-.5 2 .6v5.9h3.3c1.3 0 2.2 1.2 1.9 2.4l-1.3 6.3c-.2 1-1.1 1.7-2.1 1.7H9.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-        </svg>
-      `;
-    }
-
-    function cardTemplate(item){
-      const pairNum = item?.id ?? "—";
-      const totalVotes = Number(item?.total_votes ?? item?.votes_total ?? item?.votes ?? 0);
-      const votesLeft = Number(item?.votes_left ?? item?.left_votes ?? 0);
-      const votesRight = Number(item?.votes_right ?? item?.right_votes ?? 0);
-      const denom = (Number.isFinite(totalVotes) && totalVotes > 0) ? totalVotes : (votesLeft + votesRight);
-      const base = denom > 0 ? denom : 0;
-      const pctL = base ? Math.round((votesLeft / base) * 100) : 0;
-      const pctR = base ? (100 - pctL) : 0;
-      const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
-
-      const leftUrl =
-        item?.photo_left_url ||
-        (item?.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}` : "");
-
-      const rightUrl =
-        item?.photo_right_url ||
-        (item?.photo_right_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_right_key)}` : "");
-
-      const caption = (item?.caption ?? item?.title ?? item?.question ?? "").toString().trim();
-
-      const serverChoice = (item?.my_choice || item?.myChoice || "").toString().trim();
-      const localChoice = getLocalChoice(pairNum);
-      const choice = (serverChoice || localChoice || "").toLowerCase();
-      const voted = choice === "left" || choice === "right";
-
-      return `
-        <div class="card" data-pair-id="${escapeHtml(pairNum)}" data-choice="${escapeHtml(choice)}">
-          <div class="cardHead">
-            <div>
-              <div class="pairTitle">${escapeHtml(DUEL_LABEL)} #${escapeHtml(pairNum)}</div>
-              <div class="pairSub">Чтобы сделать выбор — нажми на фото</div>
-            </div>
-            <div></div>
-          </div>
-
-          <div class="caption">${escapeHtml(caption)}</div>
-
-          <div class="pairWrap">
-            <div class="divider"></div>
-
-            
-            <div class="statsRail ${voted ? "show" : ""}">
-              <div class="statIco" title="Левое фото">
-                <div style="font-weight:900;font-size:11px;opacity:.75">Л</div>
-                <div class="num" data-stat="left">${isFinite(votesLeft) ? votesLeft : 0}</div>
-              </div>
-              <div class="statIco" title="Правое фото">
-                <div style="font-weight:900;font-size:11px;opacity:.75">П</div>
-                <div class="num" data-stat="right">${isFinite(votesRight) ? votesRight : 0}</div>
-              </div>
-              <div class="statIco" title="Проценты">
-                <div style="font-weight:900;font-size:11px;opacity:.75">${pctL}%</div>
-                <div style="font-weight:900;font-size:11px;opacity:.75">${pctR}%</div>
-              </div>
-            </div>
-
-            <div class="pane" data-choice="left">
-              ${leftUrl ? `<img class="img" src="${escapeHtml(leftUrl)}" alt="Фото 1" />` : `<div class="skeleton"></div>`}
-              <div class="heart ${choice==="left" ? "isOn": ""}" data-heart="left" aria-hidden="true">${heartSvg()}</div>
-            </div>
-
-            <div class="pane" data-choice="right">
-              ${rightUrl ? `<img class="img" src="${escapeHtml(rightUrl)}" alt="Фото 2" />` : `<div class="skeleton"></div>`}
-              <div class="heart ${choice==="right" ? "isOn": ""}" data-heart="right" aria-hidden="true">${heartSvg()}</div>
-            </div>
-          </div>
-
-          <div class="cardFooter">
-            <div class="votes" data-votes>${votesText}</div>
-            <button class="shareBtn" type="button" aria-label="Поделиться">
-              <svg class="shareIco" viewBox="0 0 24 24" fill="none">
-                <path d="M16 8.5l-8 4m8 3.5l-8-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M18.5 9.8a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M18.5 21a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M5.5 15.4a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
-              </svg>
-              Поделиться
-            </button>
-          </div>
+<!-- Upload sheet (modal bottom) -->
+<div class="sheetBack" id="sheetBack">
+  <div class="sheet">
+    <div class="sheetHead">
+      <p class="sheetTitle">Загрузка пары</p>
+      <button class="sheetClose" id="sheetClose">Закрыть</button>
+    </div>
+    <div class="sheetBody">
+      <div class="pickGrid">
+        <div class="pickBox" id="pickLeft">
+          <p class="pickLabel">Фото 1</p>
+          <p class="pickHint">Нажми, чтобы загрузить</p>
+          <div class="pickPreview" id="prevLeft"><img alt="left preview"></div>
         </div>
-      `;
+        <div class="pickBox" id="pickRight">
+          <p class="pickLabel">Фото 2</p>
+          <p class="pickHint">Нажми, чтобы загрузить</p>
+          <div class="pickPreview" id="prevRight"><img alt="right preview"></div>
+        </div>
+      </div>
+
+      <input class="caption" id="captionInput" placeholder="Комментарий (необязательно)" />
+
+      <button class="shareBtn" id="shareBtn" disabled>Отправить</button>
+
+      <input type="file" accept="image/*" id="fileLeft" style="display:none" />
+      <input type="file" accept="image/*" id="fileRight" style="display:none" />
+      <div class="tiny" id="uploadMsg" style="margin-top:10px;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======================
+   LookingGreat — Index v2.6.0
+   Changes:
+   - Убрана статистика справа в ленте
+   - Заголовок = caption, иначе "Пара #N"
+   - Подсказка до голосования, после голосования убирается
+   - Статистика после голосования в футере: "👍 X голосов · A% / B%" (округление до целого)
+   - В профиле: "Пара #N" + та же компактная статистика; при 0 голосов: "Пока нет голосов"
+   ====================== */
+
+const APP_VERSION = "2.6.0";
+
+// Важно: фронт и backend на разных доменах — всегда явный API_BASE
+const API_BASE = "https://api.lookingreat.ru";
+
+const $ = (id) => document.getElementById(id);
+
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+
+// ---- Telegram init
+function initTelegram() {
+  try {
+    if (tg) {
+      tg.expand();
+      if (typeof tg.disableVerticalSwipes === "function") tg.disableVerticalSwipes();
+      tg.ready();
+    }
+  } catch (e) {}
+}
+initTelegram();
+
+// ---- tg_id resolve
+function getTgId() {
+  // Prefer real Telegram initDataUnsafe
+  try {
+    const id = tg?.initDataUnsafe?.user?.id;
+    if (id) return String(id);
+  } catch(e) {}
+  // Fallback: query param ?tg_id=...
+  const u = new URL(location.href);
+  const p = (u.searchParams.get("tg_id") || "").trim();
+  if (p) return p;
+  // Last fallback: stable test id for debugging
+  return "531932411";
+}
+
+const TG_ID = getTgId();
+
+$("subLine").textContent = `v${APP_VERSION} • TG_ID: ${TG_ID} • API: api.lookingreat.ru`;
+
+// ---- Tabs
+const tabFeed = $("tabFeed");
+const tabProfile = $("tabProfile");
+const viewFeed = $("viewFeed");
+const viewProfile = $("viewProfile");
+
+tabFeed.onclick = () => setView("feed");
+tabProfile.onclick = () => setView("profile");
+
+function setView(name){
+  const isFeed = name === "feed";
+  tabFeed.classList.toggle("active", isFeed);
+  tabProfile.classList.toggle("active", !isFeed);
+  viewFeed.classList.toggle("active", isFeed);
+  viewProfile.classList.toggle("active", !isFeed);
+
+  if (!isFeed) loadProfile();
+}
+
+// ---- Helpers
+function esc(s){
+  return String(s ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;");
+}
+
+function pctRound(n){
+  return Math.round(Number(n || 0));
+}
+
+function statsText(item){
+  // item is expected to contain vote stats in some shape.
+  // We try multiple field names to stay compatible with existing Worker.
+  const total =
+    Number(item.total_votes ?? item.total ?? item.votes_total ?? item.votes ?? 0);
+
+  if (!total) return "Пока нет голосов";
+
+  // percentages may be provided or we compute from counts
+  let leftPct = item.left_percent ?? item.leftPct ?? item.percent_left ?? null;
+  let rightPct = item.right_percent ?? item.rightPct ?? item.percent_right ?? null;
+
+  const leftCount = Number(item.left_votes ?? item.left ?? item.votes_left ?? 0);
+  const rightCount = Number(item.right_votes ?? item.right ?? item.votes_right ?? 0);
+
+  if (leftPct == null || rightPct == null) {
+    if (total > 0 && (leftCount + rightCount) > 0) {
+      leftPct = (leftCount / total) * 100;
+      rightPct = (rightCount / total) * 100;
+    } else {
+      leftPct = 0; rightPct = 0;
+    }
+  }
+
+  return `👍 ${total} ${pluralVotes(total)} · ${pctRound(leftPct)}% / ${pctRound(rightPct)}%`;
+}
+
+function pluralVotes(n){
+  // русское склонение для "голос"
+  n = Math.abs(Number(n)) || 0;
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return "голос";
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return "голоса";
+  return "голосов";
+}
+
+function titleText(item, idx){
+  const cap = (item.caption ?? item.text ?? item.title ?? "").trim();
+  if (cap) return cap;
+  const id = item.id ?? item.pair_id ?? item.photo_pair_id ?? (idx+1);
+  return `Пара #${id}`;
+}
+
+function getPhotoUrls(item){
+  // feed may return keys or direct urls
+  const leftUrl =
+    item.photo_left_url ?? item.left_url ?? item.leftUrl ??
+    (item.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_left_key)}` : null);
+
+  const rightUrl =
+    item.photo_right_url ?? item.right_url ?? item.rightUrl ??
+    (item.photo_right_key ? `${API_BASE}/r2/${encodeURIComponent(item.photo_right_key)}` : null);
+
+  return { leftUrl, rightUrl };
+}
+
+// ---- API
+async function apiGet(path){
+  const r = await fetch(`${API_BASE}${path}`, { method:"GET" });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.ok === false) throw j;
+  return j;
+}
+
+async function apiPost(path, body){
+  const r = await fetch(`${API_BASE}${path}`, {
+    method:"POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify(body)
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.ok === false) throw j;
+  return j;
+}
+
+// ---- FEED rendering
+let FEED_CACHE = [];
+
+async function loadFeed(){
+  const host = $("feedList");
+  host.innerHTML = `<div class="mutedBox">Загрузка ленты…</div>`;
+  try {
+    const j = await apiGet(`/feed?tg_id=${encodeURIComponent(TG_ID)}`);
+    const items = j.items ?? j.feed ?? j.data ?? [];
+    FEED_CACHE = Array.isArray(items) ? items : [];
+    if (!FEED_CACHE.length){
+      host.innerHTML = `<div class="mutedBox">Пока нет пар. Зайди в “Мой профиль” и загрузить фото.</div>`;
+      return;
+    }
+    host.innerHTML = FEED_CACHE.map((item, idx) => renderFeedCard(item, idx)).join("");
+    wireFeedCards();
+  } catch (e){
+    host.innerHTML = `<div class="mutedBox">Не удалось загрузить ленту. Проверь Network и Worker Logs.<br><br><span style="opacity:.8">${esc(e?.error || e?.message || JSON.stringify(e))}</span></div>`;
+  }
+}
+
+function renderFeedCard(item, idx){
+  const { leftUrl, rightUrl } = getPhotoUrls(item);
+  const title = esc(titleText(item, idx));
+  const hasChoice = !!(item.my_choice ?? item.myChoice);
+  const hint = hasChoice ? "" : `<p class="cardHint">Чтобы выбрать — нажми на фото</p>`;
+
+  const footerVisible = hasChoice ? "visible" : "";
+  const footerText = hasChoice ? esc(statsText(item)) : "";
+
+  const id = item.id ?? item.pair_id ?? item.photo_pair_id ?? `idx${idx}`;
+  const choice = String(item.my_choice ?? item.myChoice ?? "");
+
+  return `
+    <div class="card" data-pair="${esc(id)}" data-idx="${idx}">
+      <div class="cardHead">
+        <p class="cardTitle">${title}</p>
+        ${hint}
+      </div>
+
+      <div class="photos">
+        <div class="photoBtn ${choice==='left'?'selected':''} ${hasChoice?'disabled':''}" data-choice="left">
+          ${leftUrl ? `<img loading="lazy" src="${esc(leftUrl)}" alt="Фото 1">` : `<div class="tiny">Нет фото</div>`}
+        </div>
+        <div class="photoBtn ${choice==='right'?'selected':''} ${hasChoice?'disabled':''}" data-choice="right">
+          ${rightUrl ? `<img loading="lazy" src="${esc(rightUrl)}" alt="Фото 2">` : `<div class="tiny">Нет фото</div>`}
+        </div>
+      </div>
+
+      <div class="cardFooter ${footerVisible}">${footerText}</div>
+    </div>
+  `;
+}
+
+function wireFeedCards(){
+  const cards = document.querySelectorAll("#feedList .card");
+  cards.forEach(card => {
+    const idx = Number(card.getAttribute("data-idx"));
+    const pairId = card.getAttribute("data-pair");
+
+    const btns = card.querySelectorAll(".photoBtn");
+    btns.forEach(btn => {
+      btn.onclick = async () => {
+        // if already voted - do nothing
+        const item = FEED_CACHE[idx];
+        if (!item) return;
+        const already = !!(item.my_choice ?? item.myChoice);
+        if (already) return;
+
+        const choice = btn.getAttribute("data-choice"); // left/right
+        await doVote(pairId, idx, choice, card);
+      };
+    });
+  });
+}
+
+async function doVote(pairId, idx, choice, cardEl){
+  // optimistic UI: disable clicks immediately
+  cardEl.querySelectorAll(".photoBtn").forEach(b => b.classList.add("disabled"));
+
+  try {
+    const j = await apiPost("/vote", { tg_id: TG_ID, pair_id: Number(pairId) || pairId, choice });
+
+    // Worker may return updated item or stats in different fields
+    const updated =
+      j.item ?? j.updated_item ?? j.pair ?? j.data ?? null;
+
+    // Merge stats into cache item
+    const cur = FEED_CACHE[idx] || {};
+    const merged = updated ? { ...cur, ...updated } : { ...cur };
+
+    // Ensure my_choice set
+    merged.my_choice = choice;
+
+    // If server returned stats separately:
+    if (j.stats && typeof j.stats === "object") {
+      Object.assign(merged, j.stats);
     }
 
-    let loading = false;
-    let lastScrollTop = 0;
+    FEED_CACHE[idx] = merged;
 
-    async function loadFeed({ preserveScroll=true } = {}){
-      if (loading) return;
-      loading = true;
+    // Update UI: highlight selection, remove hint, show footer
+    const leftBtn = cardEl.querySelector('.photoBtn[data-choice="left"]');
+    const rightBtn = cardEl.querySelector('.photoBtn[data-choice="right"]');
 
-      if (preserveScroll) lastScrollTop = feedEl.scrollTop;
+    leftBtn.classList.toggle("selected", choice === "left");
+    rightBtn.classList.toggle("selected", choice === "right");
 
-      feedEl.innerHTML = `
-        <div class="card">
-          <div class="cardHead">
-            <div>
-              <div class="pairTitle">Загрузка…</div>
-              <div class="pairSub">Чтобы сделать выбор — нажми на фото</div>
-            </div>
-            <div></div>
-          </div>
-          <div class="pairWrap">
-            <div class="divider"></div>
-            <div class="pane"><div class="skeleton"></div></div>
-            <div class="pane"><div class="skeleton"></div></div>
-          </div>
-          <div class="cardFooter">
-            <div class="votes">👍 0 голосов</div>
-            <button class="shareBtn" type="button">Поделиться</button>
-          </div>
+    // Remove hint line (2nd line)
+    const hint = cardEl.querySelector(".cardHint");
+    if (hint) hint.remove();
+
+    // Footer
+    const footer = cardEl.querySelector(".cardFooter");
+    footer.classList.add("visible");
+    footer.textContent = statsText(merged);
+
+  } catch (e){
+    // Restore clickability on error (only if not voted)
+    cardEl.querySelectorAll(".photoBtn").forEach(b => b.classList.remove("disabled"));
+
+    const err = (e && (e.error || e.message)) ? (e.error || e.message) : JSON.stringify(e);
+    alert("Не удалось проголосовать. Проверь сеть и логи.\n\n" + err);
+  }
+}
+
+// ---- PROFILE
+let PROFILE_CACHE = [];
+
+async function loadProfile(){
+  const host = $("profileList");
+  host.innerHTML = `<div class="mutedBox">Загрузка…</div>`;
+  try {
+    const j = await apiGet(`/my_pairs?tg_id=${encodeURIComponent(TG_ID)}`);
+    const items = j.items ?? j.pairs ?? j.data ?? [];
+    PROFILE_CACHE = Array.isArray(items) ? items : [];
+
+    if (!PROFILE_CACHE.length){
+      host.innerHTML = `<div class="mutedBox">У тебя пока нет загруженных пар. Нажми “Загрузить фото”.</div>`;
+      return;
+    }
+
+    host.innerHTML = PROFILE_CACHE.map((item, idx) => renderProfileCard(item, idx)).join("");
+    wireProfileShare();
+  } catch (e){
+    host.innerHTML = `<div class="mutedBox">Не удалось загрузить профиль. Проверь Network и Worker Logs.<br><br><span style="opacity:.8">${esc(e?.error || e?.message || JSON.stringify(e))}</span></div>`;
+  }
+}
+
+function renderProfileCard(item, idx){
+  const { leftUrl, rightUrl } = getPhotoUrls(item);
+  const id = item.id ?? item.pair_id ?? item.photo_pair_id ?? (idx+1);
+
+  const total =
+    Number(item.total_votes ?? item.total ?? item.votes_total ?? item.votes ?? 0);
+
+  let statLine = "";
+  if (!total) statLine = "Пока нет голосов";
+  else statLine = statsText(item);
+
+  return `
+    <div class="card" data-pair="${esc(id)}" data-idx="${idx}">
+      <div class="cardHead">
+        <p class="cardTitle">Пара #${esc(id)}</p>
+        <p class="cardHint">${esc(statLine)}</p>
+      </div>
+
+      <div class="photos">
+        <div class="photoBtn disabled">
+          ${leftUrl ? `<img loading="lazy" src="${esc(leftUrl)}" alt="Фото 1">` : `<div class="tiny">Нет фото</div>`}
         </div>
-      `;
+        <div class="photoBtn disabled">
+          ${rightUrl ? `<img loading="lazy" src="${esc(rightUrl)}" alt="Фото 2">` : `<div class="tiny">Нет фото</div>`}
+        </div>
+      </div>
 
+      <div class="cardFooter visible">
+        <button class="btn" data-share="1" style="width:100%;">Поделиться</button>
+      </div>
+    </div>
+  `;
+}
+
+function wireProfileShare(){
+  document.querySelectorAll('#profileList [data-share="1"]').forEach(btn => {
+    btn.onclick = () => {
       try{
-        refreshTgId();
-        const data = await apiGet(`/feed?tg_id=${encodeURIComponent(tg_id)}`);
-
-        let items = [];
-        if (data?.ok && Array.isArray(data?.items)) items = data.items;
-        else if (data?.ok && data?.item) items = [data.item];
-        else if (Array.isArray(data)) items = data;
-        else if (data?.item) items = [data.item];
-
-        if (!items.length){
-          feedEl.innerHTML = `
-            <div class="card">
-              <div class="cardHead">
-                <div>
-                  <div class="pairTitle">Пока нет батлов</div>
-                  <div class="pairSub">Нажми “+” чтобы загрузить</div>
-                </div>
-              </div>
-              <div class="pairWrap">
-                <div class="divider"></div>
-                <div class="pane"></div>
-                <div class="pane"></div>
-              </div>
-              <div class="cardFooter">
-                <div class="votes">👍 0 голосов</div>
-                <button class="shareBtn" type="button">Поделиться</button>
-              </div>
-            </div>
-          `;
-          loading = false;
-          bindEvents();
-          if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
-          return;
+        const card = btn.closest(".card");
+        const pairId = card?.getAttribute("data-pair") || "";
+        const shareUrl = `https://lookingreat.ru/?pair=${encodeURIComponent(pairId)}`;
+        if (tg && typeof tg.openTelegramLink === "function") {
+          // open share dialog (simple link copy behavior is okay too)
+          tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}`);
+        } else {
+          navigator.clipboard?.writeText(shareUrl);
+          alert("Ссылка скопирована:\n" + shareUrl);
         }
-
-        feedEl.innerHTML = items.map(cardTemplate).join("");
-        loading = false;
-        bindEvents();
-
-        if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
-
       } catch(e){
-        loading = false;
-        feedEl.innerHTML = `
-          <div class="card">
-            <div class="cardHead">
-              <div>
-                <div class="pairTitle">Ошибка загрузки</div>
-                <div class="pairSub">Проверь сеть и перезагрузи</div>
-              </div>
-            </div>
-            <div class="pairWrap">
-              <div class="divider"></div>
-              <div class="pane"></div>
-              <div class="pane"></div>
-            </div>
-            <div class="cardFooter">
-              <div class="votes">👍 0 голосов</div>
-              <button class="shareBtn" type="button" id="retryBtn">Повторить</button>
-            </div>
-          </div>
-        `;
-        document.getElementById("retryBtn")?.addEventListener("click", ()=>loadFeed({preserveScroll:false}));
+        alert("Не удалось поделиться.");
       }
-    }
+    };
+  });
+}
 
-    function setHeart(cardEl, choice){
-      const hL = cardEl.querySelector('[data-heart="left"]');
-      const hR = cardEl.querySelector('[data-heart="right"]');
-      if (hL) hL.classList.toggle("isOn", choice === "left");
-      if (hR) hR.classList.toggle("isOn", choice === "right");
-      cardEl.setAttribute("data-choice", choice || "");
-      const rail = cardEl.querySelector(".statsRail");
-      if (rail) rail.classList.toggle("show", choice === "left" || choice === "right");
-    }
+// ---- Upload modal (ETALON)
+const sheetBack = $("sheetBack");
+const sheetClose = $("sheetClose");
+const btnUploadOpen = $("btnUploadOpen");
+const pickLeft = $("pickLeft");
+const pickRight = $("pickRight");
+const fileLeft = $("fileLeft");
+const fileRight = $("fileRight");
+const prevLeft = $("prevLeft").querySelector("img");
+const prevRight = $("prevRight").querySelector("img");
+const captionInput = $("captionInput");
+const shareBtn = $("shareBtn");
+const uploadMsg = $("uploadMsg");
 
-    function bumpVotesUI(cardEl, delta, choice){
-      const v = cardEl.querySelector("[data-votes]");
-      if (!v) return;
-      const m = v.textContent.match(/(\d+)/);
-      const cur = m ? Number(m[1]) : 0;
-      const next = Math.max(0, cur + delta);
-      v.textContent = `👍 ${next} голосов`;
+let uploadLeftFile = null;
+let uploadRightFile = null;
 
-      // total in rail not shown; we update per-side if present
-      const nL = cardEl.querySelector('.statsRail [data-stat="left"]');
-      const nR = cardEl.querySelector('.statsRail [data-stat="right"]');
-      if (choice === 'left' && nL){ nL.textContent = String(Number(nL.textContent||0) + delta); }
-      if (choice === 'right' && nR){ nR.textContent = String(Number(nR.textContent||0) + delta); }
-    }
+function openSheet(){
+  uploadMsg.textContent = "";
+  sheetBack.classList.add("open");
+}
+function closeSheet(){
+  sheetBack.classList.remove("open");
+}
+btnUploadOpen.onclick = openSheet;
+sheetClose.onclick = closeSheet;
+sheetBack.onclick = (e) => { if (e.target === sheetBack) closeSheet(); };
 
-    async function vote(pairId, choice, cardEl){
-      haptic("light");
+pickLeft.onclick = () => fileLeft.click();
+pickRight.onclick = () => fileRight.click();
 
-      const existing = (cardEl?.getAttribute("data-choice") || "").toLowerCase();
-      if (existing === "left" || existing === "right") {
-        toast("Ты уже проголосовал");
-        return false;
-      }
+fileLeft.onchange = () => {
+  const f = fileLeft.files && fileLeft.files[0];
+  if (!f) return;
+  uploadLeftFile = f;
+  const url = URL.createObjectURL(f);
+  prevLeft.src = url;
+  pickLeft.classList.add("hasImg");
+  updateShareEnabled();
+};
 
-      try{
-        setHeart(cardEl, choice);
-        bumpVotesUI(cardEl, +1, choice);
+fileRight.onchange = () => {
+  const f = fileRight.files && fileRight.files[0];
+  if (!f) return;
+  uploadRightFile = f;
+  const url = URL.createObjectURL(f);
+  prevRight.src = url;
+  pickRight.classList.add("hasImg");
+  updateShareEnabled();
+};
 
-        const body = { tg_id, pair_id: Number(pairId), choice };
-        const res = await apiPost(`/vote`, body);
+function updateShareEnabled(){
+  shareBtn.disabled = !(uploadLeftFile && uploadRightFile);
+}
 
-        if (!res?.ok){
-          setHeart(cardEl, "");
-          bumpVotesUI(cardEl, -1, choice);
+shareBtn.onclick = async () => {
+  if (!(uploadLeftFile && uploadRightFile)) return;
 
-          if (res?.error === "cannot_vote_own_pair"){
-            toast("Нельзя голосовать за свою пару");
-            haptic("error");
-            return false;
-          }
-          if (res?.error === "already_voted"){
-            toast("Ты уже голосовал за эту пару");
-            setLocalChoice(pairId, choice);
-            setHeart(cardEl, choice);
-            return false;
-          }
+  shareBtn.disabled = true;
+  uploadMsg.textContent = "Загрузка…";
 
-          toast("Не удалось проголосовать");
-          haptic("error");
-          return false;
-        }
+  try {
+    const fd = new FormData();
+    fd.append("tg_id", TG_ID);
+    fd.append("left", uploadLeftFile);
+    fd.append("right", uploadRightFile);
+    fd.append("caption", captionInput.value || "");
 
-        // если сервер вернул статистику — обновим блок справа и футер точными значениями
-        try{
-          if (cardEl && typeof res.votes_left !== 'undefined' && typeof res.votes_right !== 'undefined'){
-            const vL = Number(res.votes_left||0);
-            const vR = Number(res.votes_right||0);
-            const t = Number(res.total_votes|| (vL+vR) || 0);
-            const footer = cardEl.querySelector('[data-votes]');
-            if (footer) footer.textContent = `👍 ${t} голосов`;
-            const nL = cardEl.querySelector('.statsRail [data-stat="left"]');
-            const nR = cardEl.querySelector('.statsRail [data-stat="right"]');
-            if (nL) nL.textContent = String(vL);
-            if (nR) nR.textContent = String(vR);
-          }
-        }catch(e){}
+    const r = await fetch(`${API_BASE}/upload_pair`, { method:"POST", body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.ok === false) throw j;
 
-        setLocalChoice(pairId, choice);
-        toast("Голос учтён");
-        haptic("success");
-        return true;
-
-      } catch(e){
-        setHeart(cardEl, "");
-        bumpVotesUI(cardEl, -1, choice);
-        toast("Ошибка сети");
-        haptic("error");
-        return false;
-      }
-    }
-
-    function bindEvents(){
-      document.querySelectorAll(".card .pane").forEach(pane=>{
-        pane.addEventListener("click", async ()=>{
-          const card = pane.closest(".card");
-          const pairId = card?.getAttribute("data-pair-id");
-          const choice = pane.getAttribute("data-choice");
-          if (!pairId || !choice) return;
-          await vote(pairId, choice, card);
-        });
-      });
-
-      document.querySelectorAll(".card .shareBtn").forEach(btn=>{
-        btn.addEventListener("click", (e)=>{
-          e.stopPropagation();
-          const card = btn.closest(".card");
-          const pairId = card?.getAttribute("data-pair-id") || "";
-          sharePair(pairId);
-        });
-      });
-
-      document.getElementById("navHome")?.addEventListener("click", ()=> {
-        feedEl.scrollTo({ top: 0, behavior: "smooth" });
-      });
-
-      document.getElementById("navPlus")?.addEventListener("click", ()=> {
-        openUploadModal();
-      });
-
-      document.getElementById("navProfile")?.addEventListener("click", ()=> {
-        openProfile();
-      });
-    }
-
-
-    // Profile modal logic (v1)
-    const profileOverlay = document.getElementById("profileOverlay");
-    const profileBody = document.getElementById("profileBody");
-    const closeProfileBtn = document.getElementById("closeProfile");
-
-    function openProfile(){
-      profileBody.innerHTML = `<div class="pairSub">Загрузка…</div>`;
-      profileOverlay.style.display = "flex";
+    uploadMsg.textContent = "Готово ✅";
+    // ETALON: задержка закрытия 900ms
+    setTimeout(() => {
+      closeSheet();
+      // reset
+      uploadLeftFile = null; uploadRightFile = null;
+      fileLeft.value = ""; fileRight.value = "";
+      captionInput.value = "";
+      pickLeft.classList.remove("hasImg");
+      pickRight.classList.remove("hasImg");
+      updateShareEnabled();
+      // reload profile and feed
       loadProfile();
-    }
-    function closeProfile(){ profileOverlay.style.display = "none"; }
+      loadFeed();
+    }, 900);
 
-    closeProfileBtn.addEventListener("click", closeProfile);
-    profileOverlay.addEventListener("click", (e)=>{ if (e.target === profileOverlay) closeProfile(); });
+  } catch(e){
+    uploadMsg.textContent = "Ошибка загрузки. Проверь Worker Logs / Network.";
+    const err = (e && (e.error || e.message)) ? (e.error || e.message) : JSON.stringify(e);
+    alert("Не удалось загрузить.\n\n" + err);
+    shareBtn.disabled = false;
+  }
+};
 
-    function fmtPct(v){
-      const n = Number(v) || 0;
-      return `${n}%`;
-    }
+// ---- start
+loadFeed();
+</script>
 
-    async function loadProfile(){
-      try{
-        refreshTgId();
-        const data = await apiGet(`/my_pairs?tg_id=${encodeURIComponent(tg_id)}`);
-        if (!data?.ok) throw new Error(data?.error || "bad_response");
-
-        const stats = data.stats || {};
-        const items = Array.isArray(data.items) ? data.items : [];
-
-        const pairsCount = Number(stats.pairs_count || 0);
-        const totalVotes = Number(stats.total_votes || 0);
-        const avgPercent = Number(stats.avg_percent || 0);
-        const bestPairId = stats.best_pair_id;
-        const bestPercent = Number(stats.best_percent || 0);
-
-        const bestText = (bestPairId ? `${DUEL_LABEL} #${bestPairId} — ${bestPercent}%` : "—");
-
-        const statsHtml = `
-          <div class="statGrid">
-            <div class="statCard">
-              <div class="statLabel">Загружено пар</div>
-              <div class="statValue">${pairsCount}</div>
-            </div>
-            <div class="statCard">
-              <div class="statLabel">Всего голосов</div>
-              <div class="statValue">${totalVotes}</div>
-            </div>
-            <div class="statCard">
-              <div class="statLabel">Средний результат</div>
-              <div class="statValue">${fmtPct(avgPercent)}</div>
-            </div>
-            <div class="statCard">
-              <div class="statLabel">Лучшая пара</div>
-              <div class="statValue" style="font-size:14px; line-height:1.15">${escapeHtml(bestText)}</div>
-            </div>
-          </div>
-          <div class="myListTitle">Мои пары</div>
-        `;
-
-        const listHtml = items.map((it)=>{
-          const id = it?.id ?? "—";
-          const vL = Number(it?.votes_left || 0);
-          const vR = Number(it?.votes_right || 0);
-          const t = Number(it?.total_votes || (vL+vR) || 0);
-          const pL = Number(it?.pct_left || (t ? Math.round((vL/t)*100) : 0));
-          const pR = Number(it?.pct_right || (t ? (100-pL) : 0));
-          const leftUrl = it?.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(it.photo_left_key)}` : "";
-          const rightUrl = it?.photo_right_key ? `${API_BASE}/r2/${encodeURIComponent(it.photo_right_key)}` : "";
-
-          const statLine = `Л ${vL} · П ${vR} · ${pL}% / ${pR}% · всего ${t}`;
-
-          return `
-            <div class="myPair" data-my-id="${escapeHtml(id)}">
-              <div class="myPairHead">
-                <div class="myPairTitle">${escapeHtml(DUEL_LABEL)} #${escapeHtml(id)}</div>
-                <div class="myPairStats">${escapeHtml(statLine)}</div>
-              </div>
-              <div class="myPairGrid">
-                ${leftUrl ? `<img src="${escapeHtml(leftUrl)}" alt="Фото 1" />` : `<div class="skeleton"></div>`}
-                ${rightUrl ? `<img src="${escapeHtml(rightUrl)}" alt="Фото 2" />` : `<div class="skeleton"></div>`}
-              </div>
-              <div class="myPairFoot">
-                <div class="miniMute">👍 ${t}</div>
-                <button class="shareBtn" type="button" data-share="${escapeHtml(id)}">
-                  <svg class="shareIco" viewBox="0 0 24 24" fill="none">
-                    <path d="M16 8.5l-8 4m8 3.5l-8-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M18.5 9.8a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
-                    <path d="M18.5 21a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
-                    <path d="M5.5 15.4a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  Поделиться
-                </button>
-              </div>
-            </div>
-          `;
-        }).join("");
-
-        profileBody.innerHTML = statsHtml + (listHtml || `<div class="pairSub">Пока нет загруженных пар</div>`);
-
-        // bind share buttons inside profile
-        profileBody.querySelectorAll('[data-share]').forEach(btn=>{
-          btn.addEventListener('click', (e)=>{
-            e.stopPropagation();
-            const id = btn.getAttribute('data-share') || "";
-            sharePair(id);
-          });
-        });
-
-      }catch(e){
-        profileBody.innerHTML = `<div class="pairSub">Не удалось загрузить профиль. Проверь сеть и повтори.</div>`;
-      }
-    }
-
-    // Upload modal logic (эталон)
-    const modalOverlay = document.getElementById("modalOverlay");
-    const closeModalBtn = document.getElementById("closeModal");
-    const doUploadBtn = document.getElementById("doUpload");
-    const fileLeft = document.getElementById("fileLeft");
-    const fileRight = document.getElementById("fileRight");
-    const leftName = document.getElementById("leftName");
-    const rightName = document.getElementById("rightName");
-    const uploadStatus = document.getElementById("uploadStatus");
-    const pairCaptionEl = document.getElementById("pairCaption");
-
-    function openUploadModal(){
-      uploadStatus.style.display = "none";
-      uploadStatus.textContent = "";
-      modalOverlay.style.display = "flex";
-    }
-    function closeUploadModal(){ modalOverlay.style.display = "none"; }
-
-    closeModalBtn.addEventListener("click", closeUploadModal);
-    modalOverlay.addEventListener("click", (e)=>{ if (e.target === modalOverlay) closeUploadModal(); });
-
-    fileLeft.addEventListener("change", ()=>{
-      leftName.textContent = fileLeft.files?.[0]?.name ? fileLeft.files[0].name : "Файл не выбран";
-    });
-    fileRight.addEventListener("change", ()=>{
-      rightName.textContent = fileRight.files?.[0]?.name ? fileRight.files[0].name : "Файл не выбран";
-    });
-
-    doUploadBtn.addEventListener("click", async ()=>{
-      const f1 = fileLeft.files?.[0];
-      const f2 = fileRight.files?.[0];
-      const caption = (pairCaptionEl?.value || "").trim();
-
-      if (!f1 || !f2){
-        uploadStatus.style.display = "block";
-        uploadStatus.textContent = "Выбери оба фото.";
-        return;
-      }
-
-      uploadStatus.style.display = "block";
-      uploadStatus.textContent = "Загрузка…";
-      haptic("light");
-
-      try{
-        refreshTgId();
-        const fd = new FormData();
-        fd.append("tg_id", String(tg_id));
-        fd.append("left", f1);
-        fd.append("right", f2);
-        if (caption) fd.append("caption", caption);
-
-        const res = await fetch(API_BASE + "/upload_pair", { method: "POST", body: fd });
-        const data = await res.json().catch(()=>({}));
-        if (!res.ok || !data?.ok) throw new Error(data?.error || ("HTTP " + res.status));
-
-        uploadStatus.textContent = "Готово! Пара загружена.";
-        haptic("success");
-
-        fileLeft.value = "";
-        fileRight.value = "";
-        leftName.textContent = "Файл не выбран";
-        rightName.textContent = "Файл не выбран";
-        pairCaptionEl.value = "";
-
-        setTimeout(()=>{
-          closeUploadModal();
-          loadFeed({ preserveScroll:false });
-        }, 900);
-
-      } catch(e){
-        uploadStatus.textContent = "Ошибка загрузки.";
-        haptic("error");
-      }
-    });
-
-    loadFeed({ preserveScroll:false });
-  </script>
 </body>
 </html>
