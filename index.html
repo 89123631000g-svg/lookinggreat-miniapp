@@ -485,6 +485,36 @@
     #profileBody > * { margin-bottom: 10px; }
     #profileBody .myPair { margin-bottom: 10px; }
 
+
+.linkBtn{
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: rgba(17,17,17,.55);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.linkBtn:active{ opacity:.7; }
+
+.reportReasonRow{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin: 10px 0 8px;
+}
+.reasonBtn{
+  border: 1px solid rgba(0,0,0,.14);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor:pointer;
+}
+.reasonBtn.isOn{
+  border-color: rgba(0,0,0,.35);
+}
 </style>
 </head>
 
@@ -576,9 +606,47 @@
     </div>
   </div>
 
-  <script>
-    const APP_VERSION = "v2.7.1";
+  
+  <!-- Report Modal -->
+  <div class="modalOverlay" id="reportOverlay" style="display:none;">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle">Пожаловаться</div>
+        <button class="shareBtn" id="closeReport" type="button">Закрыть</button>
+      </div>
+      <div class="modalBody">
+        <div class="pairSub" style="margin:0 0 6px;">Выбери причину</div>
+        <div class="reportReasonRow">
+          <button class="reasonBtn" type="button" data-reason="Спам">Спам</button>
+          <button class="reasonBtn" type="button" data-reason="Неприемлемое">Неприемлемое</button>
+          <button class="reasonBtn" type="button" data-reason="Другое">Другое</button>
+        </div>
+        <textarea id="reportComment" class="captionInput" rows="3" placeholder="Комментарий (необязательно)" maxlength="500"></textarea>
+        <div class="modalActions">
+          <button class="shareBtn wideBtn" id="sendReport" type="button" disabled>Отправить</button>
+        </div>
+        <div class="pairSub" id="reportStatus" style="display:none; margin:0;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Modal (only for tg_id 531932411) -->
+  <div class="modalOverlay" id="adminOverlay" style="display:none;">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle">Админ</div>
+        <button class="shareBtn" id="closeAdmin" type="button">Закрыть</button>
+      </div>
+      <div class="modalBody" id="adminBody">
+        <div class="pairSub">Загрузка…</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+    const APP_VERSION = "v2.8.0";
     const API_BASE = "https://api.lookingreat.ru";
+    const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
 
     const tg = window.Telegram?.WebApp;
@@ -734,7 +802,10 @@
           </div>
 
           <div class="cardFooter">
-            <div class="votes" data-votes>${escapeHtml(footerText)}</div>
+            <div>
+              <div class="votes" data-votes>${escapeHtml(footerText)}</div>
+              <button class="linkBtn reportBtn" type="button" data-report="${escapeHtml(pairNum)}">Пожаловаться</button>
+            </div>
             <button class="shareBtn" type="button" aria-label="Поделиться">
               <svg class="shareIco" viewBox="0 0 24 24" fill="none">
                 <path d="M16 8.5l-8 4m8 3.5l-8-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -1055,7 +1126,18 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
           const pairId = card?.getAttribute("data-pair-id") || "";
           sharePair(pairId);
         });
+      
+      document.querySelectorAll(".card .reportBtn").forEach(btn=>{
+        btn.addEventListener("click", async (e)=>{
+          e.stopPropagation();
+          const card = btn.closest(".card");
+          const pairId = btn.getAttribute("data-report") || card?.getAttribute("data-pair-id") || "";
+          if (!pairId) return;
+          openReport(pairId);
+        });
       });
+
+});
 
       document.getElementById("navHome")?.addEventListener("click", ()=> {
         feedEl.scrollTo({ top: 0, behavior: "smooth" });
@@ -1086,7 +1168,153 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
     closeProfileBtn.addEventListener("click", closeProfile);
     profileOverlay.addEventListener("click", (e)=>{ if (e.target === profileOverlay) closeProfile(); });
 
-    function fmtPct(v){
+    
+    // Report modal logic
+    const reportOverlay = document.getElementById("reportOverlay");
+    const closeReportBtn = document.getElementById("closeReport");
+    const sendReportBtn = document.getElementById("sendReport");
+    const reportCommentEl = document.getElementById("reportComment");
+    const reportStatusEl = document.getElementById("reportStatus");
+    let reportPairId = "";
+    let reportReason = "";
+
+    function openReport(pairId){
+      reportPairId = String(pairId || "");
+      reportReason = "";
+      if (reportCommentEl) reportCommentEl.value = "";
+      if (reportStatusEl) reportStatusEl.style.display = "none";
+      if (sendReportBtn) sendReportBtn.disabled = true;
+      document.querySelectorAll(".reasonBtn").forEach(b=>b.classList.remove("isOn"));
+      if (reportOverlay) reportOverlay.style.display = "flex";
+    }
+    function closeReport(){
+      if (reportOverlay) reportOverlay.style.display = "none";
+    }
+    closeReportBtn?.addEventListener("click", closeReport);
+    reportOverlay?.addEventListener("click", (e)=>{ if (e.target === reportOverlay) closeReport(); });
+
+    document.querySelectorAll(".reasonBtn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        reportReason = btn.getAttribute("data-reason") || "";
+        document.querySelectorAll(".reasonBtn").forEach(b=>b.classList.remove("isOn"));
+        btn.classList.add("isOn");
+        if (sendReportBtn) sendReportBtn.disabled = !reportReason;
+      });
+    });
+
+    sendReportBtn?.addEventListener("click", async ()=>{
+      try{
+        if (!reportPairId || !reportReason) return;
+        refreshTgId();
+        sendReportBtn.disabled = true;
+        if (reportStatusEl){ reportStatusEl.textContent = "Отправляем…"; reportStatusEl.style.display = "block"; }
+        const payload = {
+          tg_id,
+          pair_id: Number(reportPairId),
+          reason: reportReason,
+          comment: (reportCommentEl?.value || "").trim()
+        };
+        const res = await apiPost("/report", payload);
+        if (!res?.ok) throw new Error(res?.error || "report_failed");
+        toast("Жалоба отправлена");
+        closeReport();
+      } catch(e){
+        toast("Не удалось отправить");
+        if (reportStatusEl){ reportStatusEl.textContent = "Ошибка отправки"; reportStatusEl.style.display = "block"; }
+      } finally {
+        if (sendReportBtn) sendReportBtn.disabled = false;
+      }
+    });
+
+    // Admin modal logic
+    const adminOverlay = document.getElementById("adminOverlay");
+    const adminBody = document.getElementById("adminBody");
+    const closeAdminBtn = document.getElementById("closeAdmin");
+
+    function isAdminClient(){ return String(tg_id) === ADMIN_TG_ID; }
+
+    function openAdmin(){
+      if (!isAdminClient()) return;
+      if (adminBody) adminBody.innerHTML = `<div class="pairSub">Загрузка…</div>`;
+      if (adminOverlay) adminOverlay.style.display = "flex";
+      loadAdminReports();
+    }
+    function closeAdmin(){ if (adminOverlay) adminOverlay.style.display = "none"; }
+
+    closeAdminBtn?.addEventListener("click", closeAdmin);
+    adminOverlay?.addEventListener("click", (e)=>{ if (e.target === adminOverlay) closeAdmin(); });
+
+    async function loadAdminReports(){
+      try{
+        refreshTgId();
+        const data = await apiGet(`/admin/reports?tg_id=${encodeURIComponent(tg_id)}&limit=50`);
+        if (!data?.ok) throw new Error(data?.error || "bad_response");
+        const reports = Array.isArray(data.reports) ? data.reports : [];
+        if (!reports.length){
+          adminBody.innerHTML = `<div class="pairSub">Жалоб пока нет</div>`;
+          return;
+        }
+        adminBody.innerHTML = reports.map(r=>{
+          const p = r.pair || {};
+          const st = p.status || "visible";
+          const caption = (p.caption || "").trim();
+          const title = caption ? caption : `Пара #${p.id || r.pair_id}`;
+          const when = r.created_at ? new Date(r.created_at*1000).toLocaleString("ru-RU") : "";
+          return `
+            <div class="card" data-admin-pair="${escapeHtml(p.id || r.pair_id)}">
+              <div class="cardHead">
+                <div>
+                  <div class="pairTitle">${escapeHtml(title)}</div>
+                  <div class="pairSub">Причина: ${escapeHtml(r.reason || "")}${r.comment ? " · " + escapeHtml(r.comment) : ""}</div>
+                  <div class="pairSub">Статус: ${escapeHtml(st)} · ${escapeHtml(when)}</div>
+                </div>
+                <div></div>
+              </div>
+              <div class="cardFooter">
+                <div class="votes">Пара: #${escapeHtml(p.id || r.pair_id)} · Репорт: #${escapeHtml(r.report_id)}</div>
+                <button class="shareBtn" type="button" data-setstatus="hidden">Скрыть</button>
+              </div>
+              <div class="cardFooter" style="padding-top:0;">
+                <div class="votes"></div>
+                <button class="shareBtn" type="button" data-setstatus="visible">Показать</button>
+              </div>
+              <div class="cardFooter" style="padding-top:0;">
+                <div class="votes"></div>
+                <button class="shareBtn" type="button" data-setstatus="deleted">Удалить</button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        adminBody.querySelectorAll("button[data-setstatus]").forEach(btn=>{
+          btn.addEventListener("click", async (e)=>{
+            e.stopPropagation();
+            const card = btn.closest(".card");
+            const pairId = card?.getAttribute("data-admin-pair");
+            const status = btn.getAttribute("data-setstatus");
+            if (!pairId || !status) return;
+            try{
+              btn.disabled = true;
+              const res = await apiPost("/admin/pair_status", { tg_id, pair_id: Number(pairId), status });
+              if (!res?.ok) throw new Error(res?.error || "update_failed");
+              toast("Готово");
+              // refresh both admin list and feed silently
+              loadAdminReports();
+              silentRefreshTop();
+            } catch(err){
+              toast("Ошибка");
+            } finally {
+              btn.disabled = false;
+            }
+          });
+        });
+
+      } catch(e){
+        adminBody.innerHTML = `<div class="pairSub">Ошибка загрузки</div>`;
+      }
+    }
+
+function fmtPct(v){
       const n = Number(v) || 0;
       return `${n}%`;
     }
@@ -1109,6 +1337,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
         const bestText = (bestPairId ? `${DUEL_LABEL} #${bestPairId} — ${bestPercent}%` : "—");
 
         const statsHtml = `
+          ${isAdminClient() ? '<div class="modalActions"><button class="shareBtn wideBtn" id="openAdminBtn" type="button">Админ</button></div>' : ''}
           <div class="statGrid">
             <div class="statCard">
               <div class="statLabel">Загружено пар</div>
@@ -1169,6 +1398,8 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
         }).join("");
 
         profileBody.innerHTML = statsHtml + (listHtml || `<div class="pairSub">Пока нет загруженных пар</div>`);
+
+        profileBody.querySelector("#openAdminBtn")?.addEventListener("click", openAdmin);
 
         // bind share buttons inside profile
         profileBody.querySelectorAll('[data-share]').forEach(btn=>{
