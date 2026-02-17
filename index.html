@@ -577,7 +577,7 @@
   </div>
 
   <script>
-    const APP_VERSION = "v2.6.0";
+    const APP_VERSION = "v2.6.1";
     const API_BASE = "https://api.lookingreat.ru";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
 
@@ -633,6 +633,16 @@
         .replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
 
+
+    function pluralVotes(n){
+      n = Math.abs(Number(n)) || 0;
+      const mod10 = n % 10;
+      const mod100 = n % 100;
+      if (mod10 === 1 && mod100 !== 11) return "голос";
+      if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return "голоса";
+      return "голосов";
+    }
+
     function sharePair(pairId){
       const shareText = `Сравни ${DUEL_LABEL.toLowerCase()} #${pairId} в LookingGreat`;
       const link = `https://t.me/share/url?url=${encodeURIComponent("https://lookingreat.ru")}&text=${encodeURIComponent(shareText)}`;
@@ -673,7 +683,7 @@
       const base = denom > 0 ? denom : 0;
       const pctL = base ? Math.round((votesLeft / base) * 100) : 0;
       const pctR = base ? (100 - pctL) : 0;
-      const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
+      const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} ${pluralVotes(isFinite(totalVotes) ? totalVotes : 0)}`;
 
       const leftUrl =
         item?.photo_left_url ||
@@ -694,8 +704,8 @@
 
       const subHtml = voted ? "" : `<div class="pairSub">Чтобы выбрать — нажми на фото</div>`;
       const footerText = (voted && (isFinite(totalVotes) ? totalVotes : 0) > 0)
-        ? `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов · ${pctL}% / ${pctR}%`
-        : `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
+        ? `👍 ${isFinite(totalVotes) ? totalVotes : 0} ${pluralVotes(isFinite(totalVotes) ? totalVotes : 0)} · ${pctL}% / ${pctR}%`
+        : `👍 ${isFinite(totalVotes) ? totalVotes : 0} ${pluralVotes(isFinite(totalVotes) ? totalVotes : 0)}`;
 
       return `
         <div class="card" data-pair-id="${escapeHtml(pairNum)}" data-choice="${escapeHtml(choice)}">
@@ -741,14 +751,19 @@
 
     let loading = false;
     let lastScrollTop = 0;
+    let lastFeedSig = "";
 
-    async function loadFeed({ preserveScroll=true } = {}){
+    async function loadFeed({ preserveScroll=true, showLoading=null } = {}){
       if (loading) return;
       loading = true;
 
+      if (showLoading === null) {
+        showLoading = !feedEl.innerHTML.trim();
+      }
+
       if (preserveScroll) lastScrollTop = feedEl.scrollTop;
 
-      feedEl.innerHTML = `
+      if (showLoading) feedEl.innerHTML = `
         <div class="card">
           <div class="cardHead">
             <div>
@@ -805,7 +820,24 @@
           return;
         }
 
+        const sig = items.map(it => {
+          const pid = it?.id ?? it?.pair_id ?? it?.photo_pair_id ?? "";
+          const vL = Number(it?.votes_left ?? it?.left_votes ?? it?.votesLeft ?? 0);
+          const vR = Number(it?.votes_right ?? it?.right_votes ?? it?.votesRight ?? 0);
+          const t  = Number(it?.total_votes ?? it?.votes_total ?? it?.total ?? (vL+vR));
+          const c  = (it?.my_choice || it?.myChoice || getLocalChoice(pid) || "");
+          return `${pid}:${t}:${c}`;
+        }).join("|");
+
+        if (!showLoading && sig === lastFeedSig) {
+          // Ничего не изменилось — не трогаем DOM, чтобы не было дергания
+          loading = false;
+          return;
+        }
+        lastFeedSig = sig;
+
         feedEl.innerHTML = items.map(cardTemplate).join("");
+
         loading = false;
         bindEvents();
 
@@ -832,7 +864,7 @@
             </div>
           </div>
         `;
-        document.getElementById("retryBtn")?.addEventListener("click", ()=>loadFeed({preserveScroll:false}));
+        document.getElementById("retryBtn")?.addEventListener("click", ()=>loadFeed({preserveScroll:false, showLoading:true}));
       }
     }
 
@@ -850,7 +882,7 @@
       const m = v.textContent.match(/(\d+)/);
       const cur = m ? Number(m[1]) : 0;
       const next = Math.max(0, cur + delta);
-      v.textContent = `👍 ${next} голосов`;
+      v.textContent = `👍 ${next} ${pluralVotes(next)}`;
     }
 
     async function vote(pairId, choice, cardEl){
@@ -899,7 +931,7 @@
             const pL = t ? Math.round((vL/t)*100) : 0;
             const pR = t ? (100 - pL) : 0;
             const footer = cardEl.querySelector("[data-votes]");
-            if (footer) footer.textContent = (t > 0) ? `👍 ${t} голосов · ${pL}% / ${pR}%` : `👍 0 голосов`;
+            if (footer) footer.textContent = (t > 0) ? `👍 ${t} ${pluralVotes(t)} · ${pL}% / ${pR}%` : `👍 0 голосов`;
           }
         }catch(e){}
 
@@ -1020,7 +1052,7 @@
           const leftUrl = it?.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(it.photo_left_key)}` : "";
           const rightUrl = it?.photo_right_key ? `${API_BASE}/r2/${encodeURIComponent(it.photo_right_key)}` : "";
 
-          const statLine = (t > 0) ? `👍 ${t} голосов · ${pL}% / ${pR}%` : `👍 0 голосов`;
+          const statLine = (t > 0) ? `👍 ${t} ${pluralVotes(t)} · ${pL}% / ${pR}%` : `👍 0 голосов`;
 
           return `
             <div class="myPair" data-my-id="${escapeHtml(id)}">
@@ -1130,7 +1162,17 @@
 
         setTimeout(()=>{
           closeUploadModal();
-          loadFeed({ preserveScroll:false });
+          loadFeed({ preserveScroll:false, showLoading:true });
+
+    // Автообновление ленты каждые 10 секунд без дергания UI
+    setInterval(()=>{
+      try{
+        const profileOpen = profileOverlay?.classList.contains("open");
+        const uploadOpen = uploadOverlay?.classList.contains("open");
+        if (profileOpen || uploadOpen) return;
+        loadFeed({ preserveScroll:true, showLoading:false });
+      } catch(e){}
+    }, 10000);
         }, 900);
 
       } catch(e){
@@ -1139,7 +1181,17 @@
       }
     });
 
-    loadFeed({ preserveScroll:false });
+    loadFeed({ preserveScroll:false, showLoading:true });
+
+    // Автообновление ленты каждые 10 секунд без дергания UI
+    setInterval(()=>{
+      try{
+        const profileOpen = profileOverlay?.classList.contains("open");
+        const uploadOpen = uploadOverlay?.classList.contains("open");
+        if (profileOpen || uploadOpen) return;
+        loadFeed({ preserveScroll:true, showLoading:false });
+      } catch(e){}
+    }, 10000);
   </script>
 </body>
 </html>
