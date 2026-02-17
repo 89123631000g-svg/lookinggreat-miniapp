@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.9.2";
+    const APP_VERSION = "v2.9.3";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -1562,12 +1562,13 @@ feedEl.addEventListener("scroll", function () {
       feedEl.scrollTop + feedEl.clientHeight >=
       feedEl.scrollHeight - 260;
 
-    if (nearBottom) {
-      loadFeedMore();
-    }
+    if (nearBottom) loadFeedMore();
   } catch (e) {
     console.log("Scroll handler error:", e);
   }
+});
+    if (nearBottom) loadFeedMore();
+  } catch(e){}
 });
 
 
