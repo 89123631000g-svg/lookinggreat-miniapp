@@ -515,6 +515,32 @@
 .reasonBtn.isOn{
   border-color: rgba(0,0,0,.35);
 }
+
+    /* ===== PATCH v2.8.7: Admin modal scroll (no squeezing) ===== */
+    #adminOverlay .modalBody{
+      display: block;              /* вместо grid — чтобы не сжимало */
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      flex: 1;
+      min-height: 0;
+    }
+    #adminBody{ display:block; }
+
+    .pairThumbs{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: rgba(0,0,0,.06);
+    }
+    .pairThumb img{
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      background: #fff;
+      display: block;
+    }
+
 </style>
 </head>
 
@@ -644,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.8.3";
+    const APP_VERSION = "v2.8.7";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -716,14 +742,16 @@
       const link = `https://t.me/share/url?url=${encodeURIComponent("https://lookingreat.ru")}&text=${encodeURIComponent(shareText)}`;
       try { tg?.openTelegramLink?.(link); } catch(e) { window.open(link, "_blank"); }
     }
-	function photoUrlFromKey(key){
- 	 if (!key) return "";
- 	 return `${API_BASE}/r2/${encodeURIComponent(String(key))}`;
-	}
 
-	function silentRefreshTop(){
- 	 refreshFeedTopSilently();
-	}
+    function photoUrlFromKey(key){
+      if (!key) return "";
+      return `${API_BASE}/r2/${encodeURIComponent(String(key))}`;
+    }
+
+    // Admin calls silentRefreshTop(); map to existing refreshFeedTopSilently()
+    function silentRefreshTop(){
+      refreshFeedTopSilently();
+    }
 
     function choiceKey(pairId){ return `LG_VOTE_${tg_id}_${pairId}`; }
     function getLocalChoice(pairId){
@@ -990,7 +1018,7 @@ async function loadFeedMore(){
 
     appendFeed(items);
   } catch(e){
-    // silently ignore; next scroll will retry
+    console.log("AUTO /feed failed:", e);ly ignore; next scroll will retry
   } finally {
     loadingMore = false;
   }
@@ -1002,10 +1030,12 @@ async function refreshFeedTopSilently(){
   try{
     const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
     const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
-    if (profileOpen || uploadOpen) return;
+    const reportOpen  = !!reportOverlay && reportOverlay.style.display !== "none";
+    const adminOpen   = !!adminOverlay && adminOverlay.style.display !== "none";
+    if (profileOpen || uploadOpen || reportOpen || adminOpen) return;
   } catch(e){}
 
-  if (feedEl.scrollTop > 40) return;
+  if (feedEl.scrollTop > 120) return;
 
   try{
     const { items } = await fetchFeedPage(null, FEED_PAGE_SIZE);
@@ -1028,7 +1058,7 @@ async function refreshFeedTopSilently(){
 
     lastTopSig = sig;
   } catch(e){
-    // silent
+    console.log("AUTO /feed failed:", e);
   }
 }
 
@@ -1536,14 +1566,30 @@ feedEl.addEventListener("scroll", () => {
 
     // Автообновление ленты каждые 10 секунд (тихо, без дергания UI)
     // Пауза, если открыт профиль или модалка загрузки
-    setInterval(()=>{
+    // ===== PATCH v2.8.7: robust auto-refresh (visible in logs) =====
+    let __autoTimer = null;
+
+    function startAutoRefresh(){
+      if (__autoTimer) clearInterval(__autoTimer);
+
+      // первый прогон сразу, не ждём 10 секунд
       try{
-        const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
-        const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
-        if (profileOpen || uploadOpen) return;
+        console.log("AUTO start");
         refreshFeedTopSilently();
-      } catch(e){}
-    }, 10000);
-  </script>
+      } catch(e){
+        console.log("AUTO first tick error:", e);
+      }
+
+      __autoTimer = setInterval(()=>{
+        try{
+          refreshFeedTopSilently();
+        } catch(e){
+          console.log("AUTO tick error:", e);
+        }
+      }, 10000);
+    }
+
+    startAutoRefresh();
+</script>
 </body>
 </html>
