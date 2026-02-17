@@ -1017,11 +1017,11 @@ async function loadFeedMore(){
     if (!nextBeforeId) reachedEnd = true;
 
     appendFeed(items);
-  } catch(e){
-    console.log("AUTO /feed failed:", e);ly ignore; next scroll will retry
-  } finally {
-    loadingMore = false;
-  }
+} catch(e){
+  console.log("AUTO /feed failed:", e);
+} finally {
+  loadingMore = false;
+}
 }
 
 async function refreshFeedTopSilently(){
