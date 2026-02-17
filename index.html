@@ -1018,8 +1018,8 @@ async function loadFeedMore(){
     if (!nextBeforeId) reachedEnd = true;
 
     appendFeed(items);
-  } catch(e){
-    console.log("AUTO /feed failed:", e);ly ; next scroll will retry
+  } catch (e) {
+    console.log("AUTO /feed failed:", e);
   } finally {
     loadingMore = false;
   }
