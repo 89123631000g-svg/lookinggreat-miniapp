@@ -104,16 +104,6 @@
     .pairTitle{ font-weight:850; font-size:22px; }
     .pairSub{ margin-top:2px; font-size:13px; color:var(--muted); }
 
-    .caption{
-      padding: 10px 12px 0;
-      background: #fff;
-      color: var(--text);
-      font-weight: 800;
-      font-size: 14px;
-      letter-spacing: .1px;
-    }
-    .caption:empty{ display:none; }
-
     .pairWrap{
       height: var(--pairH);
       position:relative;
@@ -182,40 +172,16 @@
       stroke: #ffffff;
     }
 
-    /* Right stats rail (показываем после голосования) */
-    .statsRail{
-      position:absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      display:none;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 4;
-      pointer-events: none;
-    }
-    .statsRail.show{ display:flex; }
-    .statIco{
-      width: 34px;
-      height: 34px;
-      display:grid;
-      place-items:center;
-      border-radius: 999px;
-      background: rgba(255,255,255,.86);
-      border: 1px solid rgba(0,0,0,.10);
-      box-shadow: 0 10px 22px rgba(15,23,42,.16);
+    /* Caption (подпись пары) */
+    .caption{
+      padding: 10px 12px 0;
+      background: #fff;
       color: var(--text);
-      position: relative;
+      font-weight: 800;
+      font-size: 14px;
+      letter-spacing: .1px;
     }
-    .statIco svg{ width: 18px; height: 18px; display:block; }
-    .statIco .num{
-      position:absolute;
-      bottom: 2px;
-      right: 6px;
-      font-size: 11px;
-      font-weight: 900;
-      color: rgba(15,23,42,.75);
-    }
+    .caption:empty{ display:none; }
 
     .cardFooter{
       display:flex;
@@ -328,7 +294,7 @@
       100%{ background-position: -200% 0; }
     }
 
-    /* ===== MODAL UPLOAD (эталон, не менять стиль) ===== */
+    /* ===== MODAL UPLOAD ===== */
     .modalOverlay{
       position: fixed;
       inset: 0;
@@ -467,6 +433,7 @@
         <input id="fileLeft" type="file" accept="image/*" />
         <input id="fileRight" type="file" accept="image/*" />
 
+        <!-- ✅ Подпись к паре -->
         <input id="pairCaption" class="field" type="text"
                placeholder="Подпись к паре (например: Какой образ лучше?)"
                maxlength="80" />
@@ -481,17 +448,20 @@
   </div>
 
   <script>
-    const APP_VERSION = "v2.4";
-    const API_BASE = "https://api.lookingreat.ru";
-    const DUEL_LABEL = "Батл"; // замену названия делаем только тут
+    // ===== VERSION (меняю при каждом обновлении) =====
+    const APP_VERSION = "v2.3";
 
+    // ===== CONFIG =====
+    const API_BASE = "https://api.lookingreat.ru";
+
+    // ===== TELEGRAM INIT =====
     const tg = window.Telegram?.WebApp;
     try { tg?.ready(); tg?.expand(); tg?.disableVerticalSwipes?.(); } catch(e) {}
 
     function getTgId() {
       const id = tg?.initDataUnsafe?.user?.id;
       if (id) return String(id);
-      return localStorage.getItem("DEV_TG_ID") || "531932411";
+      return localStorage.getItem("DEV_TG_ID") || "531932411"; // DEV fallback
     }
 
     let tg_id = "";
@@ -505,10 +475,14 @@
 
     const feedEl = document.getElementById("feed");
     const toastEl = document.getElementById("toast");
+
+    // Версия в шапке + в консоли
     document.getElementById("ver").textContent = APP_VERSION;
+    console.log("LookingGreat version:", APP_VERSION);
 
     let toastTimer = null;
     function toast(msg){
+      if (!toastEl) return;
       toastEl.textContent = msg;
       toastEl.classList.add("show");
       clearTimeout(toastTimer);
@@ -532,40 +506,15 @@
     }
 
     function escapeHtml(s){
-      return String(s ?? "")
+      return String(s)
         .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
         .replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
 
     function sharePair(pairId){
-      const shareText = `Сравни ${DUEL_LABEL.toLowerCase()} #${pairId} в LookingGreat`;
+      const shareText = `Сравни пару #${pairId} в LookingGreat`;
       const link = `https://t.me/share/url?url=${encodeURIComponent("https://lookingreat.ru")}&text=${encodeURIComponent(shareText)}`;
       try { tg?.openTelegramLink?.(link); } catch(e) { window.open(link, "_blank"); }
-    }
-
-    function choiceKey(pairId){ return `LG_VOTE_${tg_id}_${pairId}`; }
-    function getLocalChoice(pairId){
-      try { return localStorage.getItem(choiceKey(pairId)) || ""; } catch(e) { return ""; }
-    }
-    function setLocalChoice(pairId, choice){
-      try { localStorage.setItem(choiceKey(pairId), choice); } catch(e) {}
-    }
-
-    function heartSvg(){
-      return `
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M12 21s-7.2-4.7-9.6-9C.8 8.6 2.7 5.6 5.8 5c2-.4 4 .3 5.2 1.7C12.2 5.3 14.2 4.6 16.2 5c3.1.6 5 3.6 3.4 7C19.2 16.3 12 21 12 21Z"
-                stroke="rgba(15,23,42,.92)" stroke-width="1.9" stroke-linejoin="round"/>
-        </svg>
-      `;
-    }
-    function statThumbSvg(){
-      return `
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M9.5 10.2V20a2 2 0 0 1-2 2H5.2A2.2 2.2 0 0 1 3 19.8v-7.3a2.2 2.2 0 0 1 2.2-2.2h1.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <path d="M9.5 10.2l4.5-6.5c.6-.9 2-.5 2 .6v5.9h3.3c1.3 0 2.2 1.2 1.9 2.4l-1.3 6.3c-.2 1-1.1 1.7-2.1 1.7H9.5" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-        </svg>
-      `;
     }
 
     function cardTemplate(item){
@@ -583,19 +532,14 @@
 
       const caption = (item?.caption ?? item?.title ?? item?.question ?? "").toString().trim();
 
-      const serverChoice = (item?.my_choice || item?.myChoice || "").toString().trim();
-      const localChoice = getLocalChoice(pairNum);
-      const choice = (serverChoice || localChoice || "").toLowerCase();
-      const voted = choice === "left" || choice === "right";
-
       return `
-        <div class="card" data-pair-id="${escapeHtml(pairNum)}" data-choice="${escapeHtml(choice)}">
+        <div class="card" data-pair-id="${escapeHtml(pairNum)}">
           <div class="cardHead">
             <div>
-              <div class="pairTitle">${escapeHtml(DUEL_LABEL)} #${escapeHtml(pairNum)}</div>
+              <div class="pairTitle">Пара #${escapeHtml(pairNum)}</div>
               <div class="pairSub">Чтобы сделать выбор — нажми на фото</div>
             </div>
-            <div></div>
+            <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(15,23,42,.04);"></div>
           </div>
 
           <div class="caption">${escapeHtml(caption)}</div>
@@ -603,26 +547,29 @@
           <div class="pairWrap">
             <div class="divider"></div>
 
-            <div class="statsRail ${voted ? "show" : ""}">
-              <div class="statIco" title="Голоса">
-                ${statThumbSvg()}
-                <div class="num">${isFinite(totalVotes) ? totalVotes : 0}</div>
-              </div>
-            </div>
-
             <div class="pane" data-choice="left">
               ${leftUrl ? `<img class="img" src="${escapeHtml(leftUrl)}" alt="Фото 1" />` : `<div class="skeleton"></div>`}
-              <div class="heart ${choice==="left" ? "isOn": ""}" data-heart="left" aria-hidden="true">${heartSvg()}</div>
+              <div class="heart" data-heart="left" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 20s-7-4.6-9.5-8.7C.7 8.3 2.4 5.2 5.6 4.5c1.8-.4 3.6.2 4.8 1.4 1.2-1.2 3-1.8 4.8-1.4 3.2.7 4.9 3.8 3.1 6.8C19 15.4 12 20 12 20Z"
+                        stroke="rgba(15,23,42,.90)" stroke-width="1.8" stroke-linejoin="round"/>
+                </svg>
+              </div>
             </div>
 
             <div class="pane" data-choice="right">
               ${rightUrl ? `<img class="img" src="${escapeHtml(rightUrl)}" alt="Фото 2" />` : `<div class="skeleton"></div>`}
-              <div class="heart ${choice==="right" ? "isOn": ""}" data-heart="right" aria-hidden="true">${heartSvg()}</div>
+              <div class="heart" data-heart="right" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 20s-7-4.6-9.5-8.7C.7 8.3 2.4 5.2 5.6 4.5c1.8-.4 3.6.2 4.8 1.4 1.2-1.2 3-1.8 4.8-1.4 3.2.7 4.9 3.8 3.1 6.8C19 15.4 12 20 12 20Z"
+                        stroke="rgba(15,23,42,.90)" stroke-width="1.8" stroke-linejoin="round"/>
+                </svg>
+              </div>
             </div>
           </div>
 
           <div class="cardFooter">
-            <div class="votes" data-votes>${votesText}</div>
+            <div class="votes">${votesText}</div>
             <button class="shareBtn" type="button" aria-label="Поделиться">
               <svg class="shareIco" viewBox="0 0 24 24" fill="none">
                 <path d="M16 8.5l-8 4m8 3.5l-8-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -638,13 +585,10 @@
     }
 
     let loading = false;
-    let lastScrollTop = 0;
 
-    async function loadFeed({ preserveScroll=true } = {}){
+    async function loadFeed(){
       if (loading) return;
       loading = true;
-
-      if (preserveScroll) lastScrollTop = feedEl.scrollTop;
 
       feedEl.innerHTML = `
         <div class="card">
@@ -653,7 +597,7 @@
               <div class="pairTitle">Загрузка…</div>
               <div class="pairSub">Чтобы сделать выбор — нажми на фото</div>
             </div>
-            <div></div>
+            <div style="width:28px;height:28px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(15,23,42,.04);"></div>
           </div>
           <div class="pairWrap">
             <div class="divider"></div>
@@ -682,7 +626,7 @@
             <div class="card">
               <div class="cardHead">
                 <div>
-                  <div class="pairTitle">Пока нет батлов</div>
+                  <div class="pairTitle">Пока нет пар</div>
                   <div class="pairSub">Нажми “+” чтобы загрузить</div>
                 </div>
               </div>
@@ -699,16 +643,12 @@
           `;
           loading = false;
           bindEvents();
-          if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
           return;
         }
 
         feedEl.innerHTML = items.map(cardTemplate).join("");
         loading = false;
         bindEvents();
-
-        if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
-
       } catch(e){
         loading = false;
         feedEl.innerHTML = `
@@ -730,7 +670,7 @@
             </div>
           </div>
         `;
-        document.getElementById("retryBtn")?.addEventListener("click", ()=>loadFeed({preserveScroll:false}));
+        document.getElementById("retryBtn")?.addEventListener("click", loadFeed);
       }
     }
 
@@ -739,71 +679,38 @@
       const hR = cardEl.querySelector('[data-heart="right"]');
       if (hL) hL.classList.toggle("isOn", choice === "left");
       if (hR) hR.classList.toggle("isOn", choice === "right");
-      cardEl.setAttribute("data-choice", choice || "");
-      const rail = cardEl.querySelector(".statsRail");
-      if (rail) rail.classList.toggle("show", choice === "left" || choice === "right");
-    }
-
-    function bumpVotesUI(cardEl, delta){
-      const v = cardEl.querySelector("[data-votes]");
-      if (!v) return;
-      const m = v.textContent.match(/(\d+)/);
-      const cur = m ? Number(m[1]) : 0;
-      const next = Math.max(0, cur + delta);
-      v.textContent = `👍 ${next} голосов`;
-
-      const num = cardEl.querySelector(".statsRail .num");
-      if (num) num.textContent = String(next);
     }
 
     async function vote(pairId, choice, cardEl){
       haptic("light");
-
-      const existing = (cardEl?.getAttribute("data-choice") || "").toLowerCase();
-      if (existing === "left" || existing === "right") {
-        toast("Ты уже проголосовал");
-        return false;
-      }
-
       try{
-        setHeart(cardEl, choice);
-        bumpVotesUI(cardEl, +1);
+        if (cardEl) setHeart(cardEl, choice); // визуально сразу
 
         const body = { tg_id, pair_id: Number(pairId), choice };
         const res = await apiPost(`/vote`, body);
 
         if (!res?.ok){
-          setHeart(cardEl, "");
-          bumpVotesUI(cardEl, -1);
-
           if (res?.error === "cannot_vote_own_pair"){
             toast("Нельзя голосовать за свою пару");
             haptic("error");
+            if (cardEl) setHeart(cardEl, null);
             return false;
           }
-          if (res?.error === "already_voted"){
-            toast("Ты уже голосовал за эту пару");
-            setLocalChoice(pairId, choice);
-            setHeart(cardEl, choice);
-            return false;
-          }
-
           toast("Не удалось проголосовать");
           haptic("error");
+          if (cardEl) setHeart(cardEl, null);
           return false;
         }
 
-        setLocalChoice(pairId, choice);
         toast("Голос учтён");
         haptic("success");
-        await loadFeed({ preserveScroll:true });
+        await loadFeed();
         return true;
 
       } catch(e){
-        setHeart(cardEl, "");
-        bumpVotesUI(cardEl, -1);
         toast("Ошибка сети");
         haptic("error");
+        if (cardEl) setHeart(cardEl, null);
         return false;
       }
     }
@@ -837,12 +744,12 @@
       });
 
       document.getElementById("navProfile")?.addEventListener("click", ()=> {
-        toast("Профиль — следующий шаг");
+        toast("Профиль — в разработке");
         haptic("light");
       });
     }
 
-    // Upload modal logic (эталон)
+    // ===== Upload modal logic (как было — оставляем стиль) =====
     const modalOverlay = document.getElementById("modalOverlay");
     const closeModalBtn = document.getElementById("closeModal");
     const doUploadBtn = document.getElementById("doUpload");
@@ -858,7 +765,9 @@
       uploadStatus.textContent = "";
       modalOverlay.style.display = "flex";
     }
-    function closeUploadModal(){ modalOverlay.style.display = "none"; }
+    function closeUploadModal(){
+      modalOverlay.style.display = "none";
+    }
 
     closeModalBtn.addEventListener("click", closeUploadModal);
     modalOverlay.addEventListener("click", (e)=>{ if (e.target === modalOverlay) closeUploadModal(); });
@@ -891,9 +800,14 @@
         fd.append("tg_id", String(tg_id));
         fd.append("left", f1);
         fd.append("right", f2);
+        // ✅ подпись (если Worker пока не сохраняет — он просто проигнорирует)
         if (caption) fd.append("caption", caption);
 
-        const res = await fetch(API_BASE + "/upload_pair", { method: "POST", body: fd });
+        const res = await fetch(API_BASE + "/upload_pair", {
+          method: "POST",
+          body: fd
+        });
+
         const data = await res.json().catch(()=>({}));
         if (!res.ok || !data?.ok) throw new Error(data?.error || ("HTTP " + res.status));
 
@@ -904,11 +818,12 @@
         fileRight.value = "";
         leftName.textContent = "Файл не выбран";
         rightName.textContent = "Файл не выбран";
-        pairCaptionEl.value = "";
+        if (pairCaptionEl) pairCaptionEl.value = "";
 
+        // ✅ было 300ms — увеличили ~в 3 раза
         setTimeout(()=>{
           closeUploadModal();
-          loadFeed({ preserveScroll:false });
+          loadFeed();
         }, 900);
 
       } catch(e){
@@ -917,7 +832,14 @@
       }
     });
 
-    loadFeed({ preserveScroll:false });
+    // старт
+    loadFeed();
+
+    /*
+      Важно (проверка «что работало»):
+      - Показ ленты без своих пар и защита от двойного голосования/повторного — это серверная логика Worker.
+      - Мы Worker не меняли, значит все эти правила остаются такими же, как работали раньше.
+    */
   </script>
 </body>
 </html>
