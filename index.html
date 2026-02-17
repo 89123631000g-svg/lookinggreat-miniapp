@@ -403,6 +403,66 @@
     }
     .wideBtn{ flex:1; justify-content:center; }
     input[type="file"]{ display:none; }
+  
+    /* ===== PROFILE (v1) ===== */
+    .statGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .statCard{
+      border: 1px solid var(--stroke2);
+      border-radius: 14px;
+      padding: 10px 12px;
+      background:#fff;
+    }
+    .statLabel{ font-size: 12px; color: var(--muted); font-weight: 750; }
+    .statValue{ margin-top: 4px; font-size: 18px; font-weight: 900; letter-spacing: .2px; }
+    .myListTitle{
+      margin-top: 6px;
+      font-weight: 900;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .myPair{
+      border: 1px solid var(--stroke2);
+      border-radius: 14px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .myPairHead{
+      padding: 10px 12px 8px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom: 1px solid var(--stroke2);
+    }
+    .myPairTitle{ font-weight: 900; font-size: 14px; }
+    .myPairStats{ font-size: 12px; color: var(--muted); font-weight: 800; }
+    .myPairGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: rgba(0,0,0,.06);
+    }
+    .myPairGrid img{
+      width:100%;
+      height: 150px;
+      object-fit: cover;
+      background:#fff;
+      display:block;
+    }
+    .myPairFoot{
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-top: 1px solid var(--stroke2);
+    }
+    .miniMute{ font-size: 12px; color: var(--muted); font-weight: 800; }
+
   </style>
 </head>
 
@@ -480,8 +540,22 @@
     </div>
   </div>
 
+  
+  <!-- Profile Modal -->
+  <div class="modalOverlay" id="profileOverlay">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle">Мой профиль</div>
+        <button class="shareBtn" id="closeProfile" type="button">Закрыть</button>
+      </div>
+      <div class="modalBody" id="profileBody">
+        <div class="pairSub">Загрузка…</div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const APP_VERSION = "v2.5.3";
+    const APP_VERSION = "v2.5.4";
     const API_BASE = "https://api.lookingreat.ru";
     const DUEL_LABEL = "Батл"; // замену названия делаем только тут
 
@@ -869,9 +943,122 @@
       });
 
       document.getElementById("navProfile")?.addEventListener("click", ()=> {
-        toast("Профиль — следующий шаг");
-        haptic("light");
+        openProfile();
       });
+    }
+
+
+    // Profile modal logic (v1)
+    const profileOverlay = document.getElementById("profileOverlay");
+    const profileBody = document.getElementById("profileBody");
+    const closeProfileBtn = document.getElementById("closeProfile");
+
+    function openProfile(){
+      profileBody.innerHTML = `<div class="pairSub">Загрузка…</div>`;
+      profileOverlay.style.display = "flex";
+      loadProfile();
+    }
+    function closeProfile(){ profileOverlay.style.display = "none"; }
+
+    closeProfileBtn.addEventListener("click", closeProfile);
+    profileOverlay.addEventListener("click", (e)=>{ if (e.target === profileOverlay) closeProfile(); });
+
+    function fmtPct(v){
+      const n = Number(v) || 0;
+      return `${n}%`;
+    }
+
+    async function loadProfile(){
+      try{
+        refreshTgId();
+        const data = await apiGet(`/my_pairs?tg_id=${encodeURIComponent(tg_id)}`);
+        if (!data?.ok) throw new Error(data?.error || "bad_response");
+
+        const stats = data.stats || {};
+        const items = Array.isArray(data.items) ? data.items : [];
+
+        const pairsCount = Number(stats.pairs_count || 0);
+        const totalVotes = Number(stats.total_votes || 0);
+        const avgPercent = Number(stats.avg_percent || 0);
+        const bestPairId = stats.best_pair_id;
+        const bestPercent = Number(stats.best_percent || 0);
+
+        const bestText = (bestPairId ? `${DUEL_LABEL} #${bestPairId} — ${bestPercent}%` : "—");
+
+        const statsHtml = `
+          <div class="statGrid">
+            <div class="statCard">
+              <div class="statLabel">Загружено пар</div>
+              <div class="statValue">${pairsCount}</div>
+            </div>
+            <div class="statCard">
+              <div class="statLabel">Всего голосов</div>
+              <div class="statValue">${totalVotes}</div>
+            </div>
+            <div class="statCard">
+              <div class="statLabel">Средний результат</div>
+              <div class="statValue">${fmtPct(avgPercent)}</div>
+            </div>
+            <div class="statCard">
+              <div class="statLabel">Лучшая пара</div>
+              <div class="statValue" style="font-size:14px; line-height:1.15">${escapeHtml(bestText)}</div>
+            </div>
+          </div>
+          <div class="myListTitle">Мои пары</div>
+        `;
+
+        const listHtml = items.map((it)=>{
+          const id = it?.id ?? "—";
+          const vL = Number(it?.votes_left || 0);
+          const vR = Number(it?.votes_right || 0);
+          const t = Number(it?.total_votes || (vL+vR) || 0);
+          const pL = Number(it?.pct_left || (t ? Math.round((vL/t)*100) : 0));
+          const pR = Number(it?.pct_right || (t ? (100-pL) : 0));
+          const leftUrl = it?.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(it.photo_left_key)}` : "";
+          const rightUrl = it?.photo_right_key ? `${API_BASE}/r2/${encodeURIComponent(it.photo_right_key)}` : "";
+
+          const statLine = `Л ${vL} · П ${vR} · ${pL}% / ${pR}% · всего ${t}`;
+
+          return `
+            <div class="myPair" data-my-id="${escapeHtml(id)}">
+              <div class="myPairHead">
+                <div class="myPairTitle">${escapeHtml(DUEL_LABEL)} #${escapeHtml(id)}</div>
+                <div class="myPairStats">${escapeHtml(statLine)}</div>
+              </div>
+              <div class="myPairGrid">
+                ${leftUrl ? `<img src="${escapeHtml(leftUrl)}" alt="Фото 1" />` : `<div class="skeleton"></div>`}
+                ${rightUrl ? `<img src="${escapeHtml(rightUrl)}" alt="Фото 2" />` : `<div class="skeleton"></div>`}
+              </div>
+              <div class="myPairFoot">
+                <div class="miniMute">👍 ${t}</div>
+                <button class="shareBtn" type="button" data-share="${escapeHtml(id)}">
+                  <svg class="shareIco" viewBox="0 0 24 24" fill="none">
+                    <path d="M16 8.5l-8 4m8 3.5l-8-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M18.5 9.8a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M18.5 21a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
+                    <path d="M5.5 15.4a2.3 2.3 0 1 0 0-4.6 2.3 2.3 0 0 0 0 4.6Z" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                  Поделиться
+                </button>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        profileBody.innerHTML = statsHtml + (listHtml || `<div class="pairSub">Пока нет загруженных пар</div>`);
+
+        // bind share buttons inside profile
+        profileBody.querySelectorAll('[data-share]').forEach(btn=>{
+          btn.addEventListener('click', (e)=>{
+            e.stopPropagation();
+            const id = btn.getAttribute('data-share') || "";
+            sharePair(id);
+          });
+        });
+
+      }catch(e){
+        profileBody.innerHTML = `<div class="pairSub">Не удалось загрузить профиль. Проверь сеть и повтори.</div>`;
+      }
     }
 
     // Upload modal logic (эталон)
@@ -953,4 +1140,3 @@
   </script>
 </body>
 </html>
-
