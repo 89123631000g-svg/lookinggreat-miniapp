@@ -516,9 +516,9 @@
   border-color: rgba(0,0,0,.35);
 }
 
-    /* ===== PATCH v2.8.7: Admin modal scroll (no squeezing) ===== */
+    /* ===== PATCH v2.8.8: Admin modal scroll (no squeezing) ===== */
     #adminOverlay .modalBody{
-      display: block;              /* вместо grid — чтобы не сжимало */
+      display: block;
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.8.7";
+    const APP_VERSION = "v2.8.8";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -1164,9 +1164,10 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
           const pairId = card?.getAttribute("data-pair-id") || "";
           sharePair(pairId);
         });
-      
+      });
+
       document.querySelectorAll(".card .reportBtn").forEach(btn=>{
-        btn.addEventListener("click", async (e)=>{
+        btn.addEventListener("click", (e)=>{
           e.stopPropagation();
           const card = btn.closest(".card");
           const pairId = btn.getAttribute("data-report") || card?.getAttribute("data-pair-id") || "";
@@ -1174,8 +1175,6 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
           openReport(pairId);
         });
       });
-
-});
 
       document.getElementById("navHome")?.addEventListener("click", ()=> {
         feedEl.scrollTo({ top: 0, behavior: "smooth" });
@@ -1566,7 +1565,7 @@ feedEl.addEventListener("scroll", () => {
 
     // Автообновление ленты каждые 10 секунд (тихо, без дергания UI)
     // Пауза, если открыт профиль или модалка загрузки
-    // ===== PATCH v2.8.7: robust auto-refresh (visible in logs) =====
+    // ===== PATCH v2.8.8: robust auto-refresh (visible in logs) =====
     let __autoTimer = null;
 
     function startAutoRefresh(){
