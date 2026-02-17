@@ -481,7 +481,7 @@
   </div>
 
   <script>
-    const APP_VERSION = "v2.4";
+    const APP_VERSION = "v2.5";
     const API_BASE = "https://api.lookingreat.ru";
     const DUEL_LABEL = "Батл"; // замену названия делаем только тут
 
@@ -571,6 +571,12 @@
     function cardTemplate(item){
       const pairNum = item?.id ?? "—";
       const totalVotes = Number(item?.total_votes ?? item?.votes_total ?? item?.votes ?? 0);
+      const votesLeft = Number(item?.votes_left ?? item?.left_votes ?? 0);
+      const votesRight = Number(item?.votes_right ?? item?.right_votes ?? 0);
+      const denom = (Number.isFinite(totalVotes) && totalVotes > 0) ? totalVotes : (votesLeft + votesRight);
+      const base = denom > 0 ? denom : 0;
+      const pctL = base ? Math.round((votesLeft / base) * 100) : 0;
+      const pctR = base ? (100 - pctL) : 0;
       const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
 
       const leftUrl =
@@ -603,10 +609,19 @@
           <div class="pairWrap">
             <div class="divider"></div>
 
+            
             <div class="statsRail ${voted ? "show" : ""}">
-              <div class="statIco" title="Голоса">
-                ${statThumbSvg()}
-                <div class="num">${isFinite(totalVotes) ? totalVotes : 0}</div>
+              <div class="statIco" title="Левое фото">
+                <div style="font-weight:900;font-size:11px;opacity:.75">Л</div>
+                <div class="num" data-stat="left">${isFinite(votesLeft) ? votesLeft : 0}</div>
+              </div>
+              <div class="statIco" title="Правое фото">
+                <div style="font-weight:900;font-size:11px;opacity:.75">П</div>
+                <div class="num" data-stat="right">${isFinite(votesRight) ? votesRight : 0}</div>
+              </div>
+              <div class="statIco" title="Проценты">
+                <div style="font-weight:900;font-size:11px;opacity:.75">${pctL}%</div>
+                <div style="font-weight:900;font-size:11px;opacity:.75">${pctR}%</div>
               </div>
             </div>
 
@@ -744,7 +759,7 @@
       if (rail) rail.classList.toggle("show", choice === "left" || choice === "right");
     }
 
-    function bumpVotesUI(cardEl, delta){
+    function bumpVotesUI(cardEl, delta, choice){
       const v = cardEl.querySelector("[data-votes]");
       if (!v) return;
       const m = v.textContent.match(/(\d+)/);
@@ -752,8 +767,11 @@
       const next = Math.max(0, cur + delta);
       v.textContent = `👍 ${next} голосов`;
 
-      const num = cardEl.querySelector(".statsRail .num");
-      if (num) num.textContent = String(next);
+      // total in rail not shown; we update per-side if present
+      const nL = cardEl.querySelector('.statsRail [data-stat="left"]');
+      const nR = cardEl.querySelector('.statsRail [data-stat="right"]');
+      if (choice === 'left' && nL){ nL.textContent = String(Number(nL.textContent||0) + delta); }
+      if (choice === 'right' && nR){ nR.textContent = String(Number(nR.textContent||0) + delta); }
     }
 
     async function vote(pairId, choice, cardEl){
@@ -767,14 +785,14 @@
 
       try{
         setHeart(cardEl, choice);
-        bumpVotesUI(cardEl, +1);
+        bumpVotesUI(cardEl, +1, choice);
 
         const body = { tg_id, pair_id: Number(pairId), choice };
         const res = await apiPost(`/vote`, body);
 
         if (!res?.ok){
           setHeart(cardEl, "");
-          bumpVotesUI(cardEl, -1);
+          bumpVotesUI(cardEl, -1, choice);
 
           if (res?.error === "cannot_vote_own_pair"){
             toast("Нельзя голосовать за свою пару");
@@ -793,6 +811,21 @@
           return false;
         }
 
+        // если сервер вернул статистику — обновим блок справа и футер точными значениями
+        try{
+          if (cardEl && typeof res.votes_left !== 'undefined' && typeof res.votes_right !== 'undefined'){
+            const vL = Number(res.votes_left||0);
+            const vR = Number(res.votes_right||0);
+            const t = Number(res.total_votes|| (vL+vR) || 0);
+            const footer = cardEl.querySelector('[data-votes]');
+            if (footer) footer.textContent = `👍 ${t} голосов`;
+            const nL = cardEl.querySelector('.statsRail [data-stat="left"]');
+            const nR = cardEl.querySelector('.statsRail [data-stat="right"]');
+            if (nL) nL.textContent = String(vL);
+            if (nR) nR.textContent = String(vR);
+          }
+        }catch(e){}
+
         setLocalChoice(pairId, choice);
         toast("Голос учтён");
         haptic("success");
@@ -801,7 +834,7 @@
 
       } catch(e){
         setHeart(cardEl, "");
-        bumpVotesUI(cardEl, -1);
+        bumpVotesUI(cardEl, -1, choice);
         toast("Ошибка сети");
         haptic("error");
         return false;
