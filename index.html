@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.8.8";
+    const APP_VERSION = "v2.8.9";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -709,7 +709,7 @@
     }
 
     async function apiGet(path){
-      const res = await fetch(API_BASE + path, { method:"GET" });
+      const res = await fetch(API_BASE + path, { method:"GET", cache:"no-store" });
       return res.json();
     }
     async function apiPost(path, body){
@@ -1017,11 +1017,11 @@ async function loadFeedMore(){
     if (!nextBeforeId) reachedEnd = true;
 
     appendFeed(items);
-} catch(e){
-  console.log("AUTO /feed failed:", e);
-} finally {
-  loadingMore = false;
-}
+  } catch(e){
+    console.log("AUTO /feed failed:", e);ly ignore; next scroll will retry
+  } finally {
+    loadingMore = false;
+  }
 }
 
 async function refreshFeedTopSilently(){
@@ -1565,13 +1565,15 @@ feedEl.addEventListener("scroll", () => {
 
     // Автообновление ленты каждые 10 секунд (тихо, без дергания UI)
     // Пауза, если открыт профиль или модалка загрузки
-    // ===== PATCH v2.8.8: robust auto-refresh (visible in logs) =====
-    let __autoTimer = null;
+    // ===== PATCH v2.8.9: robust auto-refresh (debuggable) =====
+    // Важно: иногда WebView/браузер может агрессивно кэшировать/троттлить таймеры.
+    // Поэтому: cache:no-store в apiGet + явный лог каждого тика.
+    window.__autoTimer = null;
 
     function startAutoRefresh(){
-      if (__autoTimer) clearInterval(__autoTimer);
+      if (window.__autoTimer) clearInterval(window.__autoTimer);
 
-      // первый прогон сразу, не ждём 10 секунд
+      // первый прогон сразу
       try{
         console.log("AUTO start");
         refreshFeedTopSilently();
@@ -1579,8 +1581,9 @@ feedEl.addEventListener("scroll", () => {
         console.log("AUTO first tick error:", e);
       }
 
-      __autoTimer = setInterval(()=>{
+      window.__autoTimer = setInterval(()=>{
         try{
+          console.log("AUTO tick", Date.now());
           refreshFeedTopSilently();
         } catch(e){
           console.log("AUTO tick error:", e);
