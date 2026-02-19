@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.9.3";
+    const APP_VERSION = "v2.9.4";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -694,6 +694,37 @@
     }
 
     const feedEl = document.getElementById("feed");
+let feedDelegationBound = false;
+function ensureFeedDelegation() {
+  if (feedDelegationBound) return;
+  feedDelegationBound = true;
+
+  feedEl.addEventListener("click", async (e) => {
+    const pane = e.target.closest(".pane");
+    if (pane && pane.closest(".card")) {
+      const card = pane.closest(".card");
+      const pairId = card?.dataset?.pairId;
+      const side = pane?.dataset?.side;
+      if (pairId && (side === "left" || side === "right")) {
+        e.preventDefault();
+        await vote(pairId, side);
+        return;
+      }
+    }
+
+    const shareBtn = e.target.closest(".shareBtn");
+    if (shareBtn && shareBtn.closest(".card")) {
+      const card = shareBtn.closest(".card");
+      const pairId = card?.dataset?.pairId;
+      if (pairId) {
+        e.preventDefault();
+        await sharePair(pairId);
+        return;
+      }
+    }
+  }, { passive: false });
+}
+
     const toastEl = document.getElementById("toast");
     document.getElementById("ver").textContent = APP_VERSION;
 
@@ -1018,8 +1049,8 @@ async function loadFeedMore(){
     if (!nextBeforeId) reachedEnd = true;
 
     appendFeed(items);
-  } catch (e) {
-    console.log("AUTO /feed failed:", e);
+  } catch(e){
+    console.log("AUTO /feed failed:", e); // next scroll will retry
   } finally {
     loadingMore = false;
   }
@@ -1555,10 +1586,13 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
 
     loadFeed({ preserveScroll:false, showLoading:true });
 
-// Infinite scroll: load next page when close to bottom
-feedEl.addEventListener("scroll", () => {
-  try{
-    const nearBottom = (feedEl.scrollTop + feedEl.clientHeight) >= (feedEl.scrollHeight - 260);
+// Infinite scroll
+feedEl.addEventListener("scroll", function () {
+  try {
+    const nearBottom =
+      feedEl.scrollTop + feedEl.clientHeight >=
+      feedEl.scrollHeight - 260;
+
     if (nearBottom) loadFeedMore();
   } catch (e) {
     console.log("Scroll handler error:", e);
@@ -1573,25 +1607,29 @@ feedEl.addEventListener("scroll", () => {
     // Поэтому: cache:no-store в apiGet + явный лог каждого тика.
     window.__autoTimer = null;
 
-    function startAutoRefresh(){
+    function startAutoRefresh() {
       if (window.__autoTimer) clearInterval(window.__autoTimer);
 
       // первый прогон сразу
-      try{
-        console.log("AUTO start");
+      try {
         refreshFeedTopSilently();
-      } catch(e){
-        console.log("AUTO first tick error:", e);
-      }
+      } catch (e) {}
 
-      window.__autoTimer = setInterval(()=>{
-        try{
-          console.log("AUTO tick", Date.now());
+      window.__autoTimer = setInterval(() => {
+        try {
+          // не мешаем пользователю, когда он свернул вкладку или открыт любой оверлей
+          if (document.hidden) return;
+          if (document.querySelector(".modal.open, .sheet.open, .overlay.open")) return;
+
+          // делаем автоподтяжку только когда пользователь наверху ленты
+          if (feedEl.scrollTop > 120) return;
+
+          if (window.DEBUG_AUTO) console.log("AUTO tick", Date.now());
           refreshFeedTopSilently();
-        } catch(e){
-          console.log("AUTO tick error:", e);
+        } catch (e) {
+          if (window.DEBUG_AUTO) console.log("AUTO error", e);
         }
-      }, 10000);
+      }, 2500);
     }
 
     startAutoRefresh();
