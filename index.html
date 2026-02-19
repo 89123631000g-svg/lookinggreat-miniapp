@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.9.4";
+    const APP_VERSION = "v2.9.5";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -1059,12 +1059,9 @@ async function loadFeedMore(){
 async function refreshFeedTopSilently(){
   // Обновляем верх тихо и без дергания: только когда пользователь наверху,
   // и когда не открыты модалки (профиль/загрузка).
-  try{
-    const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
-    const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
-    const reportOpen  = !!reportOverlay && reportOverlay.style.display !== "none";
-    const adminOpen   = !!adminOverlay && adminOverlay.style.display !== "none";
-    if (profileOpen || uploadOpen || reportOpen || adminOpen) return;
+    try{
+    const isOpen = (el) => !!el && getComputedStyle(el).display !== "none";
+    if (isOpen(profileOverlay) || isOpen(modalOverlay) || isOpen(reportOverlay) || isOpen(adminOverlay)) return;
   } catch(e){}
 
   if (feedEl.scrollTop > 120) return;
@@ -1619,7 +1616,9 @@ feedEl.addEventListener("scroll", function () {
         try {
           // не мешаем пользователю, когда он свернул вкладку или открыт любой оверлей
           if (document.hidden) return;
-          if (document.querySelector(".modal.open, .sheet.open, .overlay.open")) return;
+          const isOpen = (el) => !!el && getComputedStyle(el).display !== "none";
+		if (isOpen(profileOverlay) || isOpen(modalOverlay) || isOpen(reportOverlay) || isOpen(adminOverlay)) return;
+
 
           // делаем автоподтяжку только когда пользователь наверху ленты
           if (feedEl.scrollTop > 120) return;
