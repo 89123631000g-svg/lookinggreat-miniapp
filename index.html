@@ -541,6 +541,51 @@
       display: block;
     }
 
+
+    /* ===== PATCH v2.10.3: Voter progress (local) ===== */
+    .progressBar{
+      padding: 10px 14px 8px;
+      border-bottom: 1px solid var(--stroke2);
+      background: var(--bg);
+      flex: 0 0 auto;
+    }
+    .pbRow{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .pbMain{
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .1px;
+      color: var(--text);
+    }
+    .pbSub{
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+    .pbPill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(15,23,42,.03);
+      color: var(--text);
+      font-weight: 900;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .pbPill b{ font-weight: 950; }
+
 </style>
 </head>
 
@@ -555,15 +600,7 @@
     </div>
 
 
-    <div class="voterPanel" id="voterPanel">
-      <div class="row">
-        <div>Ты оценил: <b id="vpVotes">0</b> пар</div>
-        <div class="sep">·</div>
-        <div>Уровень: <b id="vpLevel">Новичок</b></div>
-      </div>
-      <div class="small" id="vpNext">До уровня “<span id="vpNextName">Судья</span>” осталось <b id="vpLeft">10</b></div>
-      <div class="small" id="vpTaste" style="display:none;">Твой вкус совпадает с большинством на <b id="vpTastePct">0</b>%</div>
-    </div>
+    <div id="progressBar" class="progressBar"></div>
 
 
     <div id="feed" class="feed"></div>
@@ -749,7 +786,9 @@ function ensureFeedDelegation() {
 }
 
     const toastEl = document.getElementById("toast");
-    document.getElementById("ver").textContent = APP_VERSION;
+    const progressBarEl = document.getElementById("progressBar");
+document.getElementById("ver").textContent = APP_VERSION;
+    renderProgressBar();
 
     let toastTimer = null;
     function toast(msg){
@@ -760,6 +799,89 @@ function ensureFeedDelegation() {
     }
     function haptic(type="light"){
       try { tg?.HapticFeedback?.impactOccurred?.(type); } catch(e) {}
+    }
+
+    // ===== PATCH v2.10.3: Voter progress (localStorage, no backend) =====
+    const LS_KEYS = {
+      total: "LG_VOTER_TOTAL",
+      matches: "LG_TASTE_MATCHES",
+      considered: "LG_TASTE_CONSIDERED",
+      shown10: "LG_BADGE_10",
+      shown25: "LG_BADGE_25",
+      shown50: "LG_BADGE_50"
+    };
+
+    function lsNum(k){
+      try { return Number(localStorage.getItem(k) || 0) || 0; } catch(e){ return 0; }
+    }
+    function lsSet(k,v){
+      try { localStorage.setItem(k, String(v)); } catch(e){}
+    }
+    function voterLevel(total){
+      const t = Number(total)||0;
+      if (t >= 200) return { name:"Гуру вкуса", nextName:null, nextAt:null };
+      if (t >= 50)  return { name:"Эксперт", nextName:"Гуру вкуса", nextAt:200 };
+      if (t >= 10)  return { name:"Судья", nextName:"Эксперт", nextAt:50 };
+      return { name:"Новичок", nextName:"Судья", nextAt:10 };
+    }
+    function tastePercent(){
+      const considered = lsNum(LS_KEYS.considered);
+      const matches = lsNum(LS_KEYS.matches);
+      if (considered <= 0) return 0;
+      return Math.round((matches / considered) * 100);
+    }
+function renderProgressBar(){
+      if (!progressBarEl) return;
+
+      const total = lsNum(LS_KEYS.total);
+      const lvl = voterLevel(total);
+
+      const leftToNext = (lvl.nextAt != null) ? Math.max(0, lvl.nextAt - total) : 0;
+
+      const tasteShown = total >= 10;
+      const pct = tastePercent();
+
+      progressBarEl.innerHTML = `
+        <div class="pbRow">
+          <div class="pbMain">Ты оценил: <b>${total}</b> пар</div>
+          <div class="pbPill">Уровень: <b>${lvl.name}</b></div>
+        </div>
+        <div class="pbSub">
+          ${lvl.nextAt != null ? `<span>До уровня “${lvl.nextName}” осталось <b>${leftToNext}</b></span>` : `<span>Ты на максимальном уровне</span>`}
+          ${tasteShown ? `<span>Твой вкус совпадает с большинством на <b>${pct}%</b></span>` : `<span>Совпадение с большинством появится после <b>10</b> голосов</span>`}
+        </div>
+      `;
+    }
+
+    function maybeAchievementToast(total){
+      // показываем каждый порог один раз
+      if (total === 10 && !lsNum(LS_KEYS.shown10)){ lsSet(LS_KEYS.shown10, 1); setTimeout(()=>toast("🔥 Ты уже оценил 10 пар"), 250); }
+      if (total === 25 && !lsNum(LS_KEYS.shown25)){ lsSet(LS_KEYS.shown25, 1); setTimeout(()=>toast("🔥 25 оценок — отличный темп"), 250); }
+      if (total === 50 && !lsNum(LS_KEYS.shown50)){ lsSet(LS_KEYS.shown50, 1); setTimeout(()=>toast("🏆 50 оценок — уровень “Эксперт” близко"), 250); }
+    }
+
+    function applyVoteProgress(res, userChoice){
+      // total votes counter
+      const total = lsNum(LS_KEYS.total) + 1;
+      lsSet(LS_KEYS.total, total);
+
+      // taste matching: only if server returned stats and no tie
+      try{
+        const vL = Number(res?.votes_left);
+        const vR = Number(res?.votes_right);
+        if (Number.isFinite(vL) && Number.isFinite(vR) && (vL !== vR)){
+          const majority = (vL > vR) ? "left" : "right";
+          const considered = lsNum(LS_KEYS.considered) + 1;
+          lsSet(LS_KEYS.considered, considered);
+          if (String(userChoice) === majority){
+            const matches = lsNum(LS_KEYS.matches) + 1;
+            lsSet(LS_KEYS.matches, matches);
+          }
+        }
+      } catch(e){}
+
+      renderProgressBar();
+      maybeAchievementToast(total);
     }
 
     async function apiGet(path){
@@ -790,122 +912,6 @@ function ensureFeedDelegation() {
       if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return "голоса";
       return "голосов";
     }
-
-
-    // ---------- Voter progress (localStorage, MVP) ----------
-    const VP_KEYS = {
-      votesDone: "lg_votes_done_v1",
-      tasteMatches: "lg_taste_matches_v1",
-      tasteConsidered: "lg_taste_considered_v1",
-      milestonesShown: "lg_milestones_shown_v1"
-    };
-
-    function vpGetInt(k){
-      const v = Number(localStorage.getItem(k));
-      return Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0;
-    }
-    function vpSetInt(k, n){
-      const v = Math.max(0, Math.floor(Number(n) || 0));
-      localStorage.setItem(k, String(v));
-      return v;
-    }
-    function vpGetShown(){
-      try{
-        const raw = localStorage.getItem(VP_KEYS.milestonesShown);
-        const arr = raw ? JSON.parse(raw) : [];
-        return Array.isArray(arr) ? arr.map(Number).filter(Number.isFinite) : [];
-      }catch(e){ return []; }
-    }
-    function vpMarkShown(m){
-      const mm = Number(m);
-      const arr = vpGetShown();
-      if (!arr.includes(mm)) arr.push(mm);
-      localStorage.setItem(VP_KEYS.milestonesShown, JSON.stringify(arr));
-    }
-
-    function vpLevelByVotes(v){
-      if (v >= 200) return { name: "Гуру вкуса", nextName: null, nextAt: null };
-      if (v >= 50)  return { name: "Эксперт", nextName: "Гуру вкуса", nextAt: 200 };
-      if (v >= 10)  return { name: "Судья", nextName: "Эксперт", nextAt: 50 };
-      return { name: "Новичок", nextName: "Судья", nextAt: 10 };
-    }
-
-    function renderVoterPanel(){
-      const votes = vpGetInt(VP_KEYS.votesDone);
-      const matches = vpGetInt(VP_KEYS.tasteMatches);
-      const considered = vpGetInt(VP_KEYS.tasteConsidered);
-
-      const elVotes = document.getElementById("vpVotes");
-      const elLevel = document.getElementById("vpLevel");
-      const elNext = document.getElementById("vpNext");
-      const elNextName = document.getElementById("vpNextName");
-      const elLeft = document.getElementById("vpLeft");
-
-      const elTaste = document.getElementById("vpTaste");
-      const elTastePct = document.getElementById("vpTastePct");
-
-      if (elVotes) elVotes.textContent = String(votes);
-
-      const lvl = vpLevelByVotes(votes);
-      if (elLevel) elLevel.textContent = lvl.name;
-
-      if (elNext && elNextName && elLeft){
-        if (lvl.nextAt == null){
-          elNext.style.display = "none";
-        } else {
-          elNext.style.display = "";
-          elNextName.textContent = lvl.nextName;
-          elLeft.textContent = String(Math.max(0, lvl.nextAt - votes));
-        }
-      }
-
-      if (elTaste && elTastePct){
-        if (votes >= 10 && considered > 0){
-          const pct = Math.round((matches / considered) * 100);
-          elTastePct.textContent = String(pct);
-          elTaste.style.display = "";
-        } else {
-          elTaste.style.display = "none";
-        }
-      }
-    }
-
-    function vpMaybeMilestone(votes){
-      const shown = vpGetShown();
-      const list = [
-        { at: 10, text: "🔥 Ты уже оценил 10 пар" },
-        { at: 25, text: "🔥 25 оценок — отличный темп" },
-        { at: 50, text: "🏆 50 оценок — уровень “Эксперт” близко" }
-      ];
-      for (const m of list){
-        if (votes === m.at && !shown.includes(m.at)){
-          toast(m.text);
-          vpMarkShown(m.at);
-          break;
-        }
-      }
-    }
-
-    function vpAfterVote(choice, vL, vR){
-      const votes = vpSetInt(VP_KEYS.votesDone, vpGetInt(VP_KEYS.votesDone) + 1);
-
-      const left = Number(vL || 0);
-      const right = Number(vR || 0);
-      if (Number.isFinite(left) && Number.isFinite(right) && left !== right){
-        const maj = left > right ? "left" : "right";
-        vpSetInt(VP_KEYS.tasteConsidered, vpGetInt(VP_KEYS.tasteConsidered) + 1);
-        if (choice === maj){
-          vpSetInt(VP_KEYS.tasteMatches, vpGetInt(VP_KEYS.tasteMatches) + 1);
-        }
-      }
-
-      renderVoterPanel();
-      vpMaybeMilestone(votes);
-    }
-
-    // initial render
-    try{ renderVoterPanel(); }catch(e){}
-
 
     function sharePair(pairId){
       const shareText = `Сравни ${DUEL_LABEL.toLowerCase()} #${pairId} в LookingGreat`;
@@ -1251,6 +1257,9 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
     }
 
     async function vote(pairId, choice, cardEl){
+      if (!cardEl) {
+        try { cardEl = document.querySelector('.card[data-pair-id="' + String(pairId) + '"]'); } catch(e) {}
+      }
       haptic("light");
 
       const existing = (cardEl?.getAttribute("data-choice") || "").toLowerCase();
@@ -1301,7 +1310,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
         }catch(e){}
 
         setLocalChoice(pairId, choice);
-        try{ vpAfterVote(choice, Number(res?.votes_left||0), Number(res?.votes_right||0)); }catch(e){}
+        applyVoteProgress(res, choice);
         toast("Голос учтён");
         haptic("success");
         return true;
