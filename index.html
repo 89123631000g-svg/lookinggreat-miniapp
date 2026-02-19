@@ -670,8 +670,19 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.10.1";
+    const APP_VERSION = "v2.10.2";
     const API_BASE = "https://api.lookingreat.ru";
+
+    function tgInitData(){
+      try { return (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) ? String(Telegram.WebApp.initData) : ""; } catch(e){ return ""; }
+    }
+    function authHeaders(extra){
+      const h = Object.assign({}, extra || {});
+      const initData = tgInitData();
+      if (initData) h["X-TG-INITDATA"] = initData;
+      return h;
+    }
+
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
 
@@ -740,13 +751,13 @@ function ensureFeedDelegation() {
     }
 
     async function apiGet(path){
-      const res = await fetch(API_BASE + path, { method:"GET", cache:"no-store" });
+      const res = await fetch(API_BASE + path, { method:"GET", cache:"no-store", headers: authHeaders() });
       return res.json();
     }
     async function apiPost(path, body){
       const res = await fetch(API_BASE + path, {
         method:"POST",
-        headers: { "Content-Type":"application/json" },
+        headers: authHeaders({ "Content-Type":"application/json" }),
         body: JSON.stringify(body)
       });
       return res.json();
@@ -1623,7 +1634,7 @@ doUploadBtn.addEventListener("click", async ()=>{
         fd.append("right", c2);
         if (caption) fd.append("caption", caption);
 
-        const res = await fetch(API_BASE + "/upload_pair", { method: "POST", body: fd });
+        const res = await fetch(API_BASE + "/upload_pair", { method: "POST", headers: authHeaders(), body: fd });
         const data = await res.json().catch(()=>({}));
         if (!res.ok || !data?.ok){
           const err = String(data?.error || ("HTTP " + res.status));
