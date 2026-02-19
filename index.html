@@ -25,7 +25,6 @@ html,body{
   --line: rgba(0,0,0,.08);
   --shadow: 0 10px 26px rgba(0,0,0,.06);
   --radius: 18px;
-  --pad: 12px;
   --safe-b: env(safe-area-inset-bottom);
   --safe-t: env(safe-area-inset-top);
 }
@@ -46,17 +45,8 @@ html,body{
   border-bottom: 1px solid var(--line);
   background: var(--bg);
 }
-.headerTitle{
-  font-weight: 700;
-  font-size: 16px;
-  line-height: 20px;
-  margin:0;
-}
-.headerSub{
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 16px;
-}
+.headerTitle{ font-weight: 700; font-size: 16px; line-height: 20px; margin:0; }
+.headerSub{ font-size: 12px; color: var(--muted); line-height: 16px; }
 
 .main{
   flex:1;
@@ -107,17 +97,8 @@ html,body{
   padding: 10px 12px;
   border-bottom: 1px solid var(--line);
 }
-.cardTitle{
-  font-weight: 650;
-  font-size: 14px;
-  line-height: 18px;
-  color: var(--text);
-}
-.cardMeta{
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--muted);
-}
+.cardTitle{ font-weight: 650; font-size: 14px; line-height: 18px; color: var(--text); }
+.cardMeta{ font-size: 12px; line-height: 16px; color: var(--muted); }
 
 .photos{
   display:grid;
@@ -133,22 +114,14 @@ html,body{
   overflow:hidden;
   background:#f2f4f7;
 }
-.photo::before{
-  content:"";
-  display:block;
-  padding-top: 125%;
-}
+.photo::before{ content:""; display:block; padding-top: 125%; }
 .photo img{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
+  position:absolute; inset:0;
+  width:100%; height:100%;
   object-fit: cover;
 }
 
-.cardBody{
-  padding: 10px 12px 12px;
-}
+.cardBody{ padding: 10px 12px 12px; }
 
 .actions{
   display:flex;
@@ -157,11 +130,7 @@ html,body{
   gap:10px;
 }
 
-.voteGroup{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
+.voteGroup{ display:flex; gap:10px; align-items:center; }
 
 .iconBtn{
   appearance:none;
@@ -176,11 +145,7 @@ html,body{
   user-select:none;
 }
 .iconBtn:active{ transform: translateY(1px); }
-.icon{
-  width: 18px;
-  height: 18px;
-  display:inline-block;
-}
+.icon{ width: 18px; height: 18px; display:inline-block; }
 .iconHeart{ fill:none; stroke:#0f172a; stroke-width:2.2; }
 .iconHeartFilled{ fill:#0f172a; stroke:#0f172a; stroke-width:2.2; }
 .iconShare{ fill:none; stroke:#0f172a; stroke-width:2.0; }
@@ -208,13 +173,9 @@ html,body{
   background: rgba(15,23,42,.08);
   overflow:hidden;
 }
-.bar > div{
-  height:100%;
-  width:50%;
-  background: rgba(15,23,42,.55);
-}
+.bar > div{ height:100%; width:50%; background: rgba(15,23,42,.55); }
 
-/* footer */
+/* footer (ICON BUTTONS — restore) */
 .footer{
   position: fixed;
   left:0; right:0; bottom:0;
@@ -225,22 +186,28 @@ html,body{
 }
 .tabs{
   display:flex;
-  gap:10px;
+  justify-content:space-between;
+  align-items:center;
 }
-.tabBtn{
-  flex:1;
+.tabIcon{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
   border: 1px solid var(--line);
   background:#fff;
-  border-radius: 16px;
-  padding: 12px 12px;
-  font-size: 14px;
-  line-height: 18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   cursor:pointer;
+  user-select:none;
 }
-.tabBtnActive{
+.tabIcon:active{ transform: translateY(1px); }
+.tabIconActive{
   background: rgba(15,23,42,.06);
   border-color: rgba(15,23,42,.16);
 }
+.tabIcon svg{ width:20px; height:20px; }
+.tabIcon path{ stroke:#0f172a; fill:none; stroke-width:2.2; }
 
 /* modal upload (ETHALON DESIGN — do not change) */
 .modalOverlay{
@@ -270,11 +237,7 @@ html,body{
   align-items:center;
   gap:10px;
 }
-.modalTitle{
-  font-weight:700;
-  font-size: 16px;
-  line-height: 20px;
-}
+.modalTitle{ font-weight:700; font-size: 16px; line-height: 20px; }
 .closeBtn{
   border: 1px solid var(--line);
   background:#fff;
@@ -283,20 +246,14 @@ html,body{
   cursor:pointer;
 }
 
-.modalBody{
-  padding: 14px 16px 16px;
-}
-.pickGrid{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px; /* fixed */
-}
+.modalBody{ padding: 14px 16px 16px; }
+.pickGrid{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pickBox{
-  border-radius: 14px; /* fixed */
-  border: 2px dashed rgba(0,0,0,.22); /* fixed */
-  padding: 12px; /* fixed */
-  min-height: 110px; /* fixed */
-  background: rgba(15,23,42,.03); /* fixed */
+  border-radius: 14px;
+  border: 2px dashed rgba(0,0,0,.22);
+  padding: 12px;
+  min-height: 110px;
+  background: rgba(15,23,42,.03);
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -320,17 +277,13 @@ html,body{
   margin-top: 12px;
   width:100%;
   border: 1px solid var(--line);
-  border-radius: 14px; /* fixed */
+  border-radius: 14px;
   padding: 12px 12px;
   font-size: 14px;
   outline:none;
 }
 
-.modalActions{
-  margin-top: 12px;
-  display:flex;
-  gap:10px;
-}
+.modalActions{ margin-top: 12px; display:flex; gap:10px; }
 .shareBtn{
   flex:1;
   border: none;
@@ -343,12 +296,7 @@ html,body{
 }
 .shareBtn:disabled{ opacity:.6; cursor:not-allowed; }
 
-.note{
-  margin-top: 10px;
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--muted);
-}
+.note{ margin-top: 10px; font-size: 12px; line-height: 16px; color: var(--muted); }
 
 /* toast + pulse */
 .lgToast{
@@ -430,14 +378,23 @@ html,body{
       <div class="sectionPad hidden" id="feedEmpty" style="padding-bottom:10px; color:rgba(15,23,42,.65); font-size:13px;">
         Пока нет пар для оценки.
       </div>
+      <div class="sectionPad hidden" id="needTelegram" style="padding-bottom:10px; color:rgba(15,23,42,.65); font-size:13px;">
+        Открой приложение внутри Telegram.
+      </div>
     </div>
   </div>
 
   <div class="footer">
     <div class="tabs">
-      <button class="tabBtn tabBtnActive" id="tabFeed">Лента</button>
-      <button class="tabBtn" id="tabUpload">Загрузить</button>
-      <button class="tabBtn" id="tabProfile">Профиль</button>
+      <button class="tabIcon tabIconActive" id="tabFeed" aria-label="Лента">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-5v-7H10v7H5a1 1 0 0 1-1-1z"/></svg>
+      </button>
+      <button class="tabIcon" id="tabUpload" aria-label="Загрузить">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="tabIcon" id="tabProfile" aria-label="Профиль">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><path d="M12 13a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"/></svg>
+      </button>
     </div>
   </div>
 </div>
@@ -466,13 +423,14 @@ html,body{
         </div>
       </div>
 
-      <input class="caption" id="captionInput" placeholder="Подпись (необязательно)" maxlength="80" />
+      <input class="caption" id="captionInput" placeholder="Что сравниваем? (например: до/после, вариант 1/2)" maxlength="80" />
 
       <div class="modalActions">
         <button class="shareBtn" id="uploadBtn">Загрузить</button>
       </div>
 
-      <div class="note" id="uploadNote">Максимум 20 пар в день · Фото до 8MB</div>
+      <!-- NOTE: do not show limits here; only show when limit/error is reached -->
+      <div class="note hidden" id="uploadNote"></div>
     </div>
   </div>
 </div>
@@ -481,12 +439,16 @@ html,body{
 
 <script>
 /* =========================================================
-   LookingGreat — Index v2.11.2 (full)
-   Changes: progress panel + levels + next-level + taste match + micro achievements
-   No auto-scroll. Worker unchanged.
+   LookingGreat — Index v2.11.3
+   Fixes vs v2.11.2:
+   - Restore icon-only bottom menu (no text)
+   - Do not display limits in upload modal by default
+   - Caption placeholder universal
+   - Guard: do not call API when Telegram initData missing (prevents no_hash/401 spam)
+   - Keep voter mechanics (progress/levels/taste/milestones)
 ========================================================= */
 
-const APP_VERSION = "2.11.2";
+const APP_VERSION = "2.11.3";
 const API_BASE = "https://api.lookingreat.ru";
 
 const el = (id) => document.getElementById(id);
@@ -547,7 +509,6 @@ function lsSetInt(key, n){
   localStorage.setItem(key, String(val));
   return val;
 }
-
 function getShownMilestones(){
   try{
     const raw = localStorage.getItem(LG_LS.shownMilestones);
@@ -561,14 +522,12 @@ function markMilestoneShown(m){
   if(!arr.includes(mm)) arr.push(mm);
   localStorage.setItem(LG_LS.shownMilestones, JSON.stringify(arr));
 }
-
 function calcLevel(votes){
   if (votes >= 200) return { name:"Гуру вкуса", nextName:null, nextAt:null };
   if (votes >= 50)  return { name:"Эксперт", nextName:"Гуру вкуса", nextAt:200 };
   if (votes >= 10)  return { name:"Судья", nextName:"Эксперт", nextAt:50 };
   return { name:"Новичок", nextName:"Судья", nextAt:10 };
 }
-
 function renderProgress(){
   const votes = lsGetInt(LG_LS.votesDone);
   const matches = lsGetInt(LG_LS.tasteMatches);
@@ -579,7 +538,6 @@ function renderProgress(){
   const nextWrap = el("nextLevelWrap");
   const nextNameEl = el("myNextLevelName");
   const nextLeftEl = el("myNextLevelLeft");
-
   const matchWrap = el("matchWrap");
   const matchPctEl = el("myMatchPct");
 
@@ -608,13 +566,11 @@ function renderProgress(){
     }
   }
 }
-
 const MILESTONES = [
   { at: 10, text: "🔥 Ты уже оценил 10 пар" },
   { at: 25, text: "🔥 25 оценок — отличный темп" },
   { at: 50, text: "🏆 50 оценок — уровень “Эксперт” близко" }
 ];
-
 function maybeShowMilestone(votes){
   const shown = getShownMilestones();
   for(const m of MILESTONES){
@@ -625,7 +581,6 @@ function maybeShowMilestone(votes){
     }
   }
 }
-
 function majoritySide(stats){
   if(!stats) return null;
   const left = Number(stats.votes_left ?? 0);
@@ -634,7 +589,6 @@ function majoritySide(stats){
   if(left === right) return null;
   return left > right ? "left" : "right";
 }
-
 function onVoteSuccessEnhancements({choice, stats, sourceEl}){
   const votes = lsSetInt(LG_LS.votesDone, lsGetInt(LG_LS.votesDone) + 1);
 
@@ -645,7 +599,6 @@ function onVoteSuccessEnhancements({choice, stats, sourceEl}){
       lsSetInt(LG_LS.tasteMatches, lsGetInt(LG_LS.tasteMatches) + 1);
     }
   }
-
   renderProgress();
   pulseNear(sourceEl, "+1");
   maybeShowMilestone(votes);
@@ -658,33 +611,42 @@ function initTelegram(){
   if (tg) {
     try { tg.expand(); } catch(e){}
     try { tg.disableVerticalSwipes && tg.disableVerticalSwipes(); } catch(e){}
+    try { tg.ready && tg.ready(); } catch(e){}
     initData = tg.initData || "";
     tgUserId = tg.initDataUnsafe?.user?.id || null;
   }
 
   el("verLabel").textContent = "v" + APP_VERSION;
 
-  if (!tgUserId) {
-    // Outside Telegram (or initData missing). We keep UI, but requests will likely be 401.
-    tgUserId = null;
+  // If initData missing — Worker will return no_hash. Do not call API in this mode.
+  if (!tgUserId || !initData) {
     el("headerSub").textContent = "Открой в Telegram";
   }
 }
 
+function hasTelegramAuth(){
+  return !!(tgUserId && initData);
+}
+
 // ---------- api ----------
 async function apiFetch(path, opts={}){
-  const url = API_BASE + path;
-  const headers = Object.assign({
-    "Accept": "application/json",
-  }, opts.headers || {});
+  if (!hasTelegramAuth()) {
+    const err = new Error("no_hash");
+    err.status = 401;
+    err.data = { ok:false, error:"no_hash", detail:"Открой приложение внутри Telegram" };
+    throw err;
+  }
 
-  // Pass initData if available (server validates)
-  if (initData) headers["x-telegram-init-data"] = initData;
+  const url = API_BASE + path;
+  const headers = Object.assign({ "Accept": "application/json" }, opts.headers || {});
+  headers["x-telegram-init-data"] = initData;
 
   const res = await fetch(url, { ...opts, headers });
   const text = await res.text();
   let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch(e) { data = { ok:false, error:"bad_json", raw:text }; }
+  try { data = text ? JSON.parse(text) : null; }
+  catch(e) { data = { ok:false, error:"bad_json", raw:text }; }
+
   if (!res.ok) {
     const err = new Error(data?.detail || data?.error || ("HTTP " + res.status));
     err.status = res.status;
@@ -695,21 +657,11 @@ async function apiFetch(path, opts={}){
 }
 
 // ---------- feed rendering ----------
-function pluralPairs(n){
-  const x = Math.abs(n) % 100;
-  const y = x % 10;
-  if (x > 10 && x < 20) return "пар";
-  if (y === 1) return "пару";
-  if (y >= 2 && y <= 4) return "пары";
-  return "пар";
-}
-
 function svgHeart(filled=false){
   return filled
     ? `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path class="iconHeartFilled" d="M12 21s-7.2-4.8-9.6-8.9C.7 8.7 2.4 5.4 6 5.1c1.8-.1 3.2.8 4 2 0 0 1.8-2.2 4-2 3.6.3 5.3 3.6 3.6 7C19.2 16.2 12 21 12 21z"/></svg>`
     : `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path class="iconHeart" d="M12 21s-7.2-4.8-9.6-8.9C.7 8.7 2.4 5.4 6 5.1c1.8-.1 3.2.8 4 2 0 0 1.8-2.2 4-2 3.6.3 5.3 3.6 3.6 7C19.2 16.2 12 21 12 21z"/></svg>`;
 }
-
 function svgShare(){
   return `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
     <path class="iconShare" d="M14 9l-4 2m4 4l-4-2"/>
@@ -718,14 +670,12 @@ function svgShare(){
     <path class="iconShare" d="M18 16a2.5 2.5 0 1 0-2.5 2.5A2.5 2.5 0 0 0 18 16z"/>
   </svg>`;
 }
-
 function pct(a,b){
   const t = a+b;
   if(!t) return 0;
   return Math.round((a/t)*100);
 }
-
-function cardHtml(item, idx){
+function cardHtml(item){
   const leftUrl = API_BASE + "/r2/" + item.photo_left_key;
   const rightUrl = API_BASE + "/r2/" + item.photo_right_key;
 
@@ -780,35 +730,39 @@ function cardHtml(item, idx){
     </div>
   </div>`;
 }
-
 function renderFeedAppend(items){
   const list = el("feedList");
   const frag = document.createDocumentFragment();
   const tmp = document.createElement("div");
 
   for(let i=0;i<items.length;i++){
-    tmp.innerHTML = cardHtml(items[i], feedItems.length + i);
+    tmp.innerHTML = cardHtml(items[i]);
     frag.appendChild(tmp.firstElementChild);
   }
   list.appendChild(frag);
 }
-
-function setLoading(on){
-  el("feedLoading").classList.toggle("hidden", !on);
-}
-
-function setEmpty(on){
-  el("feedEmpty").classList.toggle("hidden", !on);
-}
+function setLoading(on){ el("feedLoading").classList.toggle("hidden", !on); }
+function setEmpty(on){ el("feedEmpty").classList.toggle("hidden", !on); }
+function setNeedTelegram(on){ el("needTelegram").classList.toggle("hidden", !on); }
 
 // ---------- feed load ----------
 async function loadFeedMore(){
   if(isLoading) return;
+
+  if (!hasTelegramAuth()){
+    setNeedTelegram(true);
+    setLoading(false);
+    setEmpty(false);
+    return;
+  } else {
+    setNeedTelegram(false);
+  }
+
   isLoading = true;
   setLoading(true);
 
   try{
-    const tg_id = tgUserId ? String(tgUserId) : "";
+    const tg_id = String(tgUserId);
     const data = await apiFetch(`/feed?tg_id=${encodeURIComponent(tg_id)}&limit=${FEED_LIMIT}&offset=${feedOffset}`, { method:"GET" });
 
     const items = Array.isArray(data.items) ? data.items : [];
@@ -825,14 +779,12 @@ async function loadFeedMore(){
     setEmpty(feedItems.length === 0);
   }catch(err){
     console.error("feed error", err);
-    const msg = err?.data?.detail || err?.message || "Ошибка загрузки";
-    toast(msg, 1200);
+    toast(err?.data?.detail || err?.message || "Ошибка загрузки", 1200);
   }finally{
     isLoading = false;
     setLoading(false);
   }
 }
-
 function setupInfiniteScroll(){
   const wrap = el("feedWrap");
   wrap.addEventListener("scroll", () => {
@@ -850,12 +802,11 @@ async function handleVote(btn){
   const choice = btn.getAttribute("data-choice");
   if(!pairId || !choice) return;
 
-  if(!tgUserId){
+  if(!hasTelegramAuth()){
     toast("Открой в Telegram", 1000);
     return;
   }
 
-  // optimistic: disable both buttons to prevent double click
   const voteBtns = card.querySelectorAll(".voteBtn");
   voteBtns.forEach(b=>b.disabled = true);
 
@@ -870,33 +821,28 @@ async function handleVote(btn){
     if(!data || !data.ok){
       const errMsg = data?.detail || data?.error || "Ошибка голосования";
       toast(errMsg, 1100);
-      // re-enable if not accepted
       voteBtns.forEach(b=>b.disabled = false);
       return;
     }
 
-    // Update UI stats
-    const vl = Number(data.votes_left ?? data.left ?? 0);
-    const vr = Number(data.votes_right ?? data.right ?? 0);
+    const vl = Number(data.votes_left ?? 0);
+    const vr = Number(data.votes_right ?? 0);
     const tv = Number(data.total_votes ?? (vl+vr));
 
-    // update numbers on buttons
     const leftBtn = card.querySelector('.voteBtn[data-choice="left"]');
     const rightBtn = card.querySelector('.voteBtn[data-choice="right"]');
+
     if(leftBtn){
-      leftBtn.querySelector("span").textContent = String(vl);
       leftBtn.classList.toggle("voteChosen", choice==="left");
       leftBtn.innerHTML = `${svgHeart(choice==="left")}<span class="iconMuted">${vl}</span>`;
       leftBtn.disabled = true;
     }
     if(rightBtn){
-      rightBtn.querySelector("span").textContent = String(vr);
       rightBtn.classList.toggle("voteChosen", choice==="right");
       rightBtn.innerHTML = `${svgHeart(choice==="right")}<span class="iconMuted">${vr}</span>`;
       rightBtn.disabled = true;
     }
 
-    // update percent text and bar
     const pt = pct(vl, vr);
     const pr = 100 - pt;
     const lPct = card.querySelector(".lPct");
@@ -908,7 +854,6 @@ async function handleVote(btn){
     if(tVotes) tVotes.textContent = String(tv);
     if(barFill) barFill.style.width = pt + "%";
 
-    // persist chosen state locally in memory list
     const idx = feedItems.findIndex(x => String(x.id) === String(pairId));
     if(idx >= 0){
       feedItems[idx].my_choice = choice;
@@ -917,14 +862,11 @@ async function handleVote(btn){
       feedItems[idx].total_votes = tv;
     }
 
-    // Enhancements 1–3 + milestones
     onVoteSuccessEnhancements({ choice, stats: { votes_left: vl, votes_right: vr }, sourceEl: btn });
 
   }catch(err){
     console.error("vote error", err);
-    const msg = err?.data?.detail || err?.message || "Ошибка голосования";
-    toast(msg, 1200);
-    // re-enable on error
+    toast(err?.data?.detail || err?.message || "Ошибка голосования", 1200);
     voteBtns.forEach(b=>b.disabled = false);
   }
 }
@@ -933,12 +875,9 @@ async function handleVote(btn){
 function sharePair(card){
   try{
     const pairId = card.getAttribute("data-pair-id");
-    const shareUrl = "https://t.me/Lookinggreat_bot"; // existing bot entry (can be changed later)
+    const shareUrl = "https://t.me/Lookinggreat_bot";
     const text = `Оцени пару #${pairId} в LookingGreat`;
-    if (tg && tg.shareText) {
-      tg.shareText(text + "\n" + shareUrl);
-      return;
-    }
+
     if (tg && tg.openTelegramLink) {
       tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`);
       return;
@@ -950,13 +889,12 @@ function sharePair(card){
   }
 }
 
-// ---------- profile (minimal, uses /my_pairs) ----------
+// ---------- profile ----------
 async function loadMyPairs(){
-  if(!tgUserId){
+  if(!hasTelegramAuth()){
     toast("Открой в Telegram", 1000);
     return;
   }
-  // Simple: replace feedList with my pairs cards (same renderer)
   isLoading = true;
   setLoading(true);
   try{
@@ -998,7 +936,6 @@ function setThumb(which, file){
 }
 
 async function compressImage(file, maxW=1600, quality=0.86){
-  // front-end compression (simple & safe)
   const blobUrl = URL.createObjectURL(file);
   const img = new Image();
   img.src = blobUrl;
@@ -1024,11 +961,25 @@ async function compressImage(file, maxW=1600, quality=0.86){
   });
 }
 
+function showUploadLimitToast(errData){
+  const code = errData?.error || "";
+  if (code === "daily_limit") {
+    toast("Лимит загрузок на сегодня исчерпан", 1400);
+    return true;
+  }
+  if (code === "file_too_large") {
+    toast("Файл слишком большой (до 8MB)", 1400);
+    return true;
+  }
+  return false;
+}
+
 async function uploadPair(){
-  if(!tgUserId){
+  if(!hasTelegramAuth()){
     toast("Открой в Telegram", 1000);
     return;
   }
+
   const left = el("fileLeft").files?.[0] || null;
   const right = el("fileRight").files?.[0] || null;
   const caption = (el("captionInput").value || "").trim();
@@ -1043,7 +994,6 @@ async function uploadPair(){
   btn.textContent = "Загрузка…";
 
   try{
-    // compress (keeps upload size smaller)
     const cLeft = await compressImage(left);
     const cRight = await compressImage(right);
 
@@ -1056,21 +1006,20 @@ async function uploadPair(){
     const data = await apiFetch("/upload_pair", { method:"POST", body: fd });
 
     if(!data || !data.ok){
-      toast(data?.detail || data?.error || "Ошибка загрузки", 1200);
+      if(!showUploadLimitToast(data)) {
+        toast(data?.detail || data?.error || "Ошибка загрузки", 1200);
+      }
       return;
     }
 
     toast("Загружено", 900);
-    // close with small delay (fixed 900ms per your baseline)
     setTimeout(() => {
       closeUpload();
-      // reset
       el("fileLeft").value = "";
       el("fileRight").value = "";
       el("captionInput").value = "";
       el("thumbLeft").innerHTML = "";
       el("thumbRight").innerHTML = "";
-      // refresh feed (start over)
       if(currentTab === "feed"){
         feedOffset = 0;
         loadFeedMore();
@@ -1079,7 +1028,9 @@ async function uploadPair(){
 
   }catch(err){
     console.error("upload error", err);
-    toast(err?.data?.detail || err?.message || "Ошибка загрузки", 1300);
+    if (!showUploadLimitToast(err?.data)) {
+      toast(err?.data?.detail || err?.message || "Ошибка загрузки", 1300);
+    }
   }finally{
     btn.disabled = false;
     btn.textContent = "Загрузить";
@@ -1089,13 +1040,13 @@ async function uploadPair(){
 // ---------- tabs ----------
 function setTab(tab){
   currentTab = tab;
-  el("tabFeed").classList.toggle("tabBtnActive", tab==="feed");
-  el("tabUpload").classList.toggle("tabBtnActive", tab==="upload");
-  el("tabProfile").classList.toggle("tabBtnActive", tab==="profile");
+
+  el("tabFeed").classList.toggle("tabIconActive", tab==="feed");
+  el("tabUpload").classList.toggle("tabIconActive", tab==="upload");
+  el("tabProfile").classList.toggle("tabIconActive", tab==="profile");
 
   if(tab==="feed"){
     el("headerSub").textContent = "Лента";
-    // keep progress visible
     el("voterStats").classList.remove("hidden");
     feedOffset = 0;
     loadFeedMore();
@@ -1104,9 +1055,6 @@ function setTab(tab){
     el("headerSub").textContent = "Загрузка";
     el("voterStats").classList.add("hidden");
     openUpload();
-    // return to feed visually after opening modal
-    el("tabFeed").classList.add("tabBtnActive");
-    el("tabUpload").classList.remove("tabBtnActive");
   }
   if(tab==="profile"){
     el("headerSub").textContent = "Профиль";
@@ -1140,7 +1088,6 @@ function wireEvents(){
 
   el("uploadBtn").addEventListener("click", uploadPair);
 
-  // delegated click for votes/share
   el("feedList").addEventListener("click", (e) => {
     const voteBtn = e.target.closest && e.target.closest(".voteBtn");
     if(voteBtn) { handleVote(voteBtn); return; }
@@ -1159,7 +1106,7 @@ function boot(){
   setupInfiniteScroll();
   renderProgress(); // init progress panel
 
-  // start feed
+  // start feed only if telegram initData exists
   feedOffset = 0;
   loadFeedMore();
 }
