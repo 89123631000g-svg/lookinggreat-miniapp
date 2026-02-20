@@ -627,7 +627,7 @@
         <button class="shareBtn" id="closeProfile" type="button">Закрыть</button>
       </div>
       <div class="modalBody" id="profileBody">
-        <div class="pairSub">Загрузка…</div>
+        <div class="pairSub">&nbsp;</div>
       </div>
     </div>
   </div>
@@ -664,7 +664,7 @@
         <button class="shareBtn" id="closeAdmin" type="button">Закрыть</button>
       </div>
       <div class="modalBody" id="adminBody">
-        <div class="pairSub">Загрузка…</div>
+        <div class="pairSub">&nbsp;</div>
       </div>
     </div>
   </div>
@@ -934,7 +934,7 @@ function renderFeed(items, { preserveScroll=true, showLoading=null } = {}){
       <div class="card">
         <div class="cardHead">
           <div>
-            <div class="pairTitle">Загрузка…</div>
+            <div class="pairTitle">&nbsp;</div>
             <div class="pairSub">Чтобы выбрать — нажми на фото</div>
           </div>
           <div></div>
@@ -1228,7 +1228,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
     const closeProfileBtn = document.getElementById("closeProfile");
 
     function openProfile(){
-      profileBody.innerHTML = `<div class="pairSub">Загрузка…</div>`;
+      profileBody.innerHTML = `<div class="pairSub">&nbsp;</div>`;
       profileOverlay.style.display = "flex";
       loadProfile();
     }
@@ -1304,7 +1304,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
 
     function openAdmin(){
       if (!isAdminClient()) return;
-      if (adminBody) adminBody.innerHTML = `<div class="pairSub">Загрузка…</div>`;
+      if (adminBody) adminBody.innerHTML = `<div class="pairSub">&nbsp;</div>`;
       if (adminOverlay) adminOverlay.style.display = "flex";
       loadAdminReports();
     }
@@ -1592,7 +1592,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
       }
 
       uploadStatus.style.display = "block";
-      uploadStatus.textContent = "Загрузка…";
+      uploadStatus.textContent = "";
       haptic("light");
 
       try{
@@ -1686,7 +1686,7 @@ feedEl.addEventListener("scroll", function () {
         } catch (e) {
           if (window.DEBUG_AUTO) console.log("AUTO error", e);
         }
-      }, 2500);
+      }, 10000);
     }
 
     startAutoRefresh();
