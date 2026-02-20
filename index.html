@@ -577,7 +577,7 @@
   </div>
 
   <script>
-    const APP_VERSION = "v2.7.1";
+    const APP_VERSION = "v2.6.0";
     const API_BASE = "https://api.lookingreat.ru";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
 
@@ -633,16 +633,6 @@
         .replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
 
-
-    function pluralVotes(n){
-      n = Math.abs(Number(n)) || 0;
-      const mod10 = n % 10;
-      const mod100 = n % 100;
-      if (mod10 === 1 && mod100 !== 11) return "голос";
-      if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return "голоса";
-      return "голосов";
-    }
-
     function sharePair(pairId){
       const shareText = `Сравни ${DUEL_LABEL.toLowerCase()} #${pairId} в LookingGreat`;
       const link = `https://t.me/share/url?url=${encodeURIComponent("https://lookingreat.ru")}&text=${encodeURIComponent(shareText)}`;
@@ -683,7 +673,7 @@
       const base = denom > 0 ? denom : 0;
       const pctL = base ? Math.round((votesLeft / base) * 100) : 0;
       const pctR = base ? (100 - pctL) : 0;
-      const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} ${pluralVotes(isFinite(totalVotes) ? totalVotes : 0)}`;
+      const votesText = `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
 
       const leftUrl =
         item?.photo_left_url ||
@@ -704,8 +694,8 @@
 
       const subHtml = voted ? "" : `<div class="pairSub">Чтобы выбрать — нажми на фото</div>`;
       const footerText = (voted && (isFinite(totalVotes) ? totalVotes : 0) > 0)
-        ? `👍 ${isFinite(totalVotes) ? totalVotes : 0} ${pluralVotes(isFinite(totalVotes) ? totalVotes : 0)} · ${pctL}% / ${pctR}%`
-        : `👍 ${isFinite(totalVotes) ? totalVotes : 0} ${pluralVotes(isFinite(totalVotes) ? totalVotes : 0)}`;
+        ? `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов · ${pctL}% / ${pctR}%`
+        : `👍 ${isFinite(totalVotes) ? totalVotes : 0} голосов`;
 
       return `
         <div class="card" data-pair-id="${escapeHtml(pairNum)}" data-choice="${escapeHtml(choice)}">
@@ -751,210 +741,100 @@
 
     let loading = false;
     let lastScrollTop = 0;
-    let feedItems = [];
-    let nextBeforeId = null;
-    let reachedEnd = false;
-    let loadingMore = false;
-    let lastTopSig = "";
 
-const FEED_PAGE_SIZE = 10;
+    async function loadFeed({ preserveScroll=true } = {}){
+      if (loading) return;
+      loading = true;
 
-async function fetchFeedPage(beforeId=null, limit=FEED_PAGE_SIZE){
-  refreshTgId();
-  const qs = new URLSearchParams({ tg_id: tg_id, limit: String(limit) });
-  if (beforeId) qs.set("before_id", String(beforeId));
-  const data = await apiGet(`/feed?${qs.toString()}`);
+      if (preserveScroll) lastScrollTop = feedEl.scrollTop;
 
-  let items = [];
-  if (data?.ok && Array.isArray(data?.items)) items = data.items;
-  else if (data?.ok && data?.item) items = [data.item];
-  else if (Array.isArray(data)) items = data;
-  else if (data?.item) items = [data.item];
-
-  const next = data?.next_before_id ?? (items.length ? (items[items.length-1]?.id ?? null) : null);
-  return { items, next_before_id: next };
-}
-
-function buildTopSig(items){
-  return items.map(it => {
-    const pid = it?.id ?? it?.pair_id ?? it?.photo_pair_id ?? "";
-    const vL = Number(it?.votes_left ?? it?.left_votes ?? it?.votesLeft ?? 0);
-    const vR = Number(it?.votes_right ?? it?.right_votes ?? it?.votesRight ?? 0);
-    const t  = Number(it?.total_votes ?? it?.votes_total ?? it?.total ?? (vL+vR));
-    const c  = (it?.my_choice || it?.myChoice || getLocalChoice(pid) || "");
-    return `${pid}:${t}:${c}`;
-  }).join("|");
-}
-
-function renderFeed(items, { preserveScroll=true, showLoading=null } = {}){
-  if (showLoading === null) showLoading = !feedEl.innerHTML.trim();
-  if (preserveScroll) lastScrollTop = feedEl.scrollTop;
-
-  if (showLoading) {
-    feedEl.innerHTML = `
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="pairTitle">Загрузка…</div>
-            <div class="pairSub">Чтобы выбрать — нажми на фото</div>
+      feedEl.innerHTML = `
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <div class="pairTitle">Загрузка…</div>
+              <div class="pairSub">Чтобы выбрать — нажми на фото</div>
+            </div>
+            <div></div>
           </div>
-          <div></div>
-        </div>
-        <div class="pairWrap">
-          <div class="divider"></div>
-          <div class="pane"><div class="skeleton"></div></div>
-          <div class="pane"><div class="skeleton"></div></div>
-        </div>
-        <div class="cardFooter">
-          <div class="votes">👍 0 голосов</div>
-          <button class="shareBtn" type="button">Поделиться</button>
-        </div>
-      </div>
-    `;
-  }
-
-  if (!items.length){
-    feedEl.innerHTML = `
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="pairTitle">Пока нет пар</div>
-            <div class="pairSub">Нажми “+” чтобы загрузить</div>
+          <div class="pairWrap">
+            <div class="divider"></div>
+            <div class="pane"><div class="skeleton"></div></div>
+            <div class="pane"><div class="skeleton"></div></div>
+          </div>
+          <div class="cardFooter">
+            <div class="votes">👍 0 голосов</div>
+            <button class="shareBtn" type="button">Поделиться</button>
           </div>
         </div>
-        <div class="pairWrap">
-          <div class="divider"></div>
-          <div class="pane"></div>
-          <div class="pane"></div>
-        </div>
-        <div class="cardFooter">
-          <div class="votes">👍 0 голосов</div>
-          <button class="shareBtn" type="button">Поделиться</button>
-        </div>
-      </div>
-    `;
-    bindEvents();
-    return;
-  }
+      `;
 
-  feedEl.innerHTML = items.map(cardTemplate).join("");
-  bindEvents();
+      try{
+        refreshTgId();
+        const data = await apiGet(`/feed?tg_id=${encodeURIComponent(tg_id)}`);
 
-  if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
-}
+        let items = [];
+        if (data?.ok && Array.isArray(data?.items)) items = data.items;
+        else if (data?.ok && data?.item) items = [data.item];
+        else if (Array.isArray(data)) items = data;
+        else if (data?.item) items = [data.item];
 
-function appendFeed(moreItems){
-  if (!moreItems.length) return;
-  feedEl.insertAdjacentHTML("beforeend", moreItems.map(cardTemplate).join(""));
-  bindEvents();
-}
+        if (!items.length){
+          feedEl.innerHTML = `
+            <div class="card">
+              <div class="cardHead">
+                <div>
+                  <div class="pairTitle">Пока нет пар</div>
+                  <div class="pairSub">Нажми “+” чтобы загрузить</div>
+                </div>
+              </div>
+              <div class="pairWrap">
+                <div class="divider"></div>
+                <div class="pane"></div>
+                <div class="pane"></div>
+              </div>
+              <div class="cardFooter">
+                <div class="votes">👍 0 голосов</div>
+                <button class="shareBtn" type="button">Поделиться</button>
+              </div>
+            </div>
+          `;
+          loading = false;
+          bindEvents();
+          if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
+          return;
+        }
 
-async function loadFeedFirst({ preserveScroll=true, showLoading=null } = {}){
-  if (loading) return;
-  loading = true;
-  reachedEnd = false;
-  nextBeforeId = null;
+        feedEl.innerHTML = items.map(cardTemplate).join("");
+        loading = false;
+        bindEvents();
 
-  try{
-    const { items, next_before_id } = await fetchFeedPage(null, FEED_PAGE_SIZE);
+        if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
 
-    feedItems = items;
-    nextBeforeId = next_before_id || null;
-    reachedEnd = !nextBeforeId || !items.length;
-
-    lastTopSig = buildTopSig(items);
-
-    renderFeed(feedItems, { preserveScroll, showLoading });
-  } catch(e){
-    feedEl.innerHTML = `
-      <div class="card">
-        <div class="cardHead">
-          <div>
-            <div class="pairTitle">Ошибка загрузки</div>
-            <div class="pairSub">Проверь сеть и перезагрузи</div>
+      } catch(e){
+        loading = false;
+        feedEl.innerHTML = `
+          <div class="card">
+            <div class="cardHead">
+              <div>
+                <div class="pairTitle">Ошибка загрузки</div>
+                <div class="pairSub">Проверь сеть и перезагрузи</div>
+              </div>
+            </div>
+            <div class="pairWrap">
+              <div class="divider"></div>
+              <div class="pane"></div>
+              <div class="pane"></div>
+            </div>
+            <div class="cardFooter">
+              <div class="votes">👍 0 голосов</div>
+              <button class="shareBtn" type="button" id="retryBtn">Повторить</button>
+            </div>
           </div>
-        </div>
-        <div class="pairWrap">
-          <div class="divider"></div>
-          <div class="pane"></div>
-          <div class="pane"></div>
-        </div>
-        <div class="cardFooter">
-          <div class="votes">👍 0 голосов</div>
-          <button class="shareBtn" type="button" id="retryBtn">Повторить</button>
-        </div>
-      </div>
-    `;
-    document.getElementById("retryBtn")?.addEventListener("click", ()=>loadFeedFirst({preserveScroll:false, showLoading:true}));
-  } finally {
-    loading = false;
-  }
-}
-
-async function loadFeedMore(){
-  if (loadingMore || loading) return;
-  if (reachedEnd || !nextBeforeId) return;
-
-  loadingMore = true;
-  try{
-    const { items, next_before_id } = await fetchFeedPage(nextBeforeId, FEED_PAGE_SIZE);
-
-    if (!items.length){
-      reachedEnd = true;
-      nextBeforeId = null;
-      return;
+        `;
+        document.getElementById("retryBtn")?.addEventListener("click", ()=>loadFeed({preserveScroll:false}));
+      }
     }
-
-    feedItems = feedItems.concat(items);
-    nextBeforeId = next_before_id || null;
-    if (!nextBeforeId) reachedEnd = true;
-
-    appendFeed(items);
-  } catch(e){
-    // silently ignore; next scroll will retry
-  } finally {
-    loadingMore = false;
-  }
-}
-
-async function refreshFeedTopSilently(){
-  // Обновляем верх тихо и без дергания: только когда пользователь наверху,
-  // и когда не открыты модалки (профиль/загрузка).
-  try{
-    const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
-    const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
-    if (profileOpen || uploadOpen) return;
-  } catch(e){}
-
-  if (feedEl.scrollTop > 40) return;
-
-  try{
-    const { items } = await fetchFeedPage(null, FEED_PAGE_SIZE);
-    const sig = buildTopSig(items);
-
-    if (sig === lastTopSig) return;
-
-    // Добавляем новые пары сверху (по id)
-    const existingIds = new Set(feedItems.map(x => x?.id));
-    const newOnTop = items.filter(x => !existingIds.has(x?.id));
-
-    if (!newOnTop.length){
-      // изменились голоса/выборы в верхних карточках — пользователь вверху, можно перерисовать
-      feedItems = items.concat(feedItems.filter(x => !items.some(t => t?.id === x?.id)));
-      renderFeed(feedItems, { preserveScroll:true, showLoading:false });
-    } else {
-      feedItems = newOnTop.concat(feedItems);
-      renderFeed(feedItems, { preserveScroll:true, showLoading:false });
-    }
-
-    lastTopSig = sig;
-  } catch(e){
-    // silent
-  }
-}
-
-// Backward compatibility (older call-sites)
-function loadFeed(opts){ return loadFeedFirst(opts); }
 
     function setHeart(cardEl, choice){
       const hL = cardEl.querySelector('[data-heart="left"]');
@@ -970,7 +850,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
       const m = v.textContent.match(/(\d+)/);
       const cur = m ? Number(m[1]) : 0;
       const next = Math.max(0, cur + delta);
-      v.textContent = `👍 ${next} ${pluralVotes(next)}`;
+      v.textContent = `👍 ${next} голосов`;
     }
 
     async function vote(pairId, choice, cardEl){
@@ -1019,7 +899,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
             const pL = t ? Math.round((vL/t)*100) : 0;
             const pR = t ? (100 - pL) : 0;
             const footer = cardEl.querySelector("[data-votes]");
-            if (footer) footer.textContent = (t > 0) ? `👍 ${t} ${pluralVotes(t)} · ${pL}% / ${pR}%` : `👍 0 голосов`;
+            if (footer) footer.textContent = (t > 0) ? `👍 ${t} голосов · ${pL}% / ${pR}%` : `👍 0 голосов`;
           }
         }catch(e){}
 
@@ -1140,7 +1020,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
           const leftUrl = it?.photo_left_key ? `${API_BASE}/r2/${encodeURIComponent(it.photo_left_key)}` : "";
           const rightUrl = it?.photo_right_key ? `${API_BASE}/r2/${encodeURIComponent(it.photo_right_key)}` : "";
 
-          const statLine = (t > 0) ? `👍 ${t} ${pluralVotes(t)} · ${pL}% / ${pR}%` : `👍 0 голосов`;
+          const statLine = (t > 0) ? `👍 ${t} голосов · ${pL}% / ${pR}%` : `👍 0 голосов`;
 
           return `
             <div class="myPair" data-my-id="${escapeHtml(id)}">
@@ -1250,9 +1130,8 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
 
         setTimeout(()=>{
           closeUploadModal();
-          loadFeed({ preserveScroll:false, showLoading:true });
-
-            }, 900);
+          loadFeed({ preserveScroll:false });
+        }, 900);
 
       } catch(e){
         uploadStatus.textContent = "Ошибка загрузки.";
@@ -1260,27 +1139,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
       }
     });
 
-    loadFeed({ preserveScroll:false, showLoading:true });
-
-// Infinite scroll: load next page when close to bottom
-feedEl.addEventListener("scroll", () => {
-  try{
-    const nearBottom = (feedEl.scrollTop + feedEl.clientHeight) >= (feedEl.scrollHeight - 260);
-    if (nearBottom) loadFeedMore();
-  } catch(e){}
-});
-
-
-    // Автообновление ленты каждые 10 секунд (тихо, без дергания UI)
-    // Пауза, если открыт профиль или модалка загрузки
-    setInterval(()=>{
-      try{
-        const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
-        const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
-        if (profileOpen || uploadOpen) return;
-        refreshFeedTopSilently();
-      } catch(e){}
-    }, 10000);
+    loadFeed({ preserveScroll:false });
   </script>
 </body>
 </html>
