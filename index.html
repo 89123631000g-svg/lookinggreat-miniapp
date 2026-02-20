@@ -516,9 +516,9 @@
   border-color: rgba(0,0,0,.35);
 }
 
-    /* ===== PATCH v2.8.8: Admin modal scroll (no squeezing) ===== */
+    /* ===== PATCH v2.8.7: Admin modal scroll (no squeezing) ===== */
     #adminOverlay .modalBody{
-      display: block;
+      display: block;              /* вместо grid — чтобы не сжимало */
       overflow: auto;
       -webkit-overflow-scrolling: touch;
       overscroll-behavior: contain;
@@ -541,51 +541,6 @@
       display: block;
     }
 
-
-    /* ===== PATCH v2.10.3: Voter progress (local) ===== */
-    .progressBar{
-      padding: 10px 14px 8px;
-      border-bottom: 1px solid var(--stroke2);
-      background: var(--bg);
-      flex: 0 0 auto;
-    }
-    .pbRow{
-      display:flex;
-      align-items:baseline;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .pbMain{
-      font-size: 14px;
-      font-weight: 900;
-      letter-spacing: .1px;
-      color: var(--text);
-    }
-    .pbSub{
-      margin-top: 4px;
-      font-size: 12px;
-      font-weight: 800;
-      color: var(--muted);
-      display:flex;
-      gap: 10px;
-      flex-wrap:wrap;
-    }
-    .pbPill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--stroke);
-      background: rgba(15,23,42,.03);
-      color: var(--text);
-      font-weight: 900;
-      font-size: 12px;
-      white-space: nowrap;
-    }
-    .pbPill b{ font-weight: 950; }
-
 </style>
 </head>
 
@@ -598,10 +553,6 @@
       </div>
       <div style="opacity:.0; width:1px; height:1px;"></div>
     </div>
-
-
-    <div id="progressBar" class="progressBar"></div>
-
 
     <div id="feed" class="feed"></div>
 
@@ -719,19 +670,8 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.10.4";
+    const APP_VERSION = "v2.8.7";
     const API_BASE = "https://api.lookingreat.ru";
-
-    function tgInitData(){
-      try { return (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) ? String(Telegram.WebApp.initData) : ""; } catch(e){ return ""; }
-    }
-    function authHeaders(extra){
-      const h = Object.assign({}, extra || {});
-      const initData = tgInitData();
-      if (initData) h["X-TG-INITDATA"] = initData;
-      return h;
-    }
-
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
 
@@ -754,41 +694,8 @@
     }
 
     const feedEl = document.getElementById("feed");
-let feedDelegationBound = false;
-function ensureFeedDelegation() {
-  if (feedDelegationBound) return;
-  feedDelegationBound = true;
-
-  feedEl.addEventListener("click", async (e) => {
-    const pane = e.target.closest(".pane");
-    if (pane && pane.closest(".card")) {
-      const card = pane.closest(".card");
-      const pairId = card?.dataset?.pairId;
-      const side = pane?.dataset?.side;
-      if (pairId && (side === "left" || side === "right")) {
-        e.preventDefault();
-        await vote(pairId, side);
-        return;
-      }
-    }
-
-    const shareBtn = e.target.closest(".shareBtn");
-    if (shareBtn && shareBtn.closest(".card")) {
-      const card = shareBtn.closest(".card");
-      const pairId = card?.dataset?.pairId;
-      if (pairId) {
-        e.preventDefault();
-        await sharePair(pairId);
-        return;
-      }
-    }
-  }, { passive: false });
-}
-
     const toastEl = document.getElementById("toast");
-    const progressBarEl = document.getElementById("progressBar");
-document.getElementById("ver").textContent = APP_VERSION;
-    renderProgressBar();
+    document.getElementById("ver").textContent = APP_VERSION;
 
     let toastTimer = null;
     function toast(msg){
@@ -801,97 +708,14 @@ document.getElementById("ver").textContent = APP_VERSION;
       try { tg?.HapticFeedback?.impactOccurred?.(type); } catch(e) {}
     }
 
-    // ===== PATCH v2.10.3: Voter progress (localStorage, no backend) =====
-    const LS_KEYS = {
-      total: "LG_VOTER_TOTAL",
-      matches: "LG_TASTE_MATCHES",
-      considered: "LG_TASTE_CONSIDERED",
-      shown10: "LG_BADGE_10",
-      shown25: "LG_BADGE_25",
-      shown50: "LG_BADGE_50"
-    };
-
-    function lsNum(k){
-      try { return Number(localStorage.getItem(k) || 0) || 0; } catch(e){ return 0; }
-    }
-    function lsSet(k,v){
-      try { localStorage.setItem(k, String(v)); } catch(e){}
-    }
-    function voterLevel(total){
-      const t = Number(total)||0;
-      if (t >= 200) return { name:"Гуру вкуса", nextName:null, nextAt:null };
-      if (t >= 50)  return { name:"Эксперт", nextName:"Гуру вкуса", nextAt:200 };
-      if (t >= 10)  return { name:"Судья", nextName:"Эксперт", nextAt:50 };
-      return { name:"Новичок", nextName:"Судья", nextAt:10 };
-    }
-    function tastePercent(){
-      const considered = lsNum(LS_KEYS.considered);
-      const matches = lsNum(LS_KEYS.matches);
-      if (considered <= 0) return 0;
-      return Math.round((matches / considered) * 100);
-    }
-function renderProgressBar(){
-      if (!progressBarEl) return;
-
-      const total = lsNum(LS_KEYS.total);
-      const lvl = voterLevel(total);
-
-      const leftToNext = (lvl.nextAt != null) ? Math.max(0, lvl.nextAt - total) : 0;
-
-      const tasteShown = total >= 10;
-      const pct = tastePercent();
-
-      progressBarEl.innerHTML = `
-        <div class="pbRow">
-          <div class="pbMain">Ты оценил: <b>${total}</b> пар</div>
-          <div class="pbPill">Уровень: <b>${lvl.name}</b></div>
-        </div>
-        <div class="pbSub">
-          ${lvl.nextAt != null ? `<span>До уровня “${lvl.nextName}” осталось <b>${leftToNext}</b></span>` : `<span>Ты на максимальном уровне</span>`}
-          ${tasteShown ? `<span>Твой вкус совпадает с большинством на <b>${pct}%</b></span>` : `<span>Совпадение с большинством появится после <b>10</b> голосов</span>`}
-        </div>
-      `;
-    }
-
-    function maybeAchievementToast(total){
-      // показываем каждый порог один раз
-      if (total === 10 && !lsNum(LS_KEYS.shown10)){ lsSet(LS_KEYS.shown10, 1); setTimeout(()=>toast("🔥 Ты уже оценил 10 пар"), 250); }
-      if (total === 25 && !lsNum(LS_KEYS.shown25)){ lsSet(LS_KEYS.shown25, 1); setTimeout(()=>toast("🔥 25 оценок — отличный темп"), 250); }
-      if (total === 50 && !lsNum(LS_KEYS.shown50)){ lsSet(LS_KEYS.shown50, 1); setTimeout(()=>toast("🏆 50 оценок — уровень “Эксперт” близко"), 250); }
-    }
-
-    function applyVoteProgress(res, userChoice){
-      // total votes counter
-      const total = lsNum(LS_KEYS.total) + 1;
-      lsSet(LS_KEYS.total, total);
-
-      // taste matching: only if server returned stats and no tie
-      try{
-        const vL = Number(res?.votes_left);
-        const vR = Number(res?.votes_right);
-        if (Number.isFinite(vL) && Number.isFinite(vR) && (vL !== vR)){
-          const majority = (vL > vR) ? "left" : "right";
-          const considered = lsNum(LS_KEYS.considered) + 1;
-          lsSet(LS_KEYS.considered, considered);
-          if (String(userChoice) === majority){
-            const matches = lsNum(LS_KEYS.matches) + 1;
-            lsSet(LS_KEYS.matches, matches);
-          }
-        }
-      } catch(e){}
-
-      renderProgressBar();
-      maybeAchievementToast(total);
-    }
-
     async function apiGet(path){
-      const res = await fetch(API_BASE + path, { method:"GET", cache:"no-store", headers: authHeaders() });
+      const res = await fetch(API_BASE + path, { method:"GET" });
       return res.json();
     }
     async function apiPost(path, body){
       const res = await fetch(API_BASE + path, {
         method:"POST",
-        headers: authHeaders({ "Content-Type":"application/json" }),
+        headers: { "Content-Type":"application/json" },
         body: JSON.stringify(body)
       });
       return res.json();
@@ -1042,11 +866,10 @@ function renderProgressBar(){
 
 const FEED_PAGE_SIZE = 10;
 
-async function fetchFeedPage(beforeId=null, limit=FEED_PAGE_SIZE, bust=false){
+async function fetchFeedPage(beforeId=null, limit=FEED_PAGE_SIZE){
   refreshTgId();
   const qs = new URLSearchParams({ tg_id: tg_id, limit: String(limit) });
   if (beforeId) qs.set("before_id", String(beforeId));
-  if (bust) qs.set("_t", String(Date.now()));
   const data = await apiGet(`/feed?${qs.toString()}`);
 
   let items = [];
@@ -1195,7 +1018,7 @@ async function loadFeedMore(){
 
     appendFeed(items);
   } catch(e){
-    console.log("AUTO /feed failed:", e); // next scroll will retry
+    console.log("AUTO /feed failed:", e);ly ignore; next scroll will retry
   } finally {
     loadingMore = false;
   }
@@ -1205,14 +1028,17 @@ async function refreshFeedTopSilently(){
   // Обновляем верх тихо и без дергания: только когда пользователь наверху,
   // и когда не открыты модалки (профиль/загрузка).
   try{
-    const isOpen = (el) => !!el && getComputedStyle(el).display !== "none";
-    if (isOpen(profileOverlay) || isOpen(modalOverlay) || isOpen(reportOverlay) || isOpen(adminOverlay)) return;
+    const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
+    const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
+    const reportOpen  = !!reportOverlay && reportOverlay.style.display !== "none";
+    const adminOpen   = !!adminOverlay && adminOverlay.style.display !== "none";
+    if (profileOpen || uploadOpen || reportOpen || adminOpen) return;
   } catch(e){}
 
   if (feedEl.scrollTop > 120) return;
 
   try{
-    const { items } = await fetchFeedPage(null, FEED_PAGE_SIZE, true);
+    const { items } = await fetchFeedPage(null, FEED_PAGE_SIZE);
     const sig = buildTopSig(items);
 
     if (sig === lastTopSig) return;
@@ -1257,9 +1083,6 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
     }
 
     async function vote(pairId, choice, cardEl){
-      if (!cardEl) {
-        try { cardEl = document.querySelector('.card[data-pair-id="' + String(pairId) + '"]'); } catch(e) {}
-      }
       haptic("light");
 
       const existing = (cardEl?.getAttribute("data-choice") || "").toLowerCase();
@@ -1310,7 +1133,6 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
         }catch(e){}
 
         setLocalChoice(pairId, choice);
-        applyVoteProgress(res, choice);
         toast("Голос учтён");
         haptic("success");
         return true;
@@ -1342,10 +1164,9 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
           const pairId = card?.getAttribute("data-pair-id") || "";
           sharePair(pairId);
         });
-      });
-
+      
       document.querySelectorAll(".card .reportBtn").forEach(btn=>{
-        btn.addEventListener("click", (e)=>{
+        btn.addEventListener("click", async (e)=>{
           e.stopPropagation();
           const card = btn.closest(".card");
           const pairId = btn.getAttribute("data-report") || card?.getAttribute("data-pair-id") || "";
@@ -1353,6 +1174,8 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
           openReport(pairId);
         });
       });
+
+});
 
       document.getElementById("navHome")?.addEventListener("click", ()=> {
         feedEl.scrollTo({ top: 0, behavior: "smooth" });
@@ -1462,39 +1285,14 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
     async function loadAdminReports(){
   try{
     refreshTgId();
-
-    // metrics (admin analytics)
-    let metrics = null;
-    try{
-      const m = await apiGet(`/admin/metrics?tg_id=${encodeURIComponent(tg_id)}`);
-      if (m?.ok) metrics = m;
-    } catch(e){}
-
     const data = await apiGet(`/admin/reports?tg_id=${encodeURIComponent(tg_id)}&limit=50`);
     if (!data?.ok) throw new Error(data?.error || "bad_response");
 
     // Worker returns { ok:true, items:[ ... ] }
     const items = Array.isArray(data.items) ? data.items : [];
 
-    const fmtNum = (n)=>{
-      const x = Number(n);
-      if (!Number.isFinite(x)) return "—";
-      return x.toLocaleString("ru-RU");
-    };
-
-    const metricsHtml = metrics?.ok ? `
-      <div class="card" style="margin-bottom:10px;">
-        <div class="pairTitle">Аналитика (сегодня: ${metrics.today || "—"})</div>
-        <div class="pairSub" style="margin-top:6px;">
-          Пользователи: <b>${fmtNum(metrics.users_total)}</b> (новых сегодня: <b>${fmtNum(metrics.users_new_today)}</b>)<br/>
-          Загрузок пар: <b>${fmtNum(metrics.uploads_total)}</b> (сегодня: <b>${fmtNum(metrics.uploads_today)}</b>)<br/>
-          Голосов: <b>${fmtNum(metrics.votes_total)}</b> (сегодня: <b>${fmtNum(metrics.votes_today)}</b>)
-        </div>
-      </div>
-    ` : "";
-
     if (!items.length){
-      adminBody.innerHTML = metricsHtml + `<div class="pairSub">Жалоб пока нет</div>`;
+      adminBody.innerHTML = `<div class="pairSub">Жалоб пока нет</div>`;
       return;
     }
 
@@ -1504,7 +1302,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
       return "видна";
     };
 
-    adminBody.innerHTML = metricsHtml + items.map(r=>{
+    adminBody.innerHTML = items.map(r=>{
       const st = (r.status || "visible").toLowerCase();
       const caption = (r.caption || "").trim();
       const title = caption ? caption : `Пара #${r.pair_id}`;
@@ -1707,44 +1505,7 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
       rightName.textContent = fileRight.files?.[0]?.name ? fileRight.files[0].name : "Файл не выбран";
     });
 
-    
-    // ===== Front-end image compression (reduce traffic/cost) =====
-    // Resize to max 1600px on long side, JPEG quality 0.85.
-    // If result is larger than original — keep original.
-    async function compressImageFile(file){
-      try{
-        if (!(file instanceof File)) return file;
-        const type = (file.type || "").toLowerCase();
-        if (!type.startsWith("image/")) return file;
-
-        // If already small, skip
-        if (file.size && file.size < 900 * 1024) return file;
-
-        const bmp = await createImageBitmap(file);
-        const maxDim = 1600;
-        const w = bmp.width, h = bmp.height;
-        const scale = Math.min(1, maxDim / Math.max(w, h));
-        const outW = Math.max(1, Math.round(w * scale));
-        const outH = Math.max(1, Math.round(h * scale));
-
-        const canvas = document.createElement("canvas");
-        canvas.width = outW;
-        canvas.height = outH;
-        const ctx = canvas.getContext("2d", { alpha:false });
-        ctx.drawImage(bmp, 0, 0, outW, outH);
-
-        const blob = await new Promise((resolve)=>canvas.toBlob(resolve, "image/jpeg", 0.85));
-        if (!blob) return file;
-
-        const out = new File([blob], (file.name || "photo").replace(/\.[a-z0-9]+$/i,"") + ".jpg", { type:"image/jpeg" });
-        if (out.size >= file.size) return file;
-        return out;
-      } catch(e){
-        return file;
-      }
-    }
-
-doUploadBtn.addEventListener("click", async ()=>{
+    doUploadBtn.addEventListener("click", async ()=>{
       const f1 = fileLeft.files?.[0];
       const f2 = fileRight.files?.[0];
       const caption = (pairCaptionEl?.value || "").trim();
@@ -1761,33 +1522,15 @@ doUploadBtn.addEventListener("click", async ()=>{
 
       try{
         refreshTgId();
-
-        // compress before upload (keeps quality for feed)
-        const c1 = await compressImageFile(f1);
-        const c2 = await compressImageFile(f2);
-
         const fd = new FormData();
         fd.append("tg_id", String(tg_id));
-        fd.append("left", c1);
-        fd.append("right", c2);
+        fd.append("left", f1);
+        fd.append("right", f2);
         if (caption) fd.append("caption", caption);
 
-        const res = await fetch(API_BASE + "/upload_pair", { method: "POST", headers: authHeaders(), body: fd });
+        const res = await fetch(API_BASE + "/upload_pair", { method: "POST", body: fd });
         const data = await res.json().catch(()=>({}));
-        if (!res.ok || !data?.ok){
-          const err = String(data?.error || ("HTTP " + res.status));
-          // Friendly messages for server limits
-          if (err === "daily_upload_limit"){
-            const lim = Number(data?.limit) || 0;
-            const day = data?.day ? String(data.day) : "";
-            throw new Error(`Лимит загрузок: ${lim || 20} пар в день${day ? " ("+day+")" : ""}.`);
-          }
-          if (err === "file_too_large"){
-            const mb = data?.max_bytes ? Math.round(Number(data.max_bytes)/1024/1024) : 8;
-            throw new Error(`Файл слишком большой. Максимум ${mb || 8} МБ.`);
-          }
-          throw new Error(err);
-        }
+        if (!res.ok || !data?.ok) throw new Error(data?.error || ("HTTP " + res.status));
 
         uploadStatus.textContent = "Готово! Пара загружена.";
         haptic("success");
@@ -1812,51 +1555,38 @@ doUploadBtn.addEventListener("click", async ()=>{
 
     loadFeed({ preserveScroll:false, showLoading:true });
 
-// Infinite scroll
-feedEl.addEventListener("scroll", function () {
-  try {
-    const nearBottom =
-      feedEl.scrollTop + feedEl.clientHeight >=
-      feedEl.scrollHeight - 260;
-
+// Infinite scroll: load next page when close to bottom
+feedEl.addEventListener("scroll", () => {
+  try{
+    const nearBottom = (feedEl.scrollTop + feedEl.clientHeight) >= (feedEl.scrollHeight - 260);
     if (nearBottom) loadFeedMore();
-  } catch (e) {
-    console.log("Scroll handler error:", e);
-  }
+  } catch(e){}
 });
 
 
     // Автообновление ленты каждые 10 секунд (тихо, без дергания UI)
     // Пауза, если открыт профиль или модалка загрузки
-    // ===== PATCH v2.8.9: robust auto-refresh (debuggable) =====
-    // Важно: иногда WebView/браузер может агрессивно кэшировать/троттлить таймеры.
-    // Поэтому: cache:no-store в apiGet + явный лог каждого тика.
-    window.__autoTimer = null;
+    // ===== PATCH v2.8.7: robust auto-refresh (visible in logs) =====
+    let __autoTimer = null;
 
-    function startAutoRefresh() {
-      if (window.__autoTimer) clearInterval(window.__autoTimer);
+    function startAutoRefresh(){
+      if (__autoTimer) clearInterval(__autoTimer);
 
-      // первый прогон сразу
-      try {
+      // первый прогон сразу, не ждём 10 секунд
+      try{
+        console.log("AUTO start");
         refreshFeedTopSilently();
-      } catch (e) {}
+      } catch(e){
+        console.log("AUTO first tick error:", e);
+      }
 
-      window.__autoTimer = setInterval(() => {
-        try {
-          // не мешаем пользователю, когда он свернул вкладку или открыт любой оверлей
-          if (document.hidden) return;
-          const isOpen = (el) => !!el && getComputedStyle(el).display !== "none";
-          if (isOpen(profileOverlay) || isOpen(modalOverlay) || isOpen(reportOverlay) || isOpen(adminOverlay)) return;
-
-          // делаем автоподтяжку только когда пользователь наверху ленты
-          if (feedEl.scrollTop > 120) return;
-
-          if (window.DEBUG_AUTO) console.log("AUTO tick", Date.now());
+      __autoTimer = setInterval(()=>{
+        try{
           refreshFeedTopSilently();
-        } catch (e) {
-          if (window.DEBUG_AUTO) console.log("AUTO error", e);
+        } catch(e){
+          console.log("AUTO tick error:", e);
         }
-      }, 2500);
+      }, 10000);
     }
 
     startAutoRefresh();
