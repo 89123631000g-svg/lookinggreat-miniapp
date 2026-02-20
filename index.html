@@ -6,6 +6,8 @@
   <title>LookingGreat</title>
 
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
 
   <style>
     :root{
@@ -670,7 +672,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.11.0";
+    const APP_VERSION = "v2.11.1";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -759,7 +761,7 @@ function ensureFeedDelegation() {
     }
 
 
-    // ===== Image compression before upload (Index v2.11.0) =====
+    // ===== Image compression before upload (Index v2.11.1) =====
     async function fileToBitmap(file) {
       if (window.createImageBitmap) {
         return await createImageBitmap(file);
@@ -784,8 +786,32 @@ function ensureFeedDelegation() {
       });
     }
 
+    async function heicToJpegFile(file) {
+      if (!window.heic2any) return null;
+      try {
+        const out = await window.heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.9,
+        });
+        const blob = Array.isArray(out) ? out[0] : out;
+        if (!blob) return null;
+        const baseName = (file.name || "photo").replace(/\.[^.]+$/, "");
+        return new File([blob], `${baseName}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
+      } catch (e) {
+        return null;
+      }
+    }
+
+
     async function compressImageFile(file, opts = {}) {
       if (!file || !file.type || !file.type.startsWith("image/")) return file;
+
+      const isHeic = (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/i.test(file.name || ""));
+      if (isHeic) {
+        const converted = await heicToJpegFile(file);
+        if (converted) file = converted;
+      }
 
       const {
         maxLongEdge = 1600,
