@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.9.9";
+    const APP_VERSION = "v2.10.0";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -1063,17 +1063,23 @@ async function refreshFeedTopSilently(){
 
     if (sig === lastTopSig) return;
 
+    // Если пользователь наверху ленты — показываем новые пары сразу.
+    // Если он пролистал вниз — обновляем "тихо", не двигая экран.
+    const atTop = (feedEl && feedEl.scrollTop <= 40);
+
     // Добавляем новые пары сверху (по id)
     const existingIds = new Set(feedItems.map(x => x?.id));
     const newOnTop = items.filter(x => !existingIds.has(x?.id));
 
     if (!newOnTop.length){
-      // изменились голоса/выборы в верхних карточках — пользователь вверху, можно перерисовать
+      // изменились голоса/выборы в верхних карточках
       feedItems = items.concat(feedItems.filter(x => !items.some(t => t?.id === x?.id)));
-      renderFeed(feedItems, { preserveScroll:true, showLoading:false });
+      renderFeed(feedItems, { preserveScroll: !atTop, showLoading:false });
+      if (atTop) feedEl.scrollTop = 0;
     } else {
       feedItems = newOnTop.concat(feedItems);
-      renderFeed(feedItems, { preserveScroll:true, showLoading:false });
+      renderFeed(feedItems, { preserveScroll: !atTop, showLoading:false });
+      if (atTop) feedEl.scrollTop = 0;
     }
 
     lastTopSig = sig;
@@ -1081,6 +1087,7 @@ async function refreshFeedTopSilently(){
     console.log("AUTO /feed failed:", e);
   }
 }
+
 
 // Backward compatibility (older call-sites)
 function loadFeed(opts){ return loadFeedFirst(opts); }
