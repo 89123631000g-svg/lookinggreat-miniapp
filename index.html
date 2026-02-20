@@ -485,6 +485,36 @@
     #profileBody > * { margin-bottom: 10px; }
     #profileBody .myPair { margin-bottom: 10px; }
 
+
+.linkBtn{
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: rgba(17,17,17,.55);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.linkBtn:active{ opacity:.7; }
+
+.reportReasonRow{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin: 10px 0 8px;
+}
+.reasonBtn{
+  border: 1px solid rgba(0,0,0,.14);
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 10px;
+  font-size: 13px;
+  cursor:pointer;
+}
+.reasonBtn.isOn{
+  border-color: rgba(0,0,0,.35);
+}
 </style>
 </head>
 
@@ -576,9 +606,47 @@
     </div>
   </div>
 
-  <script>
-    const APP_VERSION = "v2.6.1";
+  
+  <!-- Report Modal -->
+  <div class="modalOverlay" id="reportOverlay" style="display:none;">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle">Пожаловаться</div>
+        <button class="shareBtn" id="closeReport" type="button">Закрыть</button>
+      </div>
+      <div class="modalBody">
+        <div class="pairSub" style="margin:0 0 6px;">Выбери причину</div>
+        <div class="reportReasonRow">
+          <button class="reasonBtn" type="button" data-reason="Спам">Спам</button>
+          <button class="reasonBtn" type="button" data-reason="Неприемлемое">Неприемлемое</button>
+          <button class="reasonBtn" type="button" data-reason="Другое">Другое</button>
+        </div>
+        <textarea id="reportComment" class="captionInput" rows="3" placeholder="Комментарий (необязательно)" maxlength="500"></textarea>
+        <div class="modalActions">
+          <button class="shareBtn wideBtn" id="sendReport" type="button" disabled>Отправить</button>
+        </div>
+        <div class="pairSub" id="reportStatus" style="display:none; margin:0;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Modal (only for tg_id 531932411) -->
+  <div class="modalOverlay" id="adminOverlay" style="display:none;">
+    <div class="modal">
+      <div class="modalHead">
+        <div class="modalTitle">Админ</div>
+        <button class="shareBtn" id="closeAdmin" type="button">Закрыть</button>
+      </div>
+      <div class="modalBody" id="adminBody">
+        <div class="pairSub">Загрузка…</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+    const APP_VERSION = "v2.8.2";
     const API_BASE = "https://api.lookingreat.ru";
+    const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
 
     const tg = window.Telegram?.WebApp;
@@ -734,7 +802,10 @@
           </div>
 
           <div class="cardFooter">
-            <div class="votes" data-votes>${escapeHtml(footerText)}</div>
+            <div>
+              <div class="votes" data-votes>${escapeHtml(footerText)}</div>
+              <button class="linkBtn reportBtn" type="button" data-report="${escapeHtml(pairNum)}">Пожаловаться</button>
+            </div>
             <button class="shareBtn" type="button" aria-label="Поделиться">
               <svg class="shareIco" viewBox="0 0 24 24" fill="none">
                 <path d="M16 8.5l-8 4m8 3.5l-8-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -751,122 +822,210 @@
 
     let loading = false;
     let lastScrollTop = 0;
-    let lastFeedSig = "";
+    let feedItems = [];
+    let nextBeforeId = null;
+    let reachedEnd = false;
+    let loadingMore = false;
+    let lastTopSig = "";
 
-    async function loadFeed({ preserveScroll=true, showLoading=null } = {}){
-      if (loading) return;
-      loading = true;
+const FEED_PAGE_SIZE = 10;
 
-      if (showLoading === null) {
-        showLoading = !feedEl.innerHTML.trim();
-      }
+async function fetchFeedPage(beforeId=null, limit=FEED_PAGE_SIZE){
+  refreshTgId();
+  const qs = new URLSearchParams({ tg_id: tg_id, limit: String(limit) });
+  if (beforeId) qs.set("before_id", String(beforeId));
+  const data = await apiGet(`/feed?${qs.toString()}`);
 
-      if (preserveScroll) lastScrollTop = feedEl.scrollTop;
+  let items = [];
+  if (data?.ok && Array.isArray(data?.items)) items = data.items;
+  else if (data?.ok && data?.item) items = [data.item];
+  else if (Array.isArray(data)) items = data;
+  else if (data?.item) items = [data.item];
 
-      if (showLoading) feedEl.innerHTML = `
-        <div class="card">
-          <div class="cardHead">
-            <div>
-              <div class="pairTitle">Загрузка…</div>
-              <div class="pairSub">Чтобы выбрать — нажми на фото</div>
-            </div>
-            <div></div>
+  const next = data?.next_before_id ?? (items.length ? (items[items.length-1]?.id ?? null) : null);
+  return { items, next_before_id: next };
+}
+
+function buildTopSig(items){
+  return items.map(it => {
+    const pid = it?.id ?? it?.pair_id ?? it?.photo_pair_id ?? "";
+    const vL = Number(it?.votes_left ?? it?.left_votes ?? it?.votesLeft ?? 0);
+    const vR = Number(it?.votes_right ?? it?.right_votes ?? it?.votesRight ?? 0);
+    const t  = Number(it?.total_votes ?? it?.votes_total ?? it?.total ?? (vL+vR));
+    const c  = (it?.my_choice || it?.myChoice || getLocalChoice(pid) || "");
+    return `${pid}:${t}:${c}`;
+  }).join("|");
+}
+
+function renderFeed(items, { preserveScroll=true, showLoading=null } = {}){
+  if (showLoading === null) showLoading = !feedEl.innerHTML.trim();
+  if (preserveScroll) lastScrollTop = feedEl.scrollTop;
+
+  if (showLoading) {
+    feedEl.innerHTML = `
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="pairTitle">Загрузка…</div>
+            <div class="pairSub">Чтобы выбрать — нажми на фото</div>
           </div>
-          <div class="pairWrap">
-            <div class="divider"></div>
-            <div class="pane"><div class="skeleton"></div></div>
-            <div class="pane"><div class="skeleton"></div></div>
-          </div>
-          <div class="cardFooter">
-            <div class="votes">👍 0 голосов</div>
-            <button class="shareBtn" type="button">Поделиться</button>
+          <div></div>
+        </div>
+        <div class="pairWrap">
+          <div class="divider"></div>
+          <div class="pane"><div class="skeleton"></div></div>
+          <div class="pane"><div class="skeleton"></div></div>
+        </div>
+        <div class="cardFooter">
+          <div class="votes">👍 0 голосов</div>
+          <button class="shareBtn" type="button">Поделиться</button>
+        </div>
+      </div>
+    `;
+  }
+
+  if (!items.length){
+    feedEl.innerHTML = `
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="pairTitle">Пока нет пар</div>
+            <div class="pairSub">Нажми “+” чтобы загрузить</div>
           </div>
         </div>
-      `;
+        <div class="pairWrap">
+          <div class="divider"></div>
+          <div class="pane"></div>
+          <div class="pane"></div>
+        </div>
+        <div class="cardFooter">
+          <div class="votes">👍 0 голосов</div>
+          <button class="shareBtn" type="button">Поделиться</button>
+        </div>
+      </div>
+    `;
+    bindEvents();
+    return;
+  }
 
-      try{
-        refreshTgId();
-        const data = await apiGet(`/feed?tg_id=${encodeURIComponent(tg_id)}`);
+  feedEl.innerHTML = items.map(cardTemplate).join("");
+  bindEvents();
 
-        let items = [];
-        if (data?.ok && Array.isArray(data?.items)) items = data.items;
-        else if (data?.ok && data?.item) items = [data.item];
-        else if (Array.isArray(data)) items = data;
-        else if (data?.item) items = [data.item];
+  if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
+}
 
-        if (!items.length){
-          feedEl.innerHTML = `
-            <div class="card">
-              <div class="cardHead">
-                <div>
-                  <div class="pairTitle">Пока нет пар</div>
-                  <div class="pairSub">Нажми “+” чтобы загрузить</div>
-                </div>
-              </div>
-              <div class="pairWrap">
-                <div class="divider"></div>
-                <div class="pane"></div>
-                <div class="pane"></div>
-              </div>
-              <div class="cardFooter">
-                <div class="votes">👍 0 голосов</div>
-                <button class="shareBtn" type="button">Поделиться</button>
-              </div>
-            </div>
-          `;
-          loading = false;
-          bindEvents();
-          if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
-          return;
-        }
+function appendFeed(moreItems){
+  if (!moreItems.length) return;
+  feedEl.insertAdjacentHTML("beforeend", moreItems.map(cardTemplate).join(""));
+  bindEvents();
+}
 
-        const sig = items.map(it => {
-          const pid = it?.id ?? it?.pair_id ?? it?.photo_pair_id ?? "";
-          const vL = Number(it?.votes_left ?? it?.left_votes ?? it?.votesLeft ?? 0);
-          const vR = Number(it?.votes_right ?? it?.right_votes ?? it?.votesRight ?? 0);
-          const t  = Number(it?.total_votes ?? it?.votes_total ?? it?.total ?? (vL+vR));
-          const c  = (it?.my_choice || it?.myChoice || getLocalChoice(pid) || "");
-          return `${pid}:${t}:${c}`;
-        }).join("|");
+async function loadFeedFirst({ preserveScroll=true, showLoading=null } = {}){
+  if (loading) return;
+  loading = true;
+  reachedEnd = false;
+  nextBeforeId = null;
 
-        if (!showLoading && sig === lastFeedSig) {
-          // Ничего не изменилось — не трогаем DOM, чтобы не было дергания
-          loading = false;
-          return;
-        }
-        lastFeedSig = sig;
+  try{
+    const { items, next_before_id } = await fetchFeedPage(null, FEED_PAGE_SIZE);
 
-        feedEl.innerHTML = items.map(cardTemplate).join("");
+    feedItems = items;
+    nextBeforeId = next_before_id || null;
+    reachedEnd = !nextBeforeId || !items.length;
 
-        loading = false;
-        bindEvents();
+    lastTopSig = buildTopSig(items);
 
-        if (preserveScroll) feedEl.scrollTop = Math.min(lastScrollTop, feedEl.scrollHeight);
-
-      } catch(e){
-        loading = false;
-        feedEl.innerHTML = `
-          <div class="card">
-            <div class="cardHead">
-              <div>
-                <div class="pairTitle">Ошибка загрузки</div>
-                <div class="pairSub">Проверь сеть и перезагрузи</div>
-              </div>
-            </div>
-            <div class="pairWrap">
-              <div class="divider"></div>
-              <div class="pane"></div>
-              <div class="pane"></div>
-            </div>
-            <div class="cardFooter">
-              <div class="votes">👍 0 голосов</div>
-              <button class="shareBtn" type="button" id="retryBtn">Повторить</button>
-            </div>
+    renderFeed(feedItems, { preserveScroll, showLoading });
+  } catch(e){
+    feedEl.innerHTML = `
+      <div class="card">
+        <div class="cardHead">
+          <div>
+            <div class="pairTitle">Ошибка загрузки</div>
+            <div class="pairSub">Проверь сеть и перезагрузи</div>
           </div>
-        `;
-        document.getElementById("retryBtn")?.addEventListener("click", ()=>loadFeed({preserveScroll:false, showLoading:true}));
-      }
+        </div>
+        <div class="pairWrap">
+          <div class="divider"></div>
+          <div class="pane"></div>
+          <div class="pane"></div>
+        </div>
+        <div class="cardFooter">
+          <div class="votes">👍 0 голосов</div>
+          <button class="shareBtn" type="button" id="retryBtn">Повторить</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("retryBtn")?.addEventListener("click", ()=>loadFeedFirst({preserveScroll:false, showLoading:true}));
+  } finally {
+    loading = false;
+  }
+}
+
+async function loadFeedMore(){
+  if (loadingMore || loading) return;
+  if (reachedEnd || !nextBeforeId) return;
+
+  loadingMore = true;
+  try{
+    const { items, next_before_id } = await fetchFeedPage(nextBeforeId, FEED_PAGE_SIZE);
+
+    if (!items.length){
+      reachedEnd = true;
+      nextBeforeId = null;
+      return;
     }
+
+    feedItems = feedItems.concat(items);
+    nextBeforeId = next_before_id || null;
+    if (!nextBeforeId) reachedEnd = true;
+
+    appendFeed(items);
+  } catch(e){
+    // silently ignore; next scroll will retry
+  } finally {
+    loadingMore = false;
+  }
+}
+
+async function refreshFeedTopSilently(){
+  // Обновляем верх тихо и без дергания: только когда пользователь наверху,
+  // и когда не открыты модалки (профиль/загрузка).
+  try{
+    const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
+    const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
+    if (profileOpen || uploadOpen) return;
+  } catch(e){}
+
+  if (feedEl.scrollTop > 40) return;
+
+  try{
+    const { items } = await fetchFeedPage(null, FEED_PAGE_SIZE);
+    const sig = buildTopSig(items);
+
+    if (sig === lastTopSig) return;
+
+    // Добавляем новые пары сверху (по id)
+    const existingIds = new Set(feedItems.map(x => x?.id));
+    const newOnTop = items.filter(x => !existingIds.has(x?.id));
+
+    if (!newOnTop.length){
+      // изменились голоса/выборы в верхних карточках — пользователь вверху, можно перерисовать
+      feedItems = items.concat(feedItems.filter(x => !items.some(t => t?.id === x?.id)));
+      renderFeed(feedItems, { preserveScroll:true, showLoading:false });
+    } else {
+      feedItems = newOnTop.concat(feedItems);
+      renderFeed(feedItems, { preserveScroll:true, showLoading:false });
+    }
+
+    lastTopSig = sig;
+  } catch(e){
+    // silent
+  }
+}
+
+// Backward compatibility (older call-sites)
+function loadFeed(opts){ return loadFeedFirst(opts); }
 
     function setHeart(cardEl, choice){
       const hL = cardEl.querySelector('[data-heart="left"]');
@@ -967,7 +1126,18 @@
           const pairId = card?.getAttribute("data-pair-id") || "";
           sharePair(pairId);
         });
+      
+      document.querySelectorAll(".card .reportBtn").forEach(btn=>{
+        btn.addEventListener("click", async (e)=>{
+          e.stopPropagation();
+          const card = btn.closest(".card");
+          const pairId = btn.getAttribute("data-report") || card?.getAttribute("data-pair-id") || "";
+          if (!pairId) return;
+          openReport(pairId);
+        });
       });
+
+});
 
       document.getElementById("navHome")?.addEventListener("click", ()=> {
         feedEl.scrollTo({ top: 0, behavior: "smooth" });
@@ -998,7 +1168,177 @@
     closeProfileBtn.addEventListener("click", closeProfile);
     profileOverlay.addEventListener("click", (e)=>{ if (e.target === profileOverlay) closeProfile(); });
 
-    function fmtPct(v){
+    
+    // Report modal logic
+    const reportOverlay = document.getElementById("reportOverlay");
+    const closeReportBtn = document.getElementById("closeReport");
+    const sendReportBtn = document.getElementById("sendReport");
+    const reportCommentEl = document.getElementById("reportComment");
+    const reportStatusEl = document.getElementById("reportStatus");
+    let reportPairId = "";
+    let reportReason = "";
+
+    function openReport(pairId){
+      reportPairId = String(pairId || "");
+      reportReason = "";
+      if (reportCommentEl) reportCommentEl.value = "";
+      if (reportStatusEl) reportStatusEl.style.display = "none";
+      if (sendReportBtn) sendReportBtn.disabled = true;
+      document.querySelectorAll(".reasonBtn").forEach(b=>b.classList.remove("isOn"));
+      if (reportOverlay) reportOverlay.style.display = "flex";
+    }
+    function closeReport(){
+      if (reportOverlay) reportOverlay.style.display = "none";
+    }
+    closeReportBtn?.addEventListener("click", closeReport);
+    reportOverlay?.addEventListener("click", (e)=>{ if (e.target === reportOverlay) closeReport(); });
+
+    document.querySelectorAll(".reasonBtn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        reportReason = btn.getAttribute("data-reason") || "";
+        document.querySelectorAll(".reasonBtn").forEach(b=>b.classList.remove("isOn"));
+        btn.classList.add("isOn");
+        if (sendReportBtn) sendReportBtn.disabled = !reportReason;
+      });
+    });
+
+    sendReportBtn?.addEventListener("click", async ()=>{
+      try{
+        if (!reportPairId || !reportReason) return;
+        refreshTgId();
+        sendReportBtn.disabled = true;
+        if (reportStatusEl){ reportStatusEl.textContent = "Отправляем…"; reportStatusEl.style.display = "block"; }
+        const payload = {
+          tg_id,
+          pair_id: Number(reportPairId),
+          reason: reportReason,
+          comment: (reportCommentEl?.value || "").trim()
+        };
+        const res = await apiPost("/report", payload);
+        if (!res?.ok) throw new Error(res?.error || "report_failed");
+        toast("Жалоба отправлена");
+        closeReport();
+      } catch(e){
+        toast("Не удалось отправить");
+        if (reportStatusEl){ reportStatusEl.textContent = "Ошибка отправки"; reportStatusEl.style.display = "block"; }
+      } finally {
+        if (sendReportBtn) sendReportBtn.disabled = false;
+      }
+    });
+
+    // Admin modal logic
+    const adminOverlay = document.getElementById("adminOverlay");
+    const adminBody = document.getElementById("adminBody");
+    const closeAdminBtn = document.getElementById("closeAdmin");
+
+    function isAdminClient(){ return String(tg_id) === ADMIN_TG_ID; }
+
+    function openAdmin(){
+      if (!isAdminClient()) return;
+      if (adminBody) adminBody.innerHTML = `<div class="pairSub">Загрузка…</div>`;
+      if (adminOverlay) adminOverlay.style.display = "flex";
+      loadAdminReports();
+    }
+    function closeAdmin(){ if (adminOverlay) adminOverlay.style.display = "none"; }
+
+    closeAdminBtn?.addEventListener("click", closeAdmin);
+    adminOverlay?.addEventListener("click", (e)=>{ if (e.target === adminOverlay) closeAdmin(); });
+
+    async function loadAdminReports(){
+  try{
+    refreshTgId();
+    const data = await apiGet(`/admin/reports?tg_id=${encodeURIComponent(tg_id)}&limit=50`);
+    if (!data?.ok) throw new Error(data?.error || "bad_response");
+
+    // Worker returns { ok:true, items:[ ... ] }
+    const items = Array.isArray(data.items) ? data.items : [];
+
+    if (!items.length){
+      adminBody.innerHTML = `<div class="pairSub">Жалоб пока нет</div>`;
+      return;
+    }
+
+    const statusLabel = (st)=>{
+      if (st === "hidden") return "скрыта";
+      if (st === "deleted") return "удалена";
+      return "видна";
+    };
+
+    adminBody.innerHTML = items.map(r=>{
+      const st = (r.status || "visible").toLowerCase();
+      const caption = (r.caption || "").trim();
+      const title = caption ? caption : `Пара #${r.pair_id}`;
+      const when = r.created_at ? new Date(Number(r.created_at)*1000).toLocaleString("ru-RU") : "";
+      const leftUrl = photoUrlFromKey(r.photo_left_key);
+      const rightUrl = photoUrlFromKey(r.photo_right_key);
+
+      const actions = [];
+      if (st === "visible"){
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="hidden">Скрыть</button>`);
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="deleted">Удалить</button>`);
+      } else if (st === "hidden"){
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="visible">Показать</button>`);
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="deleted">Удалить</button>`);
+      } else if (st === "deleted"){
+        actions.push(`<button class="shareBtn" type="button" data-setstatus="visible">Показать</button>`);
+      }
+
+      return `
+        <div class="card" data-admin-pair="${escapeHtml(r.pair_id)}">
+          <div class="cardHead">
+            <div>
+              <div class="pairTitle">${escapeHtml(title)}</div>
+              <div class="pairSub">Причина: ${escapeHtml(r.reason || "")}${r.comment ? " · " + escapeHtml(r.comment) : ""}</div>
+              <div class="pairSub">Статус: ${escapeHtml(statusLabel(st))}${when ? " · " + escapeHtml(when) : ""}</div>
+            </div>
+            <div></div>
+          </div>
+
+          <div class="pairThumbs">
+            <div class="pairThumb"><img src="${leftUrl}" alt=""></div>
+            <div class="pairThumb"><img src="${rightUrl}" alt=""></div>
+          </div>
+
+          <div class="cardFooter">
+            <div class="votes">Пара: #${escapeHtml(r.pair_id)} · Жалоба: #${escapeHtml(r.id)}</div>
+            <div style="display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap;">
+              ${actions.join("")}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    adminBody.querySelectorAll("button[data-setstatus]").forEach(btn=>{
+      btn.addEventListener("click", async (e)=>{
+        e.stopPropagation();
+        const card = btn.closest(".card");
+        const pairId = card?.getAttribute("data-admin-pair");
+        const status = btn.getAttribute("data-setstatus");
+        if (!pairId || !status) return;
+
+        try{
+          btn.disabled = true;
+          const res = await apiPost("/admin/pair_status", { tg_id, pair_id: Number(pairId), status });
+          if (!res?.ok) throw new Error(res?.error || "update_failed");
+          toast("Готово");
+          // refresh both admin list and feed silently
+          loadAdminReports();
+          silentRefreshTop();
+        } catch(err){
+          toast("Ошибка");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+
+  } catch(e){
+    adminBody.innerHTML = `<div class="pairSub">Ошибка загрузки</div>`;
+  }
+}
+
+	function fmtPct(v){
       const n = Number(v) || 0;
       return `${n}%`;
     }
@@ -1021,6 +1361,7 @@
         const bestText = (bestPairId ? `${DUEL_LABEL} #${bestPairId} — ${bestPercent}%` : "—");
 
         const statsHtml = `
+          ${isAdminClient() ? '<div class="modalActions"><button class="shareBtn wideBtn" id="openAdminBtn" type="button">Админ</button></div>' : ''}
           <div class="statGrid">
             <div class="statCard">
               <div class="statLabel">Загружено пар</div>
@@ -1081,6 +1422,8 @@
         }).join("");
 
         profileBody.innerHTML = statsHtml + (listHtml || `<div class="pairSub">Пока нет загруженных пар</div>`);
+
+        profileBody.querySelector("#openAdminBtn")?.addEventListener("click", openAdmin);
 
         // bind share buttons inside profile
         profileBody.querySelectorAll('[data-share]').forEach(btn=>{
@@ -1164,16 +1507,7 @@
           closeUploadModal();
           loadFeed({ preserveScroll:false, showLoading:true });
 
-    // Автообновление ленты каждые 10 секунд без дергания UI
-    setInterval(()=>{
-      try{
-        const profileOpen = profileOverlay?.classList.contains("open");
-        const uploadOpen = uploadOverlay?.classList.contains("open");
-        if (profileOpen || uploadOpen) return;
-        loadFeed({ preserveScroll:true, showLoading:false });
-      } catch(e){}
-    }, 10000);
-        }, 900);
+            }, 900);
 
       } catch(e){
         uploadStatus.textContent = "Ошибка загрузки.";
@@ -1183,13 +1517,23 @@
 
     loadFeed({ preserveScroll:false, showLoading:true });
 
-    // Автообновление ленты каждые 10 секунд без дергания UI
+// Infinite scroll: load next page when close to bottom
+feedEl.addEventListener("scroll", () => {
+  try{
+    const nearBottom = (feedEl.scrollTop + feedEl.clientHeight) >= (feedEl.scrollHeight - 260);
+    if (nearBottom) loadFeedMore();
+  } catch(e){}
+});
+
+
+    // Автообновление ленты каждые 10 секунд (тихо, без дергания UI)
+    // Пауза, если открыт профиль или модалка загрузки
     setInterval(()=>{
       try{
-        const profileOpen = profileOverlay?.classList.contains("open");
-        const uploadOpen = uploadOverlay?.classList.contains("open");
+        const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
+        const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
         if (profileOpen || uploadOpen) return;
-        loadFeed({ preserveScroll:true, showLoading:false });
+        refreshFeedTopSilently();
       } catch(e){}
     }, 10000);
   </script>
