@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.10.0";
+    const APP_VERSION = "v2.11.0";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -757,6 +757,90 @@ function ensureFeedDelegation() {
         .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
         .replaceAll('"',"&quot;").replaceAll("'","&#039;");
     }
+
+
+    // ===== Image compression before upload (Index v2.11.0) =====
+    async function fileToBitmap(file) {
+      if (window.createImageBitmap) {
+        return await createImageBitmap(file);
+      }
+      const url = URL.createObjectURL(file);
+      try {
+        const img = await new Promise((resolve, reject) => {
+          const im = new Image();
+          im.onload = () => resolve(im);
+          im.onerror = reject;
+          im.src = url;
+        });
+        return img;
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+
+    function canvasToBlob(canvas, type, quality) {
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), type, quality);
+      });
+    }
+
+    async function compressImageFile(file, opts = {}) {
+      if (!file || !file.type || !file.type.startsWith("image/")) return file;
+
+      const {
+        maxLongEdge = 1600,
+        quality = 0.82,
+        outputType = "image/jpeg",
+        minSizeToCompress = 350 * 1024
+      } = opts;
+
+      // Skip small files
+      if (file.size && file.size <= minSizeToCompress) return file;
+
+      let src;
+      try {
+        src = await fileToBitmap(file);
+      } catch (e) {
+        return file; // fallback to original
+      }
+
+      const srcW = src.width;
+      const srcH = src.height;
+
+      const longEdge = Math.max(srcW, srcH);
+      const scale = longEdge > maxLongEdge ? (maxLongEdge / longEdge) : 1;
+
+      const dstW = Math.max(1, Math.round(srcW * scale));
+      const dstH = Math.max(1, Math.round(srcH * scale));
+
+      // If no resize and not huge, keep original
+      if (scale === 1 && file.size <= 2.5 * 1024 * 1024) {
+        try { if (src && src.close) src.close(); } catch (_) {}
+        return file;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = dstW;
+      canvas.height = dstH;
+
+      const ctx = canvas.getContext("2d", { alpha: false });
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(src, 0, 0, dstW, dstH);
+
+      try { if (src && src.close) src.close(); } catch (_) {}
+
+      const blob = await canvasToBlob(canvas, outputType, quality);
+      if (!blob) return file;
+
+      // If compression didn't help, keep original
+      if (file.size && blob.size >= file.size) return file;
+
+      const baseName = (file.name || "photo").replace(/\.[^.]+$/, "");
+      const newName = `${baseName}.jpg`;
+      return new File([blob], newName, { type: outputType, lastModified: Date.now() });
+    }
+    // ===== /Image compression =====
 
 
     function pluralVotes(n){
@@ -1642,8 +1726,11 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
         refreshTgId();
         const fd = new FormData();
         fd.append("tg_id", String(tg_id));
-        fd.append("left", f1);
-        fd.append("right", f2);
+        const leftCompressed  = await compressImageFile(f1, { maxLongEdge: 1600, quality: 0.82 });
+        const rightCompressed = await compressImageFile(f2, { maxLongEdge: 1600, quality: 0.82 });
+
+        fd.append("left", leftCompressed);
+        fd.append("right", rightCompressed);
         if (caption) fd.append("caption", caption);
 
         const res = await fetch(API_BASE + "/upload_pair", { method: "POST", body: fd });
