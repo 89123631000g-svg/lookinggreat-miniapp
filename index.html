@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.9.8";
+    const APP_VERSION = "v2.9.9";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -1057,18 +1057,6 @@ async function loadFeedMore(){
 }
 
 async function refreshFeedTopSilently(){
-  // Обновляем верх тихо и без дергания: только когда пользователь наверху,
-  // и когда не открыты модалки (профиль/загрузка).
-  try{
-    const profileOpen = !!profileOverlay && profileOverlay.style.display !== "none";
-    const uploadOpen  = !!modalOverlay && modalOverlay.style.display !== "none";
-    const reportOpen  = !!reportOverlay && reportOverlay.style.display !== "none";
-    const adminOpen   = !!adminOverlay && adminOverlay.style.display !== "none";
-    if (profileOpen || uploadOpen || reportOpen || adminOpen) return;
-  } catch(e){}
-
-  if (feedEl.scrollTop > 120) return;
-
   try{
     const { items } = await fetchFeedPage(null, FEED_PAGE_SIZE, true);
     const sig = buildTopSig(items);
@@ -1415,9 +1403,57 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
           btn.disabled = true;
           const res = await apiPost("/admin/pair_status", { tg_id, pair_id: Number(pairId), status });
           if (!res?.ok) throw new Error(res?.error || "update_failed");
-          toast("Готово");
-          // refresh both admin list and feed silently
-          loadAdminReports();
+
+          // мгновенно показываем результат прямо в карточке (без ручного обновления)
+          try{
+            // обновим строку статуса
+            const subLines = card.querySelectorAll(".cardHead .pairSub");
+            const when = new Date().toLocaleString("ru-RU", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
+            if (subLines && subLines.length >= 2){
+              // последняя строка у нас "Статус: ..."
+              const last = subLines[subLines.length - 1];
+              last.textContent = `Статус: ${statusLabel(status)} · ${when}`;
+            }
+
+            // перестроим кнопки действий
+            const actionsWrap = card.querySelector(".cardFooter div[style*='display:flex']");
+            if (actionsWrap){
+              let html = "";
+              if (status === "hidden"){
+                html = `<button type="button" class="shareBtn" data-setstatus="visible">Показать</button>
+                        <button type="button" class="shareBtn" data-setstatus="deleted">Удалить</button>`;
+              } else if (status === "visible"){
+                html = `<button type="button" class="shareBtn" data-setstatus="hidden">Скрыть</button>
+                        <button type="button" class="shareBtn" data-setstatus="deleted">Удалить</button>`;
+              } else { // deleted
+                html = `<button type="button" class="shareBtn" data-setstatus="visible">Показать</button>`;
+              }
+              actionsWrap.innerHTML = html;
+
+              // навесим обработчики на новые кнопки в этой карточке (так же, как для остальных)
+              actionsWrap.querySelectorAll("button[data-setstatus]").forEach(b=>{
+                b.addEventListener("click", async (ev)=>{
+                  ev.stopPropagation();
+                  const st = b.getAttribute("data-setstatus");
+                  if (!st) return;
+                  try{
+                    b.disabled = true;
+                    const r2 = await apiPost("/admin/pair_status", { tg_id, pair_id: Number(pairId), status: st });
+                    if (!r2?.ok) throw new Error(r2?.error || "update_failed");
+                    // после второго клика просто перезагрузим список админки (это уже редкий кейс)
+                    await loadAdminReports();
+                    silentRefreshTop();
+                  } catch(e){
+                    toast("Ошибка");
+                  } finally {
+                    b.disabled = false;
+                  }
+                });
+              });
+            }
+          } catch(e){}
+
+          // тихо обновим ленту
           silentRefreshTop();
         } catch(err){
           toast("Ошибка");
@@ -1675,12 +1711,7 @@ feedEl.addEventListener("scroll", function () {
       window.__autoTimer = setInterval(() => {
         try {
           // не мешаем пользователю, когда он свернул вкладку или открыт любой оверлей
-          if (document.hidden) return;
-          if (document.querySelector(".modal.open, .sheet.open, .overlay.open")) return;
-
-          // делаем автоподтяжку только когда пользователь наверху ленты
-          if (feedEl.scrollTop > 120) return;
-
+          
           if (window.DEBUG_AUTO) console.log("AUTO tick", Date.now());
           refreshFeedTopSilently();
         } catch (e) {
