@@ -670,7 +670,7 @@
   </div>
 
 <script>
-    const APP_VERSION = "v2.9.6";
+    const APP_VERSION = "v2.9.7";
     const API_BASE = "https://api.lookingreat.ru";
     const ADMIN_TG_ID = "531932411";
     const DUEL_LABEL = "Пара"; // замену названия делаем только тут
@@ -1441,6 +1441,14 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
       try{
         refreshTgId();
         const data = await apiGet(`/my_pairs?tg_id=${encodeURIComponent(tg_id)}`);
+        
+        // Voter engagement (how many times you voted)
+        let voterStats = null;
+        try{
+          const vs = await apiGet(`/voter_stats?tg_id=${encodeURIComponent(tg_id)}`);
+          if (vs?.ok) voterStats = vs;
+        } catch(e){}
+
         if (!data?.ok) throw new Error(data?.error || "bad_response");
 
         const stats = data.stats || {};
@@ -1448,6 +1456,9 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
 
         const pairsCount = Number(stats.pairs_count || 0);
         const totalVotes = Number(stats.total_votes || 0);
+        const votedTotal = Number(voterStats?.votes_total || 0);
+        const votedToday = Number(voterStats?.votes_today || 0);
+
         const avgPercent = Number(stats.avg_percent || 0);
         const bestPairId = stats.best_pair_id;
         const bestPercent = Number(stats.best_percent || 0);
@@ -1464,6 +1475,14 @@ function loadFeed(opts){ return loadFeedFirst(opts); }
             <div class="statCard">
               <div class="statLabel">Всего голосов</div>
               <div class="statValue">${totalVotes}</div>
+            </div>
+            <div class="statCard">
+              <div class="statLabel">Вы проголосовали</div>
+              <div class="statValue">${votedTotal}</div>
+            </div>
+            <div class="statCard">
+              <div class="statLabel">Голосов сегодня</div>
+              <div class="statValue">${votedToday}</div>
             </div>
             <div class="statCard">
               <div class="statLabel">Средний результат</div>
